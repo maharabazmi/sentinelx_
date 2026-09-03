@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { Header } from './components/common/Header';
 import { EmergencyAlertBanner } from './components/common/EmergencyAlertBanner';
 import { QuickRoleSwitcher } from './components/common/QuickRoleSwitcher';
@@ -89,7 +90,7 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-slate-950">
+    <div className="min-h-screen bg-[var(--bg-body)] text-[var(--text-body)] flex flex-col font-sans selection:bg-emerald-500 selection:text-slate-950 transition-colors duration-250">
       {/* Quick Role Switcher Bar */}
       <QuickRoleSwitcher onRoleSelected={() => setCurrentTab('dashboard')} />
 
@@ -111,34 +112,34 @@ const AppContent: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="w-full bg-slate-950 border-t border-slate-800/80 py-8 px-4 text-xs text-slate-500">
+      <footer className="w-full bg-[var(--bg-body)] border-t border-slate-200 dark:border-slate-800/80 py-8 px-4 text-xs text-slate-500 dark:text-slate-400 transition-colors duration-250">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <div className="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
               <Shield className="w-3.5 h-3.5" />
             </div>
             <div>
-              <span className="font-bold text-slate-300 font-['Space_Grotesk']">
-                Sentinel<span className="text-emerald-400">X</span> Bangladesh
+              <span className="font-bold text-slate-700 dark:text-slate-300 font-['Space_Grotesk']">
+                Sentinel<span className="text-emerald-500 dark:text-emerald-400">X</span> Bangladesh
               </span>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
                 National Public Safety & Consumer Integrity Platform
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-6 text-[11px] text-slate-400">
+          <div className="flex items-center gap-6 text-[11px] text-slate-500 dark:text-slate-400">
             <span className="flex items-center gap-1">
-              <Lock className="w-3 h-3 text-emerald-400" />
+              <Lock className="w-3 h-3 text-emerald-500 dark:text-emerald-400" />
               NID Verification Standard
             </span>
             <span className="flex items-center gap-1">
-              <PhoneCall className="w-3 h-3 text-red-400" />
+              <PhoneCall className="w-3 h-3 text-red-500 dark:text-red-400" />
               Emergency Police 999 • DNCRP 16121
             </span>
           </div>
 
-          <div className="text-[11px] text-slate-500">
+          <div className="text-[11px] text-slate-500 dark:text-slate-400">
             &copy; {new Date().getFullYear()} Government of Bangladesh • Civil Safety Initiative
           </div>
         </div>
@@ -174,9 +175,11 @@ const AppContent: React.FC = () => {
 
 export function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
