@@ -4,14 +4,15 @@ const API_BASE = '/api';
 
 export class ApiClient {
   private static getToken(): string | null {
-    return localStorage.getItem('sentinelx_token');
+    return sessionStorage.getItem('sentinelx_token');
   }
 
   public static setToken(token: string) {
-    localStorage.setItem('sentinelx_token', token);
+    sessionStorage.setItem('sentinelx_token', token);
   }
 
   public static clearToken() {
+    sessionStorage.removeItem('sentinelx_token');
     localStorage.removeItem('sentinelx_token');
   }
 

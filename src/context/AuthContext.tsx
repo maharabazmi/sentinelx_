@@ -25,9 +25,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('sentinelx_token'));
+  const [token, setToken] = useState<string | null>(null);
   const [activeViewMode, setActiveViewMode] = useState<'AUTHORITY' | 'CITIZEN'>('AUTHORITY');
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [activeAlerts, setActiveAlerts] = useState<EmergencyAlert[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
@@ -57,31 +57,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [token, user]);
 
-  // Initial load
+  // Initial load: Always start fresh as Guest on cold run
   useEffect(() => {
-    const initAuth = async () => {
-      const savedToken = localStorage.getItem('sentinelx_token');
-      if (savedToken) {
-        try {
-          const res = await ApiClient.getMe();
-          if (res.success && res.user) {
-            setUser(res.user);
-            setToken(savedToken);
-          } else {
-            ApiClient.clearToken();
-            setToken(null);
-            setUser(null);
-          }
-        } catch (err) {
-          ApiClient.clearToken();
-          setToken(null);
-          setUser(null);
-        }
-      }
-      setIsLoading(false);
-    };
-
-    initAuth();
+    // Clear any residual tokens from previous browser runs so system always starts as Guest
+    ApiClient.clearToken();
+    setUser(null);
+    setToken(null);
+    setIsLoading(false);
   }, []);
 
   // Poll alerts & notifications periodically
