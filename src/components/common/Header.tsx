@@ -7,17 +7,11 @@ import {
   UserPlus,
   PhoneCall,
   ChevronDown,
-  ArrowRightLeft,
-  Check,
-  CheckCircle2,
-  ExternalLink,
-  ShieldAlert,
-  Menu,
-  X,
-  UserCheck
+  ArrowRightLeft
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { UserRole } from '../../types';
+import { ThemeToggle } from './ThemeToggle.tsx';
 
 interface HeaderProps {
   onOpenLogin: () => void;
@@ -47,9 +41,9 @@ export const Header: React.FC<HeaderProps> = ({
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [showHotlines, setShowHotlines] = useState(false);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [emblemClicks, setEmblemClicks] = useState(0);
   const clickTimerRef = useRef<any>(null);
+
 
   const handleEmblemClick = () => {
     onSelectTab('home');
@@ -119,7 +113,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="w-full bg-slate-950/95 border-b border-slate-800/80 backdrop-blur-md sticky top-0 z-40 transition-all">
+    <header className="w-full bg-[var(--bg-header)] border-b border-slate-200 dark:border-slate-800/80 backdrop-blur-md sticky top-0 z-40 transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-4">
         {/* Brand Emblem */}
         <div
@@ -131,32 +125,35 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="font-display font-extrabold text-lg sm:text-xl tracking-tight text-white">
-                Sentinel<span className="text-emerald-400">X</span>
+              <span className="font-display font-extrabold text-lg sm:text-xl tracking-tight text-slate-900 dark:text-white">
+                Sentinel<span className="text-emerald-500 dark:text-emerald-400">X</span>
               </span>
-              <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 uppercase tracking-widest font-mono font-bold">
+              <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 uppercase tracking-widest font-mono font-bold">
                 BD
               </span>
             </div>
-            <p className="text-[10px] sm:text-[11px] text-slate-400 font-medium tracking-tight">
+            <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium tracking-tight">
               National Public Safety & Consumer Protection
             </p>
           </div>
         </div>
 
         {/* Right Action Bar */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          {/* Custom Theme Switcher (Dark / Light / Cyber / Auto) */}
+          <ThemeToggle />
+
           {/* Emergency Hotlines Dropdown */}
           <div className="relative" ref={hotlineRef}>
             <button
               onClick={() => setShowHotlines(!showHotlines)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-950/40 text-red-300 border border-red-500/30 hover:bg-red-900/50 transition shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-950/40 light:bg-red-50 text-red-300 light:text-red-700 border border-red-500/30 hover:bg-red-900/50 light:hover:bg-red-100 transition shadow-sm"
               title="National Emergency Hotlines"
             >
-              <PhoneCall className="w-3.5 h-3.5 text-red-400 animate-pulse" />
+              <PhoneCall className="w-3.5 h-3.5 text-red-500 dark:text-red-400 animate-pulse" />
               <span className="hidden sm:inline">Emergency 999</span>
               <span className="sm:hidden font-mono font-bold">999</span>
-              <ChevronDown className="w-3 h-3 text-red-400" />
+              <ChevronDown className="w-3 h-3 text-red-500 dark:text-red-400" />
             </button>
 
             {showHotlines && (
@@ -253,13 +250,12 @@ export const Header: React.FC<HeaderProps> = ({
                           <div
                             key={notif.id}
                             onClick={() => markNotificationRead(notif.id)}
-                            className={`p-2.5 rounded-xl text-xs cursor-pointer transition ${
-                              notif.isRead
+                            className={`p-2.5 rounded-xl text-xs cursor-pointer transition ${notif.isRead
                                 ? 'bg-slate-900/40 text-slate-400 hover:bg-slate-800/40'
                                 : notif.severity === 'EMERGENCY'
-                                ? 'bg-red-950/40 border border-red-500/30 text-slate-200 hover:bg-red-950/60'
-                                : 'bg-slate-800/70 text-slate-200 hover:bg-slate-800 font-medium'
-                            }`}
+                                  ? 'bg-red-950/40 border border-red-500/30 text-slate-200 hover:bg-red-950/60'
+                                  : 'bg-slate-800/70 text-slate-200 hover:bg-slate-800 font-medium'
+                              }`}
                           >
                             <div className="flex items-start justify-between gap-2">
                               <h5 className="font-semibold text-slate-200 text-xs">{notif.title}</h5>
@@ -283,11 +279,10 @@ export const Header: React.FC<HeaderProps> = ({
               {user.role !== UserRole.CITIZEN && (
                 <button
                   onClick={() => setActiveViewMode(activeViewMode === 'CITIZEN' ? 'AUTHORITY' : 'CITIZEN')}
-                  className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition border ${
-                    activeViewMode === 'CITIZEN'
+                  className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition border ${activeViewMode === 'CITIZEN'
                       ? 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40 hover:bg-emerald-900/60'
                       : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800 hover:text-white'
-                  }`}
+                    }`}
                   title={
                     activeViewMode === 'CITIZEN'
                       ? `Return to ${user.role} Command Console`

@@ -1,67 +1,208 @@
 @import "tailwindcss";
 
+/* 1. Enable class-based dark and light variants for Tailwind CSS v4 */
+@variant dark (&:where(.dark, .dark *));
+@variant light (&:where(.light, .light *));
+
 @layer base {
+
+  /* Default Theme (Dark Obsidian) */
   :root {
     --font-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+    /* Base Surfaces & Text: Dark Mode */
+    --bg-body: #020617;
+    /* slate-950 */
+    --bg-card: #0f172a;
+    /* slate-900 */
+    --bg-header: rgba(2, 6, 23, 0.95);
+    --bg-modal: #0f172a;
+    --text-body: #f8fafc;
+    /* slate-50 */
+    --text-muted: #94a3b8;
+    /* slate-400 */
+
+    --border-color: #1e293b;
+    /* slate-800 */
+    --border-subtle: #334155;
+    /* slate-700 */
+
+    --scrollbar-track: #020617;
+    --scrollbar-thumb: #1e293b;
+    --scrollbar-thumb-hover: #334155;
+
+    /* Glassmorphism: Dark Mode */
+    --glass-bg: rgba(15, 23, 42, 0.75);
+    --glass-border: rgba(51, 65, 85, 0.4);
+    --glass-elevated-bg: rgba(15, 23, 42, 0.9);
+    --glass-elevated-border: rgba(71, 85, 105, 0.4);
+    --glass-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+    --subtle-border: rgba(51, 65, 85, 0.5);
+  }
+
+  /* Light Theme Variables (High Contrast Daylight) */
+  html.light,
+  body.light,
+  .light {
+    --bg-body: #f1f5f9;
+    /* slate-100 (darker background so white cards pop) */
+    --bg-card: #ffffff;
+    /* crisp pure white */
+    --bg-header: rgba(255, 255, 255, 0.96);
+    --bg-modal: #ffffff;
+    --text-body: #020617;
+    /* slate-950 (ultra sharp black contrast) */
+    --text-muted: #334155;
+    /* slate-700 */
+
+    --border-color: #cbd5e1;
+    /* slate-300 */
+    --border-subtle: #94a3b8;
+    /* slate-400 */
+
+    --scrollbar-track: #e2e8f0;
+    --scrollbar-thumb: #94a3b8;
+    --scrollbar-thumb-hover: #64748b;
+
+    /* Glassmorphism & Cards: Light Mode High Contrast */
+    --glass-bg: rgba(255, 255, 255, 0.95);
+    --glass-border: rgba(148, 163, 184, 0.6);
+    --glass-elevated-bg: #ffffff;
+    --glass-elevated-border: rgba(100, 116, 139, 0.5);
+    --glass-shadow: 0 10px 25px -3px rgba(15, 23, 42, 0.12), 0 4px 6px -2px rgba(15, 23, 42, 0.06);
+    --subtle-border: rgba(148, 163, 184, 0.6);
+  }
+
+  /* Dark Theme Variables */
+  html.dark,
+  body.dark,
+  .dark {
+    --bg-body: #020617;
+    /* slate-950 */
+    --bg-card: #0f172a;
+    /* slate-900 */
+    --bg-header: rgba(2, 6, 23, 0.95);
+    --bg-modal: #0f172a;
+    --text-body: #f8fafc;
+    /* slate-50 */
+    --text-muted: #94a3b8;
+    /* slate-400 */
+
+    --border-color: #1e293b;
+    /* slate-800 */
+    --border-subtle: #334155;
+    /* slate-700 */
+
+    --scrollbar-track: #020617;
+    --scrollbar-thumb: #1e293b;
+    --scrollbar-thumb-hover: #334155;
+
+    /* Glassmorphism: Dark Mode */
+    --glass-bg: rgba(15, 23, 42, 0.75);
+    --glass-border: rgba(51, 65, 85, 0.4);
+    --glass-elevated-bg: rgba(15, 23, 42, 0.9);
+    --glass-elevated-border: rgba(71, 85, 105, 0.4);
+    --glass-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+    --subtle-border: rgba(51, 65, 85, 0.5);
+  }
+
+  /* Cyber Theme Variables */
+  [data-theme="cyber"] {
+    --bg-body: #021a12;
+    --bg-card: #064e3b;
+    --bg-header: rgba(2, 26, 18, 0.95);
+    --bg-modal: #064e3b;
+    --text-body: #ecfdf5;
+    --text-muted: #6ee7b7;
+
+    --border-color: rgba(16, 185, 129, 0.3);
+    --border-subtle: rgba(52, 211, 153, 0.4);
+
+    --scrollbar-track: #021a12;
+    --scrollbar-thumb: #064e3b;
+    --scrollbar-thumb-hover: #047857;
+
+    --glass-bg: rgba(6, 78, 59, 0.45);
+    --glass-border: rgba(16, 185, 129, 0.35);
+    --glass-elevated-bg: rgba(6, 78, 59, 0.75);
+    --glass-elevated-border: rgba(52, 211, 153, 0.45);
+    --glass-shadow: 0 20px 25px -5px rgba(5, 150, 105, 0.25);
+    --subtle-border: rgba(16, 185, 129, 0.35);
   }
 
   body {
     font-family: var(--font-sans);
-    background-color: #020617; /* slate-950 */
-    color: #f8fafc; /* slate-50 */
+    background-color: var(--bg-body);
+    color: var(--text-body);
     overflow-x: hidden;
+    transition: background-color 0.25s ease, color 0.25s ease;
   }
 
-  h1, h2, h3, h4, .font-display {
+  h1,
+  h2,
+  h3,
+  h4,
+  .font-display {
     font-family: var(--font-display);
     letter-spacing: -0.025em;
   }
 
-  /* Custom Government/Security Scrollbars */
+  /* Custom Dynamic Scrollbars */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
 
   ::-webkit-scrollbar-track {
-    background: #020617;
+    background: var(--scrollbar-track);
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #1e293b;
+    background: var(--scrollbar-thumb);
     border-radius: 9999px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #334155;
+    background: var(--scrollbar-thumb-hover);
   }
 }
 
-/* Glassmorphism & Elevation Utilities */
+/* Glassmorphism & Elevation Utilities (Now adapt automatically to any theme!) */
 .glass-panel {
-  background: rgba(15, 23, 42, 0.75);
+  background: var(--glass-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(51, 65, 85, 0.4);
+  border: 1px solid var(--glass-border);
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .glass-panel-elevated {
-  background: rgba(15, 23, 42, 0.9);
+  background: var(--glass-elevated-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(71, 85, 105, 0.4);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--glass-elevated-border);
+  box-shadow: var(--glass-shadow);
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .subtle-border {
-  border-color: rgba(51, 65, 85, 0.5);
+  border-color: var(--subtle-border);
 }
 
 /* Animations */
 @keyframes pulse-subtle {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.85; transform: scale(1.02); }
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.85;
+    transform: scale(1.02);
+  }
 }
 
 .animate-pulse-subtle {
@@ -69,10 +210,270 @@
 }
 
 @keyframes radar-sweep {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .animate-radar {
   animation: radar-sweep 4s linear infinite;
 }
+
+/* ==========================================================================
+   HIGH-CONTRAST LIGHT MODE OVERRIDES Across All Sub-sections & Components
+   ========================================================================== */
+html.light,
+body.light,
+.light {
+  color-scheme: light;
+}
+
+/* 1. Backgrounds & Containers in Light Mode */
+html.light .bg-slate-950,
+.light .bg-slate-950,
+html.light .bg-slate-900,
+.light .bg-slate-900,
+html.light .bg-slate-900\/95,
+html.light .bg-slate-900\/90,
+html.light .bg-slate-900\/80,
+html.light .bg-slate-900\/70,
+html.light .bg-slate-900\/60,
+html.light .bg-slate-900\/50,
+html.light .bg-slate-900\/40,
+html.light .bg-slate-950\/95,
+html.light .bg-slate-950\/90,
+html.light .bg-slate-950\/85,
+html.light .bg-slate-950\/80,
+html.light .bg-slate-950\/70,
+html.light .bg-slate-950\/60,
+html.light .bg-slate-950\/50,
+.light .bg-slate-900\/90,
+.light .bg-slate-900\/80,
+.light .bg-slate-900\/60,
+.light .bg-slate-950\/80,
+.light .bg-slate-950\/60 {
+  background-color: #ffffff !important;
+  box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.08), 0 2px 4px -1px rgba(15, 23, 42, 0.04);
+}
+
+html.light .bg-slate-800,
+html.light .bg-slate-800\/90,
+html.light .bg-slate-800\/80,
+html.light .bg-slate-800\/70,
+html.light .bg-slate-800\/60,
+html.light .bg-slate-800\/50,
+html.light .bg-slate-800\/40,
+.light .bg-slate-800,
+.light .bg-slate-800\/80,
+.light .bg-slate-800\/60 {
+  background-color: #f1f5f9 !important;
+}
+
+/* Gradients in Light Mode */
+html.light .from-slate-950,
+.light .from-slate-950,
+html.light .from-slate-900,
+.light .from-slate-900 {
+  --tw-gradient-from: #e2e8f0 !important;
+}
+
+html.light .via-slate-900,
+.light .via-slate-900,
+html.light .via-slate-950,
+.light .via-slate-950 {
+  --tw-gradient-via: #ffffff !important;
+}
+
+html.light .to-slate-950,
+.light .to-slate-950,
+html.light .to-slate-900,
+.light .to-slate-900 {
+  --tw-gradient-to: #f1f5f9 !important;
+}
+
+/* 2. Text Colors in Light Mode (Maximum Legibility & Sharp Contrast) */
+html.light .text-white,
+html.light .text-slate-100,
+html.light .text-slate-200,
+.light .text-white,
+.light .text-slate-100,
+.light .text-slate-200 {
+  color: #020617 !important;
+  /* Ultra-sharp black slate */
+}
+
+html.light .text-slate-300,
+html.light .text-slate-400,
+.light .text-slate-300,
+.light .text-slate-400 {
+  color: #1e293b !important;
+  /* Dark slate-800 */
+}
+
+html.light .text-slate-500,
+.light .text-slate-500 {
+  color: #475569 !important;
+  /* Slate-600 */
+}
+
+/* Accent text colors adapted for high-contrast daylight rendering */
+html.light .text-emerald-400,
+.light .text-emerald-400 {
+  color: #047857 !important;
+  /* Emerald-700 */
+}
+
+html.light .text-emerald-300,
+.light .text-emerald-300 {
+  color: #065f46 !important;
+  /* Emerald-800 */
+}
+
+html.light .text-amber-400,
+.light .text-amber-400 {
+  color: #b45309 !important;
+  /* Amber-700 */
+}
+
+html.light .text-amber-300,
+.light .text-amber-300 {
+  color: #78350f !important;
+  /* Amber-900 */
+}
+
+html.light .text-blue-400,
+.light .text-blue-400 {
+  color: #1d4ed8 !important;
+  /* Blue-700 */
+}
+
+html.light .text-blue-300,
+.light .text-blue-300 {
+  color: #1e40af !important;
+  /* Blue-800 */
+}
+
+html.light .text-purple-400,
+.light .text-purple-400 {
+  color: #6b21a8 !important;
+  /* Purple-800 */
+}
+
+html.light .text-purple-300,
+.light .text-purple-300 {
+  color: #581c87 !important;
+  /* Purple-900 */
+}
+
+html.light .text-red-400,
+.light .text-red-400 {
+  color: #b91c1c !important;
+  /* Red-700 */
+}
+
+html.light .text-red-300,
+.light .text-red-300 {
+  color: #991b1b !important;
+  /* Red-800 */
+}
+
+/* 3. High-Contrast Sharp Borders in Light Mode */
+html.light .border-slate-800,
+html.light .border-slate-800\/90,
+html.light .border-slate-800\/80,
+html.light .border-slate-800\/60,
+html.light .border-slate-800\/50,
+html.light .border-slate-800\/40,
+html.light .border-slate-700,
+html.light .border-slate-700\/80,
+html.light .border-slate-700\/60,
+html.light .border-slate-700\/50,
+html.light .border-slate-900,
+.light .border-slate-800,
+.light .border-slate-700 {
+  border-color: #cbd5e1 !important;
+  /* Sharp Slate-300 border */
+}
+
+/* 4. High-Contrast Container Badges */
+html.light .bg-red-950\/40,
+html.light .bg-red-950\/60,
+html.light .bg-red-950\/30,
+.light .bg-red-950\/40 {
+  background-color: #fee2e2 !important;
+  border-color: #fca5a5 !important;
+  color: #991b1b !important;
+}
+
+html.light .bg-amber-950\/40,
+html.light .bg-amber-950\/60,
+html.light .bg-amber-950\/30,
+.light .bg-amber-950\/40 {
+  background-color: #fef3c7 !important;
+  border-color: #fcd34d !important;
+  color: #92400e !important;
+}
+
+html.light .bg-emerald-950\/40,
+html.light .bg-emerald-950\/60,
+html.light .bg-emerald-950\/30,
+.light .bg-emerald-950\/40 {
+  background-color: #d1fae5 !important;
+  border-color: #6ee7b7 !important;
+  color: #065f46 !important;
+}
+
+html.light .bg-blue-950\/40,
+html.light .bg-blue-950\/60,
+html.light .bg-blue-950\/30,
+.light .bg-blue-950\/40 {
+  background-color: #dbeafe !important;
+  border-color: #93c5fd !important;
+  color: #1e40af !important;
+}
+
+html.light .bg-purple-950\/40,
+html.light .bg-purple-950\/60,
+html.light .bg-purple-950\/30,
+.light .bg-purple-950\/40 {
+  background-color: #f3e8ff !important;
+  border-color: #d8b4fe !important;
+  color: #6b21a8 !important;
+}
+
+/* 5. Inputs, Textareas, Selects & Tables */
+html.light input,
+html.light textarea,
+html.light select,
+.light input,
+.light textarea,
+.light select {
+  background-color: #ffffff !important;
+  color: #020617 !important;
+  border-color: #94a3b8 !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+html.light input::placeholder,
+html.light textarea::placeholder,
+.light input::placeholder,
+.light textarea::placeholder {
+  color: #64748b !important;
+}
+
+html.light th,
+html.light thead,
+.light thead {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+html.light td,
+.light td {
+  border-color: #cbd5e1 !important;
+}
