@@ -24,14 +24,12 @@ import { useAuth } from '../../context/AuthContext';
 interface LandingPageProps {
   onOpenLogin: () => void;
   onOpenRegister: () => void;
-  onSelectRole: (role: UserRole) => void;
   onNavigateToDashboard?: () => void;
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({
   onOpenLogin,
   onOpenRegister,
-  onSelectRole,
   onNavigateToDashboard
 }) => {
   const { user, logout } = useAuth();
@@ -84,7 +82,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     onClick={logout}
                     className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-slate-900 hover:bg-red-950/40 text-slate-400 hover:text-red-400 border border-slate-800 hover:border-red-500/30 text-xs font-semibold transition"
                   >
-                    Switch Account / Sign Out
+                    Sign Out
                   </button>
                 </div>
               </div>

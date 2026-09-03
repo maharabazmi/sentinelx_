@@ -80,15 +80,6 @@ export class ApiClient {
     return this.request('/auth/me');
   }
 
-  static async demoSwitchRole(role: UserRole): Promise<{ success: boolean; token: string; user: User }> {
-    const res = await this.request<{ success: boolean; token: string; user: User }>('/auth/demo-switch', {
-      method: 'POST',
-      body: JSON.stringify({ role })
-    });
-    if (res.token) this.setToken(res.token);
-    return res;
-  }
-
   // --- Citizen API ---
   static async submitCrimeReport(data: Partial<CrimeReport>): Promise<{ success: boolean; report: CrimeReport; message: string }> {
     return this.request('/citizen/reports', {

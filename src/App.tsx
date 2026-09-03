@@ -3,7 +3,6 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { Header } from './components/common/Header';
 import { EmergencyAlertBanner } from './components/common/EmergencyAlertBanner';
-import { QuickRoleSwitcher } from './components/common/QuickRoleSwitcher';
 import { LoginModal } from './components/auth/LoginModal';
 import { RegisterWizard } from './components/auth/RegisterWizard';
 import { AdminClearanceModal } from './components/auth/AdminClearanceModal';
@@ -16,7 +15,7 @@ import { UserRole } from './types';
 import { Shield, Lock, PhoneCall } from 'lucide-react';
 
 const AppContent: React.FC = () => {
-  const { user, activeAlerts, switchRole, activeViewMode } = useAuth();
+  const { user, activeAlerts } = useAuth();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [isAdminClearanceOpen, setIsAdminClearanceOpen] = useState(false);
@@ -54,11 +53,6 @@ const AppContent: React.FC = () => {
     }
   }, [user]);
 
-  const handleSelectRoleFromLanding = async (role: UserRole) => {
-    await switchRole(role);
-    setCurrentTab('dashboard');
-  };
-
   const renderMainContent = () => {
     // 1. Initial run or explicit 'home' tab selection: Always land on Public Landing Page
     if (currentTab === 'home' || !user) {
@@ -66,18 +60,15 @@ const AppContent: React.FC = () => {
         <LandingPage
           onOpenLogin={() => setIsLoginOpen(true)}
           onOpenRegister={() => setIsRegisterOpen(true)}
-          onSelectRole={handleSelectRoleFromLanding}
           onNavigateToDashboard={() => setCurrentTab('dashboard')}
         />
       );
     }
 
     // 2. Active Dashboard Views (when authenticated and currentTab === 'dashboard')
-    if (user.role === UserRole.CITIZEN || activeViewMode === 'CITIZEN') {
-      return <CitizenDashboard />;
-    }
-
     switch (user.role) {
+      case UserRole.CITIZEN:
+        return <CitizenDashboard />;
       case UserRole.POLICE:
         return <PoliceDashboard />;
       case UserRole.CONSUMER_RIGHTS:
@@ -91,9 +82,6 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[var(--bg-body)] text-[var(--text-body)] flex flex-col font-sans selection:bg-emerald-500 selection:text-slate-950 transition-colors duration-250">
-      {/* Quick Role Switcher Bar */}
-      <QuickRoleSwitcher onRoleSelected={() => setCurrentTab('dashboard')} />
-
       {/* Temporary Emergency Alert Broadcast Banner */}
       <EmergencyAlertBanner alerts={activeAlerts} />
 

@@ -63,7 +63,7 @@ bun run dev
 ## Architecture & API Endpoints
 
 - **Health Check**: `GET /api/health`
-- **Auth & NID**: `POST /api/auth/verify-nid`, `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/demo-switch`
+- **Auth & NID**: `POST /api/auth/verify-nid`, `POST /api/auth/register`, `POST /api/auth/login`
 - **Citizen Services**: Crime report lodging, DNCRP dispute filing, SOS emergency distress dispatch, BSTI barcode verification
 - **Police Command**: Operational dashboard, crime report review/investigation updates, verified-only crime heatmap, emergency alerts
 - **Consumer Rights (DNCRP)**: Complaint resolution, mobile court enforcement penalties, shop inspection surveillance index

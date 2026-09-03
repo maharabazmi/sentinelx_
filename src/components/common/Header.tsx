@@ -6,8 +6,7 @@ import {
   LogIn,
   UserPlus,
   PhoneCall,
-  ChevronDown,
-  ArrowRightLeft
+  ChevronDown
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { UserRole } from '../../types';
@@ -34,9 +33,7 @@ export const Header: React.FC<HeaderProps> = ({
     notifications,
     unreadCount,
     markNotificationRead,
-    activeAlerts,
-    activeViewMode,
-    setActiveViewMode
+    activeAlerts
   } = useAuth();
 
   const [showNotifications, setShowNotifications] = useState(false);
@@ -275,26 +272,6 @@ export const Header: React.FC<HeaderProps> = ({
                 )}
               </div>
 
-              {/* Authority Mode Switcher Button (Police, DNCRP, Admin can take Citizen Services) */}
-              {user.role !== UserRole.CITIZEN && (
-                <button
-                  onClick={() => setActiveViewMode(activeViewMode === 'CITIZEN' ? 'AUTHORITY' : 'CITIZEN')}
-                  className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition border ${activeViewMode === 'CITIZEN'
-                      ? 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40 hover:bg-emerald-900/60'
-                      : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800 hover:text-white'
-                    }`}
-                  title={
-                    activeViewMode === 'CITIZEN'
-                      ? `Return to ${user.role} Command Console`
-                      : 'Switch to Citizen Safety & Grievance Services'
-                  }
-                >
-                  <ArrowRightLeft className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>
-                    {activeViewMode === 'CITIZEN' ? `Back to ${user.role}` : 'Take Citizen Services'}
-                  </span>
-                </button>
-              )}
 
               {/* User Profile Pill */}
               <div className="flex items-center gap-2 pl-2 border-l border-slate-800/80">
