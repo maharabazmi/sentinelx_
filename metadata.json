@@ -1,0 +1,6 @@
+{
+  "name": "SentinelX - Public Safety & Consumer Protection",
+  "description": "AI-assisted public safety and consumer protection platform for Bangladesh with role-based access control, police crime heatmap, admin AI crime prediction, emergency alerts, and consumer rights dispute resolution.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
