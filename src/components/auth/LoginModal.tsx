@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, Lock, Shield, KeyRound, AlertCircle, CheckCircle, UserCheck, RefreshCw } from 'lucide-react';
+import { X, Lock, AlertCircle, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { UserRole } from '../../types';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -61,20 +60,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     }
   };
 
-  const handlePrefillAndLogin = async (id: string, pass: string) => {
-    setIdentifier(id);
-    setPassword(pass);
-    setError(null);
-    setIsLoading(true);
-    try {
-      await login(id, pass);
-      onClose();
-    } catch (err: any) {
-      setError(err.message || 'Authentication failed.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in">
@@ -155,38 +140,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           </button>
         </form>
 
-        {/* Quick Demo Fill Buttons */}
-        <div className="mt-6 pt-5 border-t border-slate-800">
-          <p className="text-[11px] text-slate-400 text-center mb-3 font-mono uppercase tracking-wider">
-            Public Civil Demonstration Accounts:
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={() => handlePrefillAndLogin('citizen.tanvir@example.com', 'demo1234')}
-              className="p-2.5 rounded-xl bg-slate-800/60 hover:bg-emerald-950/40 border border-slate-700/80 text-slate-300 hover:text-emerald-300 text-xs font-medium transition text-center flex flex-col items-center justify-center gap-1"
-            >
-              <span className="text-base">👤</span>
-              <span className="font-semibold">Citizen (Tanvir)</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handlePrefillAndLogin('police.kamrul@dmp.gov.bd', 'demo1234')}
-              className="p-2.5 rounded-xl bg-slate-800/60 hover:bg-blue-950/40 border border-slate-700/80 text-slate-300 hover:text-blue-300 text-xs font-medium transition text-center flex flex-col items-center justify-center gap-1"
-            >
-              <span className="text-base">👮</span>
-              <span className="font-semibold">Police (Kamrul)</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handlePrefillAndLogin('shamim.reza@dncrp.gov.bd', 'demo1234')}
-              className="p-2.5 rounded-xl bg-slate-800/60 hover:bg-amber-950/40 border border-slate-700/80 text-slate-300 hover:text-amber-300 text-xs font-medium transition text-center flex flex-col items-center justify-center gap-1"
-            >
-              <span className="text-base">⚖️</span>
-              <span className="font-semibold">DNCRP (Shamim)</span>
-            </button>
-          </div>
-        </div>
 
         <div className="mt-5 text-center">
           <p className="text-xs text-slate-400">
