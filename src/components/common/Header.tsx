@@ -246,7 +246,15 @@ export const Header: React.FC<HeaderProps> = ({
                         notifications.map(notif => (
                           <div
                             key={notif.id}
-                            onClick={() => markNotificationRead(notif.id)}
+                            onClick={() => {
+                              markNotificationRead(notif.id);
+                              setShowNotifications(false);
+                              const match = (notif.title + ' ' + notif.message).match(/CR-[A-Z]{3}-\d{4}-\d{4}/);
+                              const caseId = match ? match[0] : null;
+                              window.dispatchEvent(new CustomEvent('open_case_report', {
+                                detail: { relatedId: notif.relatedId, caseId }
+                              }));
+                            }}
                             className={`p-2.5 rounded-xl text-xs cursor-pointer transition ${notif.isRead
                                 ? 'bg-slate-900/40 text-slate-400 hover:bg-slate-800/40'
                                 : notif.severity === 'EMERGENCY'

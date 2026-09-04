@@ -58,10 +58,10 @@ class MockNIDVerificationService:
         "Chattogram": ["Kotwali", "Panchlaish", "Agrabad", "Khulshi", "Pahartali", "Halishahar"],
         "Sylhet": ["Kotwali", "Zindabazar", "Amberkhana", "Shahporan"],
         "Rajshahi": ["Boalia", "Motihar", "Rajpara"],
-        "Khulna": ["Khalishpur", "Sonadanga", "Daulatpur"],
+        "Khulna": ["Khulna Sadar", "Khalishpur", "Sonadanga", "Daulatpur"],
         "Barishal": ["Kotwali", "Airport", "Kawnia"],
         "Rangpur": ["Kotwali", "Tajhat"],
-        "Mymensingh": ["Kotwali", "Muktagacha"],
+        "Mymensingh": ["Fulbaria", "Kotwali", "Muktagacha", "Trishal", "Bhaluka", "Gafargaon"],
     }
     NAMES_EN = ["Kamrul Hassan", "Nusrat Jahan", "Shahadat Hossain", "Ariful Islam", "Tasnim Ahmed", "Sabrina Chowdhury"]
     NAMES_BN = ["কামরুল হাসান", "নুসরাত জাহান", "শাহাদাত হোসেন", "আরিফুল ইসলাম", "তাসনিম আহমেদ", "সাবরিনা চৌধুরী"]

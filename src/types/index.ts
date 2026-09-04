@@ -141,6 +141,7 @@ export interface CrimeReport {
   evidence: EvidenceFile[];
   verificationNotes?: string;
   verifiedByOfficerId?: string;
+  assignedOfficerId?: string;
   assignedOfficerName?: string;
   assignedOfficerBadge?: string;
   assignedOfficerStation?: string;

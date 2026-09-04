@@ -52,6 +52,15 @@ def get_db():
 
 def init_db():
     Base.metadata.create_all(bind=engine)
+    # Resilient schema migration: ensure assignedOfficerId column exists
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE crime_reports ADD COLUMN assignedOfficerId VARCHAR(64)"))
+            conn.commit()
+            logger.info("[DB] Added assignedOfficerId column to crime_reports table.")
+    except Exception:
+        pass
+
     with get_db() as db:
         user_count = db.query(User).count()
         if user_count == 0:
@@ -64,3 +73,12 @@ def init_db():
             logger.info("[DB] Database seeded successfully with initial users, crime reports, alerts, and BSTI catalog.")
         else:
             logger.info(f"Database already populated ({user_count} users found).")
+
+        # Auto-sync any unassigned reports to stationed officers
+        try:
+            from .services.jurisdiction_service import JurisdictionService
+            synced_count = JurisdictionService.auto_sync_all_unassigned_reports(db)
+            if synced_count > 0:
+                logger.info(f"[DB] Auto-routed {synced_count} pending cases to stationed police officers.")
+        except Exception as e:
+            logger.warning(f"[DB] Auto-sync skipped: {e}")

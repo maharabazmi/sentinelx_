@@ -29,7 +29,8 @@ import {
   Filter,
   Check,
   Layers,
-  MessageSquare
+  MessageSquare,
+  RotateCcw
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { ApiClient } from '../../services/api';
@@ -51,6 +52,7 @@ import { EmptyState } from '../ui/EmptyState';
 import { TableRowSkeleton } from '../ui/SkeletonLoader';
 import { EvidenceViewer } from '../common/EvidenceViewer';
 import { CaseChatThread } from '../common/CaseChatThread';
+import { BANGLADESH_DIVISIONS, getThanasByDistrict } from '../../data/bangladeshGeo';
 
 export const PoliceDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -69,6 +71,7 @@ export const PoliceDashboard: React.FC = () => {
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState('ALL');
+  const [selectedThana, setSelectedThana] = useState('ALL');
   const [selectedCrimeType, setSelectedCrimeType] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
 
@@ -78,6 +81,12 @@ export const PoliceDashboard: React.FC = () => {
   const [officerNote, setOfficerNote] = useState('');
   const [assignedOfficer, setAssignedOfficer] = useState('Sub-Inspector Faruq Ahmed (Badge DMP-4412)');
   const [isProcessingAction, setIsProcessingAction] = useState(false);
+
+  // Queue Scope & Assignment State
+  const [reportQueueScope, setReportQueueScope] = useState<'station_unassigned' | 'my_cases' | 'all_station' | 'all_national'>('all_station');
+  const [stationOfficers, setStationOfficers] = useState<any[]>([]);
+  const [selectedAssigneeId, setSelectedAssigneeId] = useState<string>('');
+  const [claimActionLoadingId, setClaimActionLoadingId] = useState<string | null>(null);
 
   // Create Broadcast Form State
   const [alertTitle, setAlertTitle] = useState('');
@@ -89,15 +98,21 @@ export const PoliceDashboard: React.FC = () => {
   const [isBroadcasting, setIsBroadcasting] = useState(false);
 
   // Fetch Police Data
-  const fetchPoliceData = async () => {
+  const fetchPoliceData = async (scope = reportQueueScope) => {
     setIsLoading(true);
     try {
-      const [sumRes, repRes, heatRes, alertRes, sosRes] = await Promise.all([
+      let backendScope = 'station';
+      if (scope === 'my_cases') backendScope = 'my_cases';
+      else if (scope === 'station_unassigned') backendScope = 'unassigned';
+      else if (scope === 'all_national') backendScope = 'all';
+
+      const [sumRes, repRes, heatRes, alertRes, sosRes, offRes] = await Promise.all([
         ApiClient.getPoliceSummary(),
-        ApiClient.getPoliceCrimeReports(),
+        ApiClient.getPoliceCrimeReports({ scope: backendScope }),
         ApiClient.getPoliceCrimeHeatmap(),
         ApiClient.getPoliceEmergencyAlerts(),
-        ApiClient.getPoliceSOSList()
+        ApiClient.getPoliceSOSList(),
+        ApiClient.getPoliceOfficers(user?.stationOrThana)
       ]);
 
       if (sumRes.success) setStats(sumRes.stats);
@@ -105,6 +120,7 @@ export const PoliceDashboard: React.FC = () => {
       if (heatRes.success) setHeatmapIncidents(heatRes.incidents);
       if (alertRes.success) setAlerts(alertRes.alerts);
       if (sosRes.success) setSosRequests(sosRes.sosRequests);
+      if (offRes.success) setStationOfficers(offRes.officers);
     } catch (err) {
       console.error('Error loading police data:', err);
     } finally {
@@ -114,9 +130,79 @@ export const PoliceDashboard: React.FC = () => {
 
   useEffect(() => {
     fetchPoliceData();
-    const interval = setInterval(fetchPoliceData, 10000);
+    const interval = setInterval(() => fetchPoliceData(), 15000);
     return () => clearInterval(interval);
-  }, []);
+  }, [reportQueueScope]);
+
+  useEffect(() => {
+    const handleOpenCase = (e: any) => {
+      const { relatedId, caseId } = e.detail || {};
+      setStatusFilter('ALL');
+      setSelectedCrimeType('ALL');
+      setSelectedDistrict('ALL');
+      setSelectedThana('ALL');
+      setSearchQuery('');
+      setReportQueueScope('all_station');
+      setActiveTab('case_management');
+
+      const found = reports.find(r => (relatedId && r.id === relatedId) || (caseId && r.caseId === caseId));
+      if (found) {
+        setSelectedReport(found);
+      } else {
+        ApiClient.getPoliceCrimeReports({ scope: 'all' }).then(res => {
+          if (res.success) {
+            const target = res.reports.find(r => (relatedId && r.id === relatedId) || (caseId && r.caseId === caseId));
+            if (target) setSelectedReport(target);
+          }
+        });
+      }
+    };
+
+    window.addEventListener('open_case_report', handleOpenCase);
+    return () => window.removeEventListener('open_case_report', handleOpenCase);
+  }, [reports]);
+
+  const handleScopeChange = (newScope: 'station_unassigned' | 'my_cases' | 'all_station' | 'all_national') => {
+    setReportQueueScope(newScope);
+    fetchPoliceData(newScope);
+  };
+
+  const handleClaimCase = async (reportId: string) => {
+    setClaimActionLoadingId(reportId);
+    try {
+      const res = await ApiClient.claimCrimeReport(reportId);
+      if (res.success) {
+        if (selectedReport && selectedReport.id === reportId) {
+          setSelectedReport(res.report);
+        }
+        await fetchPoliceData();
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to claim case.');
+    } finally {
+      setClaimActionLoadingId(null);
+    }
+  };
+
+  const handleAssignCase = async (reportId: string, officerId: string) => {
+    if (!officerId) return;
+    setIsProcessingAction(true);
+    try {
+      const res = await ApiClient.assignCrimeReport(reportId, officerId, officerNote);
+      if (res.success) {
+        if (selectedReport && selectedReport.id === reportId) {
+          setSelectedReport(res.report);
+        }
+        setOfficerNote('');
+        setSelectedAssigneeId('');
+        await fetchPoliceData();
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to assign officer.');
+    } finally {
+      setIsProcessingAction(false);
+    }
+  };
 
   // Handle Verify or Reject
   const handleVerifyReport = async (action: 'VERIFY' | 'REJECT') => {
@@ -144,7 +230,7 @@ export const PoliceDashboard: React.FC = () => {
       const res = await ApiClient.updateInvestigationStatus(selectedReport.id, {
         status,
         note: officerNote || `Case status updated to ${status} by reviewing officer.`,
-        assignedOfficerName: assignedOfficer
+        assignedOfficerName: selectedReport.assignedOfficerName || user?.fullName || assignedOfficer
       });
       if (res.success) {
         setSelectedReport(null);
@@ -215,10 +301,14 @@ export const PoliceDashboard: React.FC = () => {
       r.caseId.toLowerCase().includes(searchQuery.toLowerCase()) ||
       r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       r.thana.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'ALL' || r.status === statusFilter;
+    const matchesStatus =
+      statusFilter === 'ALL' ||
+      r.status === statusFilter ||
+      (statusFilter === ReportStatus.SUBMITTED && (r.status === ReportStatus.SUBMITTED || r.status === ReportStatus.OFFICER_ASSIGNED));
     const matchesDistrict = selectedDistrict === 'ALL' || r.district.toLowerCase() === selectedDistrict.toLowerCase();
+    const matchesThana = selectedThana === 'ALL' || r.thana.toLowerCase() === selectedThana.toLowerCase();
     const matchesCrime = selectedCrimeType === 'ALL' || r.crimeType === selectedCrimeType;
-    return matchesSearch && matchesStatus && matchesDistrict && matchesCrime;
+    return matchesSearch && matchesStatus && matchesDistrict && matchesThana && matchesCrime;
   });
 
   return (
@@ -373,6 +463,91 @@ export const PoliceDashboard: React.FC = () => {
       {/* ========================================================================= */}
       {activeTab === 'case_management' && (
         <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Station Jurisdiction & Queue Selector */}
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 p-4 rounded-2xl bg-slate-900 border border-slate-800">
+            <div>
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4 text-blue-400" />
+                <span className="text-sm font-bold text-white">
+                  {user?.stationOrThana ? `${user.stationOrThana} Station Roster` : 'Police Jurisdiction Queue'}
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-[10px] font-mono font-bold text-blue-400">
+                  AUTO-ROUTED
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Citizen incident reports in your Thana are routed directly here. Claim cases to lead investigations or assign to fellow officers.
+              </p>
+            </div>
+
+            {/* Scope Toggle Pills */}
+            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-950 border border-slate-800 flex-wrap">
+              <button
+                type="button"
+                onClick={() => handleScopeChange('all_station')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
+                  reportQueueScope === 'all_station'
+                    ? 'bg-blue-600/30 text-blue-200 border border-blue-500/40 shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                }`}
+              >
+                <Shield className="w-3.5 h-3.5 text-blue-400" />
+                <span>All Station Cases</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleScopeChange('my_cases')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
+                  reportQueueScope === 'my_cases'
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                }`}
+              >
+                <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
+                <span>My Assigned Cases</span>
+                {stats?.myActiveCases !== undefined && (
+                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+                    stats.myActiveCases > 0 ? 'bg-emerald-500/30 text-emerald-200' : 'bg-slate-800 text-slate-400'
+                  }`}>
+                    {stats.myActiveCases}
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleScopeChange('station_unassigned')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
+                  reportQueueScope === 'station_unassigned'
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                }`}
+              >
+                <span>Station Queue (Unassigned)</span>
+                {stats?.stationUnassigned !== undefined && (
+                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+                    stats.stationUnassigned > 0 ? 'bg-amber-500/30 text-amber-200' : 'bg-slate-800 text-slate-400'
+                  }`}>
+                    {stats.stationUnassigned}
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleScopeChange('all_national')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                  reportQueueScope === 'all_national'
+                    ? 'bg-slate-800 text-white border border-slate-700 shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                }`}
+              >
+                National Registry
+              </button>
+            </div>
+          </div>
+
           {/* Filter & Search Bar */}
           <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-3 text-xs">
             <div className="relative w-full md:w-72">
@@ -394,6 +569,7 @@ export const PoliceDashboard: React.FC = () => {
               >
                 <option value="ALL">All Statuses</option>
                 <option value={ReportStatus.SUBMITTED}>Pending Verification</option>
+                <option value={ReportStatus.OFFICER_ASSIGNED}>Officer Assigned</option>
                 <option value={ReportStatus.VERIFIED}>Verified</option>
                 <option value={ReportStatus.INVESTIGATION}>Under Investigation</option>
                 <option value={ReportStatus.CASE_CLOSED}>Case Closed</option>
@@ -402,16 +578,38 @@ export const PoliceDashboard: React.FC = () => {
 
               <select
                 value={selectedDistrict}
-                onChange={e => setSelectedDistrict(e.target.value)}
+                onChange={e => {
+                  setSelectedDistrict(e.target.value);
+                  setSelectedThana('ALL');
+                }}
                 className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-blue-500"
               >
                 <option value="ALL">All Districts</option>
-                <option value="Dhaka">Dhaka</option>
-                <option value="Chattogram">Chattogram</option>
-                <option value="Sylhet">Sylhet</option>
-                <option value="Rajshahi">Rajshahi</option>
-                <option value="Khulna">Khulna</option>
+                {BANGLADESH_DIVISIONS.map(div => (
+                  <optgroup key={div.id} label={`${div.name} Division`}>
+                    {div.districts.map(dist => (
+                      <option key={dist.id} value={dist.name}>
+                        {dist.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
               </select>
+
+              {selectedDistrict !== 'ALL' && (
+                <select
+                  value={selectedThana}
+                  onChange={e => setSelectedThana(e.target.value)}
+                  className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-blue-500"
+                >
+                  <option value="ALL">All Thanas ({selectedDistrict})</option>
+                  {getThanasByDistrict(selectedDistrict).map(t => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+              )}
 
               <select
                 value={selectedCrimeType}
@@ -427,6 +625,24 @@ export const PoliceDashboard: React.FC = () => {
                 <option value={CrimeType.DRUG_TRAFFICKING}>Narcotics</option>
                 <option value={CrimeType.EXTORTION}>Extortion / Chandabaji</option>
               </select>
+
+              {(statusFilter !== 'ALL' || selectedDistrict !== 'ALL' || selectedThana !== 'ALL' || selectedCrimeType !== 'ALL' || searchQuery) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStatusFilter('ALL');
+                    setSelectedDistrict('ALL');
+                    setSelectedThana('ALL');
+                    setSelectedCrimeType('ALL');
+                    setSearchQuery('');
+                  }}
+                  className="px-3 py-2 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 text-xs font-semibold transition flex items-center gap-1.5"
+                  title="Reset all filters"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Reset Filters</span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -439,6 +655,7 @@ export const PoliceDashboard: React.FC = () => {
                     <th className="py-3.5 px-4 font-semibold">Case ID</th>
                     <th className="py-3.5 px-4 font-semibold">Incident Details</th>
                     <th className="py-3.5 px-4 font-semibold">Jurisdiction</th>
+                    <th className="py-3.5 px-4 font-semibold">Investigator</th>
                     <th className="py-3.5 px-4 font-semibold">Severity</th>
                     <th className="py-3.5 px-4 font-semibold">Status</th>
                     <th className="py-3.5 px-4 font-semibold text-right">Officer Action</th>
@@ -447,11 +664,43 @@ export const PoliceDashboard: React.FC = () => {
 
                 <tbody className="divide-y divide-slate-800/60">
                   {isLoading && reports.length === 0 ? (
-                    Array.from({ length: 4 }).map((_, i) => <TableRowSkeleton key={i} cols={6} />)
+                    Array.from({ length: 4 }).map((_, i) => <TableRowSkeleton key={i} cols={7} />)
                   ) : filteredReports.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-500">
-                        No crime reports match current filter criteria.
+                      <td colSpan={7} className="py-12 text-center text-slate-400">
+                        <div className="flex flex-col items-center justify-center gap-2 max-w-md mx-auto">
+                          <AlertTriangle className="w-6 h-6 text-amber-400/80" />
+                          <p className="text-sm font-semibold text-slate-200">
+                            No crime reports match current filter criteria.
+                          </p>
+                          {(statusFilter !== 'ALL' || selectedDistrict !== 'ALL' || selectedThana !== 'ALL' || selectedCrimeType !== 'ALL' || searchQuery) ? (
+                            <div className="space-y-2 pt-1 text-xs">
+                              <p className="text-slate-500">
+                                Active filters are hiding cases. Filtered by:{' '}
+                                {selectedCrimeType !== 'ALL' && <span className="text-amber-400">[{selectedCrimeType}] </span>}
+                                {statusFilter !== 'ALL' && <span className="text-amber-400">[{statusFilter}] </span>}
+                                {selectedDistrict !== 'ALL' && <span className="text-amber-400">[{selectedDistrict}] </span>}
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setStatusFilter('ALL');
+                                  setSelectedDistrict('ALL');
+                                  setSelectedThana('ALL');
+                                  setSelectedCrimeType('ALL');
+                                  setSearchQuery('');
+                                }}
+                                className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition shadow-md shadow-blue-600/20"
+                              >
+                                Clear Filters ({reports.length} Total Cases)
+                              </button>
+                            </div>
+                          ) : (
+                            <p className="text-xs text-slate-500">
+                              No reports lodged in this jurisdiction yet.
+                            </p>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ) : (
@@ -479,6 +728,21 @@ export const PoliceDashboard: React.FC = () => {
                           <span>{report.thana}, {report.district}</span>
                           <span className="text-[11px] text-slate-500 block truncate">{report.locationName}</span>
                         </td>
+                        <td className="py-3.5 px-4 text-slate-300">
+                          {report.assignedOfficerName ? (
+                            <div className="flex items-center gap-1.5">
+                              <UserCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                              <span className="font-semibold text-white truncate max-w-[140px]" title={report.assignedOfficerName}>
+                                {report.assignedOfficerName}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-[10px] font-semibold text-amber-400">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                              Unassigned
+                            </span>
+                          )}
+                        </td>
                         <td className="py-3.5 px-4">
                           <StatusBadge status={report.severity} size="sm" />
                         </td>
@@ -486,15 +750,31 @@ export const PoliceDashboard: React.FC = () => {
                           <StatusBadge status={report.status} size="sm" />
                         </td>
                         <td className="py-3.5 px-4 text-right">
-                          <button
-                            onClick={e => {
-                              e.stopPropagation();
-                              setSelectedReport(report);
-                            }}
-                            className="px-3 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 text-xs font-semibold transition"
-                          >
-                            Review Case
-                          </button>
+                          <div className="flex items-center justify-end gap-1.5">
+                            {!report.assignedOfficerId && report.status !== ReportStatus.CASE_CLOSED && report.status !== ReportStatus.REJECTED && (
+                              <button
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  handleClaimCase(report.id);
+                                }}
+                                disabled={claimActionLoadingId === report.id}
+                                className="px-2.5 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-semibold transition flex items-center gap-1"
+                                title="Claim this case directly into your investigation queue"
+                              >
+                                <UserCheck className="w-3.5 h-3.5" />
+                                <span>{claimActionLoadingId === report.id ? 'Claiming...' : 'Claim'}</span>
+                              </button>
+                            )}
+                            <button
+                              onClick={e => {
+                                e.stopPropagation();
+                                setSelectedReport(report);
+                              }}
+                              className="px-3 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 text-xs font-semibold transition"
+                            >
+                              Review Case
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -870,15 +1150,111 @@ export const PoliceDashboard: React.FC = () => {
 
                 {/* Officer Action Form */}
                 <div className="space-y-4 pt-2 border-t border-slate-800 text-xs">
-                  <div>
-                    <label className="block font-semibold text-slate-300 mb-1">Assign Investigating Officer</label>
-                    <input
-                      type="text"
-                      value={assignedOfficer}
-                      onChange={e => setAssignedOfficer(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-100 text-xs"
-                    />
+                  {/* Investigator Assignment & Ownership */}
+                  <div className="space-y-3">
+                    {selectedReport.assignedOfficerName ? (
+                    <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between flex-wrap gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
+                          <UserCheck className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <span className="text-[10px] uppercase font-mono tracking-wider text-slate-400 block font-semibold">
+                            Assigned Lead Investigator
+                          </span>
+                          <span className="font-bold text-white text-xs">
+                            {selectedReport.assignedOfficerName}
+                          </span>
+                          {selectedReport.assignedOfficerBadge && (
+                            <span className="text-slate-400 text-[11px] ml-1.5 font-mono">
+                              ({selectedReport.assignedOfficerBadge})
+                            </span>
+                          )}
+                          {selectedReport.assignedOfficerStation && (
+                            <span className="text-slate-500 text-[11px] block">
+                              {selectedReport.assignedOfficerStation}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {selectedReport.assignedOfficerId === user?.id ? (
+                        <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-semibold text-[11px]">
+                          Assigned to You
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleClaimCase(selectedReport.id)}
+                          disabled={claimActionLoadingId === selectedReport.id || isProcessingAction}
+                          className="px-3 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-300 font-semibold text-xs transition"
+                        >
+                          {claimActionLoadingId === selectedReport.id ? 'Reassigning...' : 'Take Over Case'}
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="p-3.5 rounded-xl bg-amber-950/20 border border-amber-500/30 flex items-center justify-between flex-wrap gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400">
+                          <AlertTriangle className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <span className="text-[10px] uppercase font-mono tracking-wider text-amber-400/90 block font-semibold">
+                            Station Jurisdiction Status
+                          </span>
+                          <span className="font-bold text-white text-xs">
+                            Unassigned Case ({selectedReport.thana || 'Local'} Thana)
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleClaimCase(selectedReport.id)}
+                        disabled={claimActionLoadingId === selectedReport.id || isProcessingAction}
+                        className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow-md shadow-emerald-600/20 flex items-center gap-1.5"
+                      >
+                        <UserCheck className="w-3.5 h-3.5" />
+                        <span>{claimActionLoadingId === selectedReport.id ? 'Claiming...' : 'Claim Case Now'}</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Assign to Station Officer Dropdown */}
+                  <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="block font-semibold text-slate-300 text-xs">
+                        {selectedReport.assignedOfficerName ? 'Transfer Case to Another Officer' : 'Assign to Station Officer'}
+                      </label>
+                      <span className="text-[10px] text-slate-500 font-mono">
+                        {stationOfficers.length} Officer(s) on Roster
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <select
+                        value={selectedAssigneeId}
+                        onChange={e => setSelectedAssigneeId(e.target.value)}
+                        className="flex-1 px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-blue-500"
+                      >
+                        <option value="">-- Select Officer from Station --</option>
+                        {stationOfficers.map(officer => (
+                          <option key={officer.id} value={officer.id}>
+                            {officer.fullName} ({officer.badgeNumber || 'Officer'}) — {officer.stationOrThana || 'Station'}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        disabled={!selectedAssigneeId || isProcessingAction}
+                        onClick={() => handleAssignCase(selectedReport.id, selectedAssigneeId)}
+                        className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-600 text-white font-semibold text-xs transition"
+                      >
+                        Assign
+                      </button>
+                    </div>
                   </div>
+                </div>
 
                   <div>
                     <label className="block font-semibold text-slate-300 mb-1">Officer Findings / Investigation Note</label>

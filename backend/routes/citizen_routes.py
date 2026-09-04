@@ -14,6 +14,7 @@ from ..models import (
 from ..middleware.auth import verify_auth, require_roles
 from ..services.notification_service import NotificationService
 from ..services.audit_service import AuditService
+from ..services.jurisdiction_service import JurisdictionService
 
 citizen_bp = Blueprint("citizen", __name__, url_prefix="/api/citizen")
 
@@ -84,13 +85,20 @@ def submit_crime_report():
 
     with get_db() as db:
         db.add(new_report)
+        assigned_officer = JurisdictionService.assign_report_to_jurisdiction_officer(db, new_report, notify=True)
         db.commit()
         report_dict = new_report.to_dict()
+
+    notif_msg = (
+        f'Your report "{title}" ({case_id}) has been lodged and auto-assigned to Investigating Officer {assigned_officer.fullName} at {assigned_officer.stationOrThana}.'
+        if assigned_officer
+        else f'Your report "{title}" has been registered with status SUBMITTED. Tracking case ID is {case_id}.'
+    )
 
     NotificationService.create_case_notification(
         user_id=user.id,
         title=f"Crime Report Lodged ({case_id})",
-        message=f'Your report "{title}" has been registered with status SUBMITTED. Tracking case ID is {case_id}.',
+        message=notif_msg,
         related_id=report_id,
     )
 
@@ -103,13 +111,14 @@ def submit_crime_report():
         resource_id=report_id,
         ip_address=request.remote_addr,
         status="SUCCESS",
-        details=f"Crime report [{crime_type}] lodged. Confidentiality requested: {request_confidentiality}.",
+        details=f"Crime report [{crime_type}] lodged in {thana}, {district}. Assigned officer: {assigned_officer.fullName if assigned_officer else 'Awaiting Station Officer'}.",
     )
 
     return jsonify({
         "success": True,
         "report": report_dict,
-        "message": "Report successfully submitted. Authorized police authorities have been notified for review."
+        "assignedOfficer": assigned_officer.fullName if assigned_officer else None,
+        "message": f"Report successfully submitted and routed to {assigned_officer.fullName if assigned_officer else thana + ' Police Station'}."
     }), 201
 
 # 2. Get Citizen's Own Reports

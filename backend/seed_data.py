@@ -78,6 +78,21 @@ def get_seed_records():
             passwordHash=default_hash,
         ),
         User(
+            id="user-pol-3",
+            nidNumber="1849204918",
+            fullName="SI Faruq Ahmed",
+            email="faruq.ahmed@dmp.gov.bd",
+            phone="+8801713007766",
+            role="POLICE",
+            badgeNumber="DMP-44120",
+            designation="Sub-Inspector",
+            department="Dhaka Metropolitan Police - Crime Division",
+            stationOrThana="Gulshan Thana, Dhaka",
+            isNIDVerified=True,
+            createdAt=(now - timedelta(days=100)).isoformat(),
+            passwordHash=default_hash,
+        ),
+        User(
             id="user-cr-1",
             nidNumber="3948102948",
             fullName="Shamim Reza",
@@ -141,6 +156,7 @@ def get_seed_records():
             }],
             verificationNotes="Verified via physical visit and CCTV footage from Gulshan Shopping Centre camera 4.",
             verifiedByOfficerId="user-pol-1",
+            assignedOfficerId="user-pol-1",
             assignedOfficerName="Inspector Kamrul Islam",
             assignedOfficerBadge="DMP-84920",
             assignedOfficerStation="Gulshan Thana, DMP",
@@ -270,6 +286,29 @@ def get_seed_records():
                     "note": "Resolved via Mobile Court action and strict patrolling guarantee."
                 }
             ]
+        ),
+        CrimeReport(
+            id="rep-005",
+            caseId="CR-DHK-2026-0942",
+            reporterId="user-cit-1",
+            reporterName="Tanvir Hossain",
+            reporterPhone="+8801711234567",
+            reporterNID="19922692015000123",
+            requestConfidentiality=False,
+            crimeType="THEFT_ROBBERY",
+            title="Commercial store break-in attempt near Gulshan Avenue",
+            description="Attempted forced entry at electronic appliance showroom during late night hours. Shutter lock damaged before patrol siren frightened perpetrators away.",
+            locationName="Road 11, Gulshan 1, Dhaka",
+            district="Dhaka",
+            thana="Gulshan",
+            latitude=23.7808,
+            longitude=90.4192,
+            occurredAt=(now - timedelta(hours=8)).isoformat(),
+            submittedAt=(now - timedelta(hours=6)).isoformat(),
+            severity="MEDIUM",
+            status="SUBMITTED",
+            evidence=[],
+            investigationUpdates=[]
         ),
         # Incidents for verified police heatmap
         CrimeReport(

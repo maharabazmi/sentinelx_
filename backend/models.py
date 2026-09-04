@@ -79,6 +79,7 @@ class CrimeReport(Base):
     evidenceJson = Column(Text, default="[]")
     verificationNotes = Column(Text, nullable=True)
     verifiedByOfficerId = Column(String(64), nullable=True)
+    assignedOfficerId = Column(String(64), nullable=True, index=True)
     assignedOfficerName = Column(String(128), nullable=True)
     assignedOfficerBadge = Column(String(64), nullable=True)
     assignedOfficerStation = Column(String(128), nullable=True)
@@ -130,6 +131,7 @@ class CrimeReport(Base):
             "evidence": self.evidence,
             "verificationNotes": self.verificationNotes,
             "verifiedByOfficerId": self.verifiedByOfficerId,
+            "assignedOfficerId": self.assignedOfficerId,
             "assignedOfficerName": self.assignedOfficerName,
             "assignedOfficerBadge": self.assignedOfficerBadge,
             "assignedOfficerStation": self.assignedOfficerStation,

@@ -55,6 +55,7 @@ import {
   BarcodeVerification,
   EvidenceFile
 } from '../../types';
+import { BANGLADESH_DIVISIONS, getThanasByDistrict } from '../../data/bangladeshGeo';
 
 export const CitizenDashboard: React.FC = () => {
   const { user, activeAlerts } = useAuth();
@@ -77,6 +78,13 @@ export const CitizenDashboard: React.FC = () => {
   const [severity, setSeverity] = useState<CrimeSeverity>(CrimeSeverity.MEDIUM);
   const [district, setDistrict] = useState('Dhaka');
   const [thana, setThana] = useState('Gulshan');
+
+  const handleDistrictChange = (newDistrict: string) => {
+    setDistrict(newDistrict);
+    const availableThanas = getThanasByDistrict(newDistrict);
+    setThana(availableThanas[0] || '');
+  };
+
   const [locationName, setLocationName] = useState('');
   const [occurredAt, setOccurredAt] = useState(new Date().toISOString().slice(0, 16));
   const [crimeTitle, setCrimeTitle] = useState('');
@@ -103,6 +111,12 @@ export const CitizenDashboard: React.FC = () => {
   const [tradeLicense, setTradeLicense] = useState('');
   const [shopDistrict, setShopDistrict] = useState('Dhaka');
   const [shopThana, setShopThana] = useState('Uttara');
+
+  const handleShopDistrictChange = (newDistrict: string) => {
+    setShopDistrict(newDistrict);
+    const availableThanas = getThanasByDistrict(newDistrict);
+    setShopThana(availableThanas[0] || '');
+  };
   const [shopAddress, setShopAddress] = useState('');
   const [productName, setProductName] = useState('');
   const [brandName, setBrandName] = useState('');
@@ -169,13 +183,17 @@ export const CitizenDashboard: React.FC = () => {
   }, []);
 
   // ----------------------------------------------------
-  // CRIME REPORT ACTIONS
-  // ----------------------------------------------------
   const handleNextCrimeStep = () => {
     setCrimeFormError(null);
-    if (crimeStep === 2 && !locationName.trim()) {
-      setCrimeFormError('Please specify the approximate location or street landmark.');
-      return;
+    if (crimeStep === 2) {
+      if (!thana.trim()) {
+        setCrimeFormError('Please select the Thana / Police Station jurisdiction.');
+        return;
+      }
+      if (!locationName.trim()) {
+        setCrimeFormError('Please specify the approximate location or street landmark.');
+        return;
+      }
     }
     if (crimeStep === 3 && (!crimeTitle.trim() || !crimeDesc.trim())) {
       setCrimeFormError('Please provide both an incident headline and detailed description.');
@@ -229,9 +247,15 @@ export const CitizenDashboard: React.FC = () => {
   // ----------------------------------------------------
   const handleNextComplaintStep = () => {
     setComplaintFormError(null);
-    if (complaintStep === 1 && !shopName.trim()) {
-      setComplaintFormError('Merchant or Establishment name is required.');
-      return;
+    if (complaintStep === 1) {
+      if (!shopName.trim()) {
+        setComplaintFormError('Merchant or Establishment name is required.');
+        return;
+      }
+      if (!shopThana.trim()) {
+        setComplaintFormError('Please select the shop Thana / Upazila jurisdiction.');
+        return;
+      }
     }
     if (complaintStep === 2 && !productName.trim()) {
       setComplaintFormError('Product or item name is required.');
@@ -890,17 +914,18 @@ export const CitizenDashboard: React.FC = () => {
                   </label>
                   <select
                     value={district}
-                    onChange={e => setDistrict(e.target.value)}
+                    onChange={e => handleDistrictChange(e.target.value)}
                     className="w-full px-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-emerald-500 transition"
                   >
-                    <option value="Dhaka">Dhaka</option>
-                    <option value="Chattogram">Chattogram</option>
-                    <option value="Sylhet">Sylhet</option>
-                    <option value="Rajshahi">Rajshahi</option>
-                    <option value="Khulna">Khulna</option>
-                    <option value="Barishal">Barishal</option>
-                    <option value="Rangpur">Rangpur</option>
-                    <option value="Mymensingh">Mymensingh</option>
+                    {BANGLADESH_DIVISIONS.map(div => (
+                      <optgroup key={div.id} label={`${div.name} Division (${div.nameBn})`}>
+                        {div.districts.map(dist => (
+                          <option key={dist.id} value={dist.name}>
+                            {dist.name} ({dist.nameBn})
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
                   </select>
                 </div>
 
@@ -908,14 +933,18 @@ export const CitizenDashboard: React.FC = () => {
                   <label className="block text-xs font-semibold text-slate-300 mb-1.5">
                     Thana / Police Station Jurisdiction <span className="text-emerald-400">*</span>
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={thana}
                     onChange={e => setThana(e.target.value)}
-                    placeholder="e.g. Gulshan, Mirpur, Kotwali"
                     className="w-full px-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-emerald-500 transition"
                     required
-                  />
+                  >
+                    {getThanasByDistrict(district).map(t => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -1246,14 +1275,18 @@ export const CitizenDashboard: React.FC = () => {
                   </label>
                   <select
                     value={shopDistrict}
-                    onChange={e => setShopDistrict(e.target.value)}
+                    onChange={e => handleShopDistrictChange(e.target.value)}
                     className="w-full px-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-amber-500 transition"
                   >
-                    <option value="Dhaka">Dhaka</option>
-                    <option value="Chattogram">Chattogram</option>
-                    <option value="Sylhet">Sylhet</option>
-                    <option value="Rajshahi">Rajshahi</option>
-                    <option value="Khulna">Khulna</option>
+                    {BANGLADESH_DIVISIONS.map(div => (
+                      <optgroup key={div.id} label={`${div.name} Division (${div.nameBn})`}>
+                        {div.districts.map(dist => (
+                          <option key={dist.id} value={dist.name}>
+                            {dist.name} ({dist.nameBn})
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
                   </select>
                 </div>
 
@@ -1261,14 +1294,18 @@ export const CitizenDashboard: React.FC = () => {
                   <label className="block text-xs font-semibold text-slate-300 mb-1.5">
                     Thana / Upazila <span className="text-amber-400">*</span>
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={shopThana}
                     onChange={e => setShopThana(e.target.value)}
-                    placeholder="e.g. Dhanmondi, Uttara, Kotwali"
                     className="w-full px-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-amber-500 transition"
                     required
-                  />
+                  >
+                    {getThanasByDistrict(shopDistrict).map(t => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

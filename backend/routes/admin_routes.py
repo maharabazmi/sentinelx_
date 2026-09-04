@@ -13,6 +13,7 @@ from ..models import (
 from ..middleware.auth import verify_auth, require_roles
 from ..services.ai_prediction_service import DemonstrationAIPredictionService
 from ..services.audit_service import AuditService
+from ..services.jurisdiction_service import JurisdictionService
 from ..config import Config
 from .auth_routes import hash_password
 
@@ -122,6 +123,12 @@ def create_user():
         )
         db.add(new_user)
         db.commit()
+
+        # If officer was provisioned, auto-assign any pending reports in their station jurisdiction
+        assigned_cases_count = 0
+        if role == "POLICE":
+            assigned_cases_count = JurisdictionService.auto_assign_pending_reports_for_officer(db, new_user)
+
         user_dict = new_user.to_dict()
 
     AuditService.log(
@@ -133,7 +140,7 @@ def create_user():
         resource_id=user_id,
         ip_address=request.remote_addr,
         status="SUCCESS",
-        details=f"Admin provisioned new account [{full_name}] with role [{role}].",
+        details=f"Admin provisioned new account [{full_name}] with role [{role}]. Station: [{station_or_thana}]. Auto-assigned [{assigned_cases_count}] pending cases.",
     )
 
     return jsonify({
