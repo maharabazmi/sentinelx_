@@ -154,6 +154,25 @@ export class ApiClient {
     });
   }
 
+  static async claimCrimeReport(id: string, note?: string): Promise<{ success: boolean; message: string; report: CrimeReport }> {
+    return this.request(`/police/reports/${id}/assign`, {
+      method: 'POST',
+      body: JSON.stringify({ note })
+    });
+  }
+
+  static async assignCrimeReport(id: string, officerId: string, note?: string): Promise<{ success: boolean; message: string; report: CrimeReport }> {
+    return this.request(`/police/reports/${id}/assign`, {
+      method: 'POST',
+      body: JSON.stringify({ officerId, note })
+    });
+  }
+
+  static async getPoliceOfficers(station?: string): Promise<{ success: boolean; officers: any[] }> {
+    const query = station ? `?station=${encodeURIComponent(station)}` : '';
+    return this.request(`/police/officers${query}`);
+  }
+
   static async getPoliceCrimeHeatmap(): Promise<{ success: boolean; totalVerifiedIncidents: number; incidents: any[] }> {
     return this.request('/police/heatmap');
   }

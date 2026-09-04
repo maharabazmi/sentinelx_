@@ -32,6 +32,7 @@ import {
   AuditLog,
   CrimeType
 } from '../../types';
+import { BANGLADESH_DIVISIONS, getThanasByDistrict } from '../../data/bangladeshGeo';
 import { StatusBadge } from '../ui/StatusBadge';
 import { StatCard } from '../ui/StatCard';
 import { EmptyState } from '../ui/EmptyState';
@@ -50,6 +51,13 @@ export const AdminDashboard: React.FC = () => {
   // AI Interactive Simulation State
   const [simDistrict, setSimDistrict] = useState('Dhaka');
   const [simThana, setSimThana] = useState('Gulshan');
+
+  const handleSimDistrictChange = (newDistrict: string) => {
+    setSimDistrict(newDistrict);
+    const thanas = getThanasByDistrict(newDistrict);
+    if (thanas.length > 0) setSimThana(thanas[0]);
+  };
+
   const [simCrimeType, setSimCrimeType] = useState<CrimeType>(CrimeType.THEFT_ROBBERY);
   const [simWeather, setSimWeather] = useState('Heavy Monsoon');
   const [simFestival, setSimFestival] = useState(true);
@@ -64,7 +72,23 @@ export const AdminDashboard: React.FC = () => {
   const [newRole, setNewRole] = useState<UserRole>(UserRole.POLICE);
   const [newBadge, setNewBadge] = useState('DMP-');
   const [newDesignation, setNewDesignation] = useState('Inspector of Police');
-  const [newStation, setNewStation] = useState('Gulshan Police Station');
+  const [policeDistrict, setPoliceDistrict] = useState('Dhaka');
+  const [policeThana, setPoliceThana] = useState('Gulshan');
+  const [newStation, setNewStation] = useState('Gulshan Police Station, Dhaka');
+
+  const handlePoliceDistrictChange = (newDistrict: string) => {
+    setPoliceDistrict(newDistrict);
+    const thanas = getThanasByDistrict(newDistrict);
+    const firstThana = thanas[0] || 'Sadar';
+    setPoliceThana(firstThana);
+    setNewStation(`${firstThana} Police Station, ${newDistrict}`);
+  };
+
+  const handlePoliceThanaChange = (newThana: string) => {
+    setPoliceThana(newThana);
+    setNewStation(`${newThana} Police Station, ${policeDistrict}`);
+  };
+
   const [newPassword, setNewPassword] = useState('demo1234');
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
@@ -412,26 +436,35 @@ export const AdminDashboard: React.FC = () => {
                   <label className="block font-semibold text-slate-300 mb-1">Target District</label>
                   <select
                     value={simDistrict}
-                    onChange={e => setSimDistrict(e.target.value)}
+                    onChange={e => handleSimDistrictChange(e.target.value)}
                     className="w-full px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-100"
                   >
-                    <option value="Dhaka">Dhaka</option>
-                    <option value="Chattogram">Chattogram</option>
-                    <option value="Sylhet">Sylhet</option>
-                    <option value="Rajshahi">Rajshahi</option>
-                    <option value="Khulna">Khulna</option>
+                    {BANGLADESH_DIVISIONS.map(div => (
+                      <optgroup key={div.id} label={`${div.name} Division (${div.nameBn})`}>
+                        {div.districts.map(dist => (
+                          <option key={dist.id} value={dist.name}>
+                            {dist.name} ({dist.nameBn})
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
                   </select>
                 </div>
 
                 <div>
                   <label className="block font-semibold text-slate-300 mb-1">Target Thana / Upazila</label>
-                  <input
-                    type="text"
+                  <select
                     value={simThana}
                     onChange={e => setSimThana(e.target.value)}
                     className="w-full px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-100"
                     required
-                  />
+                  >
+                    {getThanasByDistrict(simDistrict).map(t => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
@@ -802,16 +835,75 @@ export const AdminDashboard: React.FC = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="block font-semibold text-slate-300 mb-1">Station / Thana / Department</label>
-                <input
-                  type="text"
-                  value={newStation}
-                  onChange={e => setNewStation(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-100"
-                  required
-                />
-              </div>
+              {newRole === UserRole.POLICE ? (
+                <div className="space-y-3 p-3.5 rounded-xl bg-slate-950/60 border border-slate-800">
+                  <div className="flex items-center justify-between">
+                    <label className="block font-semibold text-slate-300 text-xs">
+                      Police Station Jurisdiction Assignment <span className="text-purple-400">*</span>
+                    </label>
+                    <span className="text-[10px] text-purple-400 font-mono">Real BD Thana</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] text-slate-400 mb-1">Assigned District</label>
+                      <select
+                        value={policeDistrict}
+                        onChange={e => handlePoliceDistrictChange(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-purple-500"
+                      >
+                        {BANGLADESH_DIVISIONS.map(div => (
+                          <optgroup key={div.id} label={`${div.name} Division (${div.nameBn})`}>
+                            {div.districts.map(dist => (
+                              <option key={dist.id} value={dist.name}>
+                                {dist.name} ({dist.nameBn})
+                              </option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] text-slate-400 mb-1">Thana / Police Station</label>
+                      <select
+                        value={policeThana}
+                        onChange={e => handlePoliceThanaChange(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-purple-500"
+                      >
+                        {getThanasByDistrict(policeDistrict).map(t => (
+                          <option key={t} value={t}>
+                            {t} Police Station
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] text-slate-400 mb-1">Station Record Identifier</label>
+                    <input
+                      type="text"
+                      value={newStation}
+                      onChange={e => setNewStation(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 text-xs font-mono"
+                      required
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">Station / Department / Office</label>
+                  <input
+                    type="text"
+                    value={newStation}
+                    onChange={e => setNewStation(e.target.value)}
+                    placeholder="e.g. DNCRP Headquarters, Motijheel"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-100"
+                    required
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="block font-semibold text-slate-300 mb-1">Temporary Password</label>
