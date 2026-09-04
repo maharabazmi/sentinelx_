@@ -134,9 +134,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               className="w-full px-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition font-mono"
               required
             />
-            <p className="text-[11px] text-slate-500 mt-1">
-              Demo accounts default password: <code className="text-emerald-400 font-mono font-bold">demo1234</code>
-            </p>
           </div>
 
           <button
