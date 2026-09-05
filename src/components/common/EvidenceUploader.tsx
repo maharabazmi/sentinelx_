@@ -128,6 +128,12 @@ export const EvidenceUploader: React.FC<EvidenceUploaderProps> = ({
     }
   };
 
+  const handleClearAll = () => {
+    triggerChange([]);
+    setPreviewFile(null);
+    setErrorMessage(null);
+  };
+
   // Drag and drop handlers
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -237,6 +243,17 @@ export const EvidenceUploader: React.FC<EvidenceUploaderProps> = ({
             <FileText className="w-3.5 h-3.5" />
             <span>+ Document</span>
           </button>
+          {effectiveFiles.length > 0 && (
+            <button
+              type="button"
+              onClick={handleClearAll}
+              className="px-2.5 py-1.5 rounded-lg border border-red-900/50 hover:border-red-500/60 bg-red-950/20 hover:bg-red-950/40 text-red-400 text-xs font-semibold flex items-center gap-1 transition shadow-sm"
+              title="Remove all uploaded attachments"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Clear All</span>
+            </button>
+          )}
         </div>
       </div>
 
