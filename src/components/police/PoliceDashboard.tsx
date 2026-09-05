@@ -902,10 +902,14 @@ export const PoliceDashboard: React.FC = () => {
                 </div>
                 <div className="max-w-md mx-auto space-y-1">
                   <h3 className="text-lg font-bold text-white font-display">
-                    Radar Clear: No Active Beacons in {user?.stationOrThana || 'This Station'}
+                    {sosRadarScope === 'station'
+                      ? `Radar Clear: No Active Beacons in ${user?.stationOrThana || 'This Station'}`
+                      : 'Radar Clear: No Active Distress Beacons Metropolitan-Wide'}
                   </h3>
                   <p className="text-xs text-slate-400 leading-relaxed">
-                    No emergency signals detected within your station's immediate coverage area.
+                    {sosRadarScope === 'station'
+                      ? "No emergency signals detected within your station's immediate coverage area."
+                      : "All citizen emergency SOS distress beacons across all stations have been resolved."}
                     {allActiveSOS.length > 0 && sosRadarScope === 'station' && (
                       <span className="block mt-2 text-amber-300 font-medium">
                         Notice: {allActiveSOS.length} active beacon(s) are currently transmitting in other police jurisdictions (e.g. Dhanmondi).
