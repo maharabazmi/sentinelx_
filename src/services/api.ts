@@ -114,6 +114,13 @@ export class ApiClient {
     return this.request('/citizen/sos/active');
   }
 
+  static async resolveActiveSOS(sosId?: string): Promise<{ success: boolean }> {
+    return this.request('/citizen/sos/resolve', {
+      method: 'POST',
+      body: JSON.stringify({ sosId })
+    });
+  }
+
   static async getActiveEmergencyAlerts(): Promise<{ success: boolean; alerts: EmergencyAlert[] }> {
     return this.request('/citizen/emergency-alerts');
   }

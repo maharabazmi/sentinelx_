@@ -14,7 +14,7 @@ from ..models import (
 from ..middleware.auth import verify_auth, require_roles
 from ..services.notification_service import NotificationService
 from ..services.audit_service import AuditService
-from ..services.jurisdiction_service import JurisdictionService
+from ..services.jurisdiction_service import JurisdictionService, extract_thana_keyword
 
 citizen_bp = Blueprint("citizen", __name__, url_prefix="/api/citizen")
 
@@ -253,28 +253,56 @@ def trigger_sos():
     longitude = data.get("longitude")
 
     sos_id = f"sos-{int(time.time() * 1000)}"
-    new_sos = SOSRequest(
-        id=sos_id,
-        citizenId=user.id,
-        citizenName=user.fullName,
-        citizenPhone=user.phone,
-        citizenNID=user.nidNumber,
-        locationName=location_name or "Current GPS Pinpoint Location",
-        latitude=float(latitude) if latitude is not None else 23.8103,
-        longitude=float(longitude) if longitude is not None else 90.4125,
-        status="SOS_SENT",
-        createdAt=utcnow_iso(),
-    )
+    lat_val = float(latitude) if latitude is not None else 23.8103
+    lng_val = float(longitude) if longitude is not None else 90.4125
+    loc_val = location_name or "Current GPS Pinpoint Location"
 
     with get_db() as db:
+        covering_station = JurisdictionService.determine_sos_station(
+            db,
+            location_name=loc_val,
+            latitude=lat_val,
+            longitude=lng_val,
+            citizen_station=user.stationOrThana
+        )
+
+        station_thana_kw = extract_thana_keyword(covering_station)
+        new_sos = SOSRequest(
+            id=sos_id,
+            citizenId=user.id,
+            citizenName=user.fullName,
+            citizenPhone=user.phone,
+            citizenNID=user.nidNumber,
+            locationName=loc_val,
+            latitude=lat_val,
+            longitude=lng_val,
+            status="SOS_SENT",
+            createdAt=utcnow_iso(),
+            assignedStation=covering_station,
+            assignedUnit=f"Awaiting Dispatch ({station_thana_kw} Station)",
+        )
+
         db.add(new_sos)
         db.commit()
         sos_dict = new_sos.to_dict()
 
+        # Send alert notification to officers stationed at the responsible police station
+        try:
+            target_officers = JurisdictionService.find_officers_for_station(db, covering_station)
+            for off in target_officers:
+                NotificationService.create_sos_notification(
+                    user_id=off.id,
+                    title="🚨 SOS BEACON IN YOUR JURISDICTION",
+                    message=f"Emergency distress beacon triggered at [{loc_val}]. Assigned to your station ({covering_station}).",
+                    related_id=sos_id,
+                )
+        except Exception:
+            pass
+
     NotificationService.create_sos_notification(
         user_id=user.id,
         title="🚨 EMERGENCY SOS BROADCAST ACTIVE",
-        message="Your distress signal has been transmitted to Bangladesh Police Emergency Command. Stay in a safe position.",
+        message=f"Your distress signal has been routed to {covering_station}. Police units are alerted.",
         related_id=sos_id,
     )
 
@@ -287,13 +315,13 @@ def trigger_sos():
         resource_id=sos_id,
         ip_address=request.remote_addr,
         status="SUCCESS",
-        details=f"Distress beacon triggered at [{new_sos.locationName} - Lat: {new_sos.latitude}, Lng: {new_sos.longitude}].",
+        details=f"Distress beacon triggered at [{new_sos.locationName} - Lat: {new_sos.latitude}, Lng: {new_sos.longitude}] assigned to [{covering_station}].",
     )
 
     return jsonify({
         "success": True,
         "sos": sos_dict,
-        "message": "Emergency SOS transmitted to Central Police Command Dispatch."
+        "message": f"Emergency SOS transmitted to {covering_station} Dispatch."
     }), 201
 
 # 6. Get Citizen Active SOS Status
@@ -310,6 +338,42 @@ def get_active_sos():
         return jsonify({
             "success": True,
             "activeSOS": active_sos.to_dict() if active_sos else None
+        })
+
+@citizen_bp.route("/sos/resolve", methods=["POST"])
+def resolve_active_sos():
+    user = g.user
+    data = request.get_json() or {}
+    sos_id = data.get("sosId")
+
+    with get_db() as db:
+        query = db.query(SOSRequest).filter(SOSRequest.citizenId == user.id, SOSRequest.status != "RESOLVED")
+        if sos_id:
+            query = query.filter(SOSRequest.id == sos_id)
+        active_sos = query.first()
+
+        if not active_sos:
+            return jsonify({"success": True, "message": "No active SOS beacon found."})
+
+        active_sos.status = "RESOLVED"
+        active_sos.notes = (active_sos.notes or "") + " [Resolved/Stood Down by Citizen]"
+        db.commit()
+
+        AuditService.log(
+            user_id=user.id,
+            user_name=user.fullName,
+            user_role=user.role,
+            action="EMERGENCY_SOS_RESOLVED_BY_CITIZEN",
+            resource="SOS_DISPATCH",
+            resource_id=active_sos.id,
+            ip_address=request.remote_addr,
+            status="SUCCESS",
+            details="Citizen marked their active emergency SOS as safe / resolved.",
+        )
+
+        return jsonify({
+            "success": True,
+            "message": "Emergency SOS beacon resolved. You are marked safe."
         })
 
 # 7. Get Active Emergency Alerts for Citizens

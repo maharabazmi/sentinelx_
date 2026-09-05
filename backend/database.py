@@ -52,12 +52,20 @@ def get_db():
 
 def init_db():
     Base.metadata.create_all(bind=engine)
-    # Resilient schema migration: ensure assignedOfficerId column exists
+    # Resilient schema migration: ensure assignedOfficerId and assignedStation columns exist
     try:
         with engine.connect() as conn:
             conn.execute(text("ALTER TABLE crime_reports ADD COLUMN assignedOfficerId VARCHAR(64)"))
             conn.commit()
             logger.info("[DB] Added assignedOfficerId column to crime_reports table.")
+    except Exception:
+        pass
+
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE sos_requests ADD COLUMN assignedStation VARCHAR(128)"))
+            conn.commit()
+            logger.info("[DB] Added assignedStation column to sos_requests table.")
     except Exception:
         pass
 
@@ -72,13 +80,44 @@ def init_db():
             db.commit()
             logger.info("[DB] Database seeded successfully with initial users, crime reports, alerts, and BSTI catalog.")
         else:
-            logger.info(f"Database already populated ({user_count} users found).")
+            # Ensure newly added seed police officers and seed users exist
+            records = get_seed_records()
+            added_count = 0
+            for u in records.get("users", []):
+                if not db.query(User).filter(User.id == u.id).first():
+                    db.merge(u)
+                    added_count += 1
+            if added_count > 0:
+                db.commit()
+                logger.info(f"[DB] Synced {added_count} newly added seed users/officers into database.")
+            else:
+                logger.info(f"Database already populated ({user_count} users found).")
 
         # Auto-sync any unassigned reports to stationed officers
         try:
-            from .services.jurisdiction_service import JurisdictionService
+            from .services.jurisdiction_service import JurisdictionService, extract_thana_keyword
+            from .models import SOSRequest
             synced_count = JurisdictionService.auto_sync_all_unassigned_reports(db)
             if synced_count > 0:
                 logger.info(f"[DB] Auto-routed {synced_count} pending cases to stationed police officers.")
+
+            # Auto-sync/correct existing SOS records
+            all_sos = db.query(SOSRequest).all()
+            sos_updated = 0
+            for s in all_sos:
+                corrected_station = JurisdictionService.determine_sos_station(
+                    db,
+                    location_name=s.locationName,
+                    latitude=s.latitude or 0.0,
+                    longitude=s.longitude or 0.0
+                )
+                if not s.assignedStation or ("dhanmondi" in (s.locationName or "").lower() and "dhanmondi" not in (s.assignedStation or "").lower()):
+                    s.assignedStation = corrected_station
+                    st_kw = extract_thana_keyword(corrected_station)
+                    s.assignedUnit = f"Awaiting Dispatch ({st_kw} Station)"
+                    sos_updated += 1
+            if sos_updated > 0:
+                db.commit()
+                logger.info(f"[DB] Auto-corrected station routing for {sos_updated} SOS records.")
         except Exception as e:
             logger.warning(f"[DB] Auto-sync skipped: {e}")
