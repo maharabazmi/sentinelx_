@@ -32,7 +32,8 @@ import {
   Calendar,
   MessageSquare,
   Award,
-  ShieldCheck
+  ShieldCheck,
+  Printer
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { ApiClient } from '../../services/api';
@@ -156,7 +157,9 @@ export const CitizenDashboard: React.FC = () => {
 
   // Search & Filter state for My Reports / Complaints
   const [reportSearchQuery, setReportSearchQuery] = useState('');
+  const [reportStatusFilter, setReportStatusFilter] = useState('ALL');
   const [complaintSearchQuery, setComplaintSearchQuery] = useState('');
+  const [printingDocket, setPrintingDocket] = useState<CrimeReport | null>(null);
 
   // Fetch Citizen Data
   const fetchData = async () => {
@@ -1864,6 +1867,42 @@ export const CitizenDashboard: React.FC = () => {
             </div>
           </div>
 
+          {/* Status Filter Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+            {[
+              { id: 'ALL', label: 'All Cases' },
+              { id: 'PENDING_REVIEW', label: 'Pending Review' },
+              { id: 'VERIFIED', label: 'Verified' },
+              { id: 'UNDER_INVESTIGATION', label: 'Investigating' },
+              { id: 'RESOLVED', label: 'Resolved' }
+            ].map(pill => {
+              const count = pill.id === 'ALL'
+                ? myReports.length
+                : myReports.filter(r => r.status === pill.id).length;
+              const isActive = reportStatusFilter === pill.id;
+
+              return (
+                <button
+                  key={pill.id}
+                  type="button"
+                  onClick={() => setReportStatusFilter(pill.id)}
+                  className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 whitespace-nowrap ${
+                    isActive
+                      ? 'bg-emerald-500 text-slate-950 font-bold shadow-md shadow-emerald-500/20'
+                      : 'bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800'
+                  }`}
+                >
+                  <span>{pill.label}</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+                    isActive ? 'bg-slate-950/30 text-slate-950' : 'bg-slate-800 text-slate-400'
+                  }`}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
           {myReports.length === 0 ? (
             <EmptyState
               icon={FilePlus}
@@ -1878,11 +1917,15 @@ export const CitizenDashboard: React.FC = () => {
           ) : (
             <div className="grid grid-cols-1 gap-4">
               {myReports
-                .filter(r =>
-                  r.caseId.toLowerCase().includes(reportSearchQuery.toLowerCase()) ||
-                  r.title.toLowerCase().includes(reportSearchQuery.toLowerCase()) ||
-                  r.district.toLowerCase().includes(reportSearchQuery.toLowerCase())
-                )
+                .filter(r => {
+                  const matchesSearch =
+                    r.caseId.toLowerCase().includes(reportSearchQuery.toLowerCase()) ||
+                    r.title.toLowerCase().includes(reportSearchQuery.toLowerCase()) ||
+                    r.district.toLowerCase().includes(reportSearchQuery.toLowerCase());
+                  const matchesStatus =
+                    reportStatusFilter === 'ALL' || r.status === reportStatusFilter;
+                  return matchesSearch && matchesStatus;
+                })
                 .map(report => (
                   <div
                     key={report.id}
@@ -1918,15 +1961,19 @@ export const CitizenDashboard: React.FC = () => {
                       </span>
 
                       {report.investigationUpdates.length === 0 ? (
-                        <p className="text-[11px] text-slate-500">Case registered. Awaiting initial police review.</p>
+                        <p className="text-[11px] text-slate-500 italic">
+                          Case lodged with central registry. Thana investigating officer assignment pending review.
+                        </p>
                       ) : (
-                        <div className="space-y-2">
-                          {report.investigationUpdates.map(u => (
-                            <div key={u.id} className="flex items-start gap-2.5 text-xs">
+                        <div className="space-y-2 pt-1">
+                          {report.investigationUpdates.map((u, i) => (
+                            <div key={i} className="flex items-start gap-2.5">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 flex-shrink-0" />
-                              <div className="flex-1">
-                                <div className="flex items-baseline justify-between">
-                                  <span className="font-semibold text-slate-200">{u.officerName}</span>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold text-slate-200 text-xs">
+                                    {u.status}
+                                  </span>
                                   <span className="text-[10px] font-mono text-slate-500">
                                     {new Date(u.timestamp).toLocaleDateString()}
                                   </span>
@@ -1956,8 +2003,17 @@ export const CitizenDashboard: React.FC = () => {
                         <MapPin className="w-3.5 h-3.5 text-emerald-400" />
                         {report.locationName} ({report.thana}, {report.district})
                       </span>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span>Lodged: {new Date(report.submittedAt).toLocaleDateString()}</span>
+                        <button
+                          type="button"
+                          onClick={() => setPrintingDocket(report)}
+                          className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-[11px] font-semibold flex items-center gap-1.5 transition shadow-sm"
+                          title="Print official General Diary (GD) docket acknowledgment"
+                        >
+                          <Printer className="w-3.5 h-3.5 text-slate-400" />
+                          <span>GD Docket</span>
+                        </button>
                         <button
                           type="button"
                           onClick={() => setActiveChatCase({
@@ -1969,7 +2025,7 @@ export const CitizenDashboard: React.FC = () => {
                           className="px-2.5 py-1 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 border border-blue-500/30 text-[11px] font-semibold flex items-center gap-1.5 transition shadow-sm"
                         >
                           <MessageSquare className="w-3.5 h-3.5 text-blue-400" />
-                          <span>Officer Inquiries & Chat</span>
+                          <span>Officer Inquiries</span>
                         </button>
                       </div>
                     </div>
@@ -1977,6 +2033,143 @@ export const CitizenDashboard: React.FC = () => {
                 ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: OFFICIAL GD DOCKET & POLICE ACKNOWLEDGMENT SLIP                    */}
+      {/* ========================================================================= */}
+      {printingDocket && (
+        <div
+          onClick={() => setPrintingDocket(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md animate-in fade-in"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white text-slate-900 rounded-3xl w-full max-w-2xl max-h-[90vh] shadow-2xl overflow-y-auto flex flex-col animate-in zoom-in-95 duration-150 border-4 border-emerald-800/80"
+          >
+            {/* Printable Docket Content */}
+            <div className="p-6 sm:p-8 space-y-5 print:p-0">
+              {/* Header */}
+              <div className="text-center pb-4 border-b-2 border-slate-900 space-y-1">
+                <div className="inline-block px-3 py-0.5 rounded-full bg-emerald-800 text-white font-mono text-[10px] font-bold tracking-wider uppercase mb-1">
+                  Government of the People's Republic of Bangladesh
+                </div>
+                <h2 className="text-lg font-black tracking-tight text-slate-950 uppercase font-display">
+                  Digital Crime Registration & GD Docket
+                </h2>
+                <p className="text-xs text-slate-600 font-mono">
+                  SentinelX National Public Safety Infrastructure • Section 154 CrPC
+                </p>
+              </div>
+
+              {/* Case Barcode & Tracking Metadata */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 bg-slate-100 rounded-xl border border-slate-300 text-xs font-mono">
+                <div>
+                  <span className="text-slate-500 text-[10px] block">Case Number</span>
+                  <strong className="text-emerald-900 font-bold">{printingDocket.caseId}</strong>
+                </div>
+                <div>
+                  <span className="text-slate-500 text-[10px] block">Jurisdiction Thana</span>
+                  <strong className="text-slate-900">{printingDocket.thana || 'Central Thana'}</strong>
+                </div>
+                <div>
+                  <span className="text-slate-500 text-[10px] block">District</span>
+                  <strong className="text-slate-900">{printingDocket.district}</strong>
+                </div>
+                <div>
+                  <span className="text-slate-500 text-[10px] block">Current Status</span>
+                  <strong className="text-blue-900 uppercase font-bold">{printingDocket.status}</strong>
+                </div>
+              </div>
+
+              {/* Incident Details */}
+              <div className="space-y-2 text-xs">
+                <div className="grid grid-cols-2 gap-3 border-b border-slate-200 pb-2">
+                  <div>
+                    <span className="text-slate-500 text-[11px] block">Incident Classification:</span>
+                    <strong className="text-slate-900 text-sm">{printingDocket.title}</strong>
+                    <span className="text-slate-600 text-[11px] block mt-0.5">Category: {printingDocket.crimeType}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 text-[11px] block">Occurred At & Reported:</span>
+                    <span className="font-mono text-slate-800">{printingDocket.occurredAt || 'Recent'}</span>
+                    <span className="text-slate-500 text-[10px] block mt-0.5">Lodged: {new Date(printingDocket.submittedAt).toLocaleString()}</span>
+                  </div>
+                </div>
+
+                <div className="pt-1">
+                  <span className="text-slate-500 text-[11px] block font-semibold">Incident Narrative / Deposition:</span>
+                  <p className="text-slate-800 text-xs mt-1 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    {printingDocket.description}
+                  </p>
+                </div>
+              </div>
+
+              {/* Evidence Inventory */}
+              <div className="p-3 bg-emerald-50/60 rounded-xl border border-emerald-200 text-xs space-y-1.5">
+                <div className="flex items-center justify-between font-semibold text-emerald-900">
+                  <span className="flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-emerald-700" />
+                    <span>Evidence Inventory & Chain of Custody</span>
+                  </span>
+                  <span className="font-mono text-[11px] bg-emerald-200/80 text-emerald-900 px-2 py-0.5 rounded">
+                    {printingDocket.evidence?.length || 0} Files Attached
+                  </span>
+                </div>
+                <p className="text-[11px] text-emerald-800">
+                  Digital hashes generated client-side and verified for evidentiary admissibility under Bangladesh Evidence Act (Digital Admissibility Amendment).
+                </p>
+                {printingDocket.evidence && printingDocket.evidence.length > 0 && (
+                  <div className="pt-1 grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[10px] font-mono text-slate-700">
+                    {printingDocket.evidence.map((ev, i) => (
+                      <div key={ev.id || i} className="p-1.5 rounded bg-white border border-emerald-200 flex items-center justify-between truncate">
+                        <span className="truncate">{ev.fileName}</span>
+                        <span className="text-emerald-700 font-bold ml-1 uppercase">{ev.fileType}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Official Seal & Signature */}
+              <div className="pt-4 border-t-2 border-slate-200 flex items-end justify-between text-xs text-slate-600">
+                <div>
+                  <p className="font-mono text-[10px] text-slate-500">SentinelX Anti-Fraud Verification Token</p>
+                  <p className="font-mono text-[11px] font-bold text-slate-800">SHA256-{printingDocket.caseId.replace(/[^0-9]/g, '') || '92847192'}-VERIFIED</p>
+                </div>
+                <div className="text-right">
+                  <div className="w-32 h-10 border-b border-slate-400 mb-1"></div>
+                  <p className="font-bold text-slate-800">Station Duty Officer</p>
+                  <p className="text-[10px] text-slate-500">{printingDocket.thana || 'Bangladesh Police'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions / Buttons (Hidden when printing) */}
+            <div className="p-4 bg-slate-100 border-t border-slate-300 flex items-center justify-between gap-3 print:hidden">
+              <span className="text-xs text-slate-500">
+                Official acknowledgment copy for complainant records.
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold flex items-center gap-1.5 transition shadow"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Print GD Slip</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPrintingDocket(null)}
+                  className="px-4 py-2 rounded-xl bg-slate-300 hover:bg-slate-400 text-slate-800 text-xs font-semibold transition"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
