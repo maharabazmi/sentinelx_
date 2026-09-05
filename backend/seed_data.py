@@ -93,6 +93,21 @@ def get_seed_records():
             passwordHash=default_hash,
         ),
         User(
+            id="user-pol-4",
+            nidNumber="1849204999",
+            fullName="SI Jahangir Alam",
+            email="police.jahangir@dmp.gov.bd",
+            phone="+8801713005544",
+            role="POLICE",
+            badgeNumber="DMP-55210",
+            designation="Sub-Inspector",
+            department="Dhaka Metropolitan Police - Crime Division",
+            stationOrThana="Uttara Police Station, Dhaka",
+            isNIDVerified=True,
+            createdAt=(now - timedelta(days=95)).isoformat(),
+            passwordHash=default_hash,
+        ),
+        User(
             id="user-cr-1",
             nidNumber="3948102948",
             fullName="Shamim Reza",
@@ -518,7 +533,7 @@ def get_seed_records():
         ),
     ]
 
-    # 4. SOS Requests
+    # 4. SOS Requests (Station Jurisdiction-Aware)
     sos_requests = [
         SOSRequest(
             id="sos-001",
@@ -532,8 +547,39 @@ def get_seed_records():
             status="RESPONDING",
             createdAt=(now - timedelta(minutes=25)).isoformat(),
             respondedAt=(now - timedelta(minutes=20)).isoformat(),
+            assignedStation="Uttara Police Station, Dhaka",
             assignedUnit="DMP Mobile Patrol Van 14 (Uttara East)",
             notes="Officer contacted citizen via phone; patrol vehicle arrived at location.",
+        ),
+        SOSRequest(
+            id="sos-002",
+            citizenId="user-cit-1",
+            citizenName="Tanvir Hossain",
+            citizenPhone="+8801711234567",
+            citizenNID="19922692015000123",
+            locationName="Gulshan 2 Circle, Near Landmark Tower, Dhaka",
+            latitude=23.7925,
+            longitude=90.4150,
+            status="SOS_SENT",
+            createdAt=(now - timedelta(minutes=10)).isoformat(),
+            assignedStation="Gulshan Thana, Dhaka",
+            assignedUnit="Awaiting Dispatch (Gulshan Police)",
+            notes="Distress beacon active near Gulshan 2 roundabout.",
+        ),
+        SOSRequest(
+            id="sos-003",
+            citizenId="user-cit-2",
+            citizenName="Farhana Sultana",
+            citizenPhone="+8801819876543",
+            citizenNID="5508192841",
+            locationName="GEC Circle, Nasirabad, Chattogram",
+            latitude=22.3590,
+            longitude=91.8215,
+            status="SOS_SENT",
+            createdAt=(now - timedelta(minutes=5)).isoformat(),
+            assignedStation="Agrabad / Kotwali, Chattogram",
+            assignedUnit="Awaiting Dispatch (CMP Patrol)",
+            notes="Emergency alert triggered near GEC intersection.",
         )
     ]
 

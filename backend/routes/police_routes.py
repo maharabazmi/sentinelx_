@@ -14,6 +14,7 @@ from ..models import (
 from ..middleware.auth import verify_auth, require_roles
 from ..services.notification_service import NotificationService
 from ..services.audit_service import AuditService
+from ..services.jurisdiction_service import JurisdictionService
 
 police_bp = Blueprint("police", __name__, url_prefix="/api/police")
 
@@ -73,7 +74,16 @@ def dashboard_summary():
             and r.status not in ("CASE_CLOSED", "REJECTED")
         ])
 
-        active_sos = len([s for s in sos_list if s.status != "RESOLVED"])
+        # Filter SOS strictly to this officer's police station coverage area
+        if user.role == "POLICE":
+            station_sos = [
+                s for s in sos_list
+                if JurisdictionService.is_sos_in_police_jurisdiction(user.stationOrThana, s, db)
+            ]
+        else:
+            station_sos = sos_list
+
+        active_sos = len([s for s in station_sos if s.status != "RESOLVED"])
         active_alerts = len([a for a in alerts if a.isActive and a.expirationTime > now_iso])
 
         return jsonify({
@@ -577,11 +587,20 @@ def toggle_alert_active(alert_id):
 # 7. SOS Dispatch Management
 @police_bp.route("/sos", methods=["GET"])
 def get_police_sos_list():
+    user = g.user
     with get_db() as db:
-        sos_list = db.query(SOSRequest).order_by(SOSRequest.createdAt.desc()).all()
+        all_sos = db.query(SOSRequest).order_by(SOSRequest.createdAt.desc()).all()
+        if user.role == "POLICE":
+            filtered_sos = [
+                s for s in all_sos
+                if JurisdictionService.is_sos_in_police_jurisdiction(user.stationOrThana, s, db)
+            ]
+        else:
+            filtered_sos = all_sos
+
         return jsonify({
             "success": True,
-            "sosRequests": [s.to_dict() for s in sos_list]
+            "sosRequests": [s.to_dict() for s in filtered_sos]
         })
 
 @police_bp.route("/sos/<sos_id>/respond", methods=["POST"])
@@ -596,6 +615,10 @@ def respond_sos(sos_id):
         sos = db.query(SOSRequest).filter(SOSRequest.id == sos_id).first()
         if not sos:
             return jsonify({"error": "SOS request not found."}), 404
+
+        # Verify jurisdiction before allowing police response
+        if user.role == "POLICE" and not JurisdictionService.is_sos_in_police_jurisdiction(user.stationOrThana, sos, db):
+            return jsonify({"error": "This distress beacon is outside your police station's coverage jurisdiction."}), 403
 
         sos.status = status
         sos.respondedAt = utcnow_iso()

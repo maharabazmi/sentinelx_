@@ -825,7 +825,7 @@ export const PoliceDashboard: React.FC = () => {
                 Live Citizen SOS Dispatch Radar
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
-                Real-time distress beacons triggered by verified citizens with GPS coordinates.
+                Real-time distress beacons strictly scoped to {user?.stationOrThana || 'station'} coverage area.
               </p>
             </div>
 
@@ -842,7 +842,7 @@ export const PoliceDashboard: React.FC = () => {
             <EmptyState
               icon={Radio}
               title="Radar Clear: No Active Distress Beacons"
-              description="No citizen emergency distress signals are currently active within patrol jurisdictions."
+              description={`No citizen emergency distress signals are currently active within ${user?.stationOrThana || 'this station'} coverage jurisdiction.`}
             />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -874,6 +874,14 @@ export const PoliceDashboard: React.FC = () => {
                       <span>Lng: {sos.longitude.toFixed(4)}</span>
                       <span>Time: {new Date(sos.createdAt).toLocaleTimeString()}</span>
                       <span className="text-blue-300 font-bold">{sos.assignedUnit || 'Unassigned'}</span>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-[11px] font-mono">
+                      <span className="text-slate-400 flex items-center gap-1">
+                        <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Coverage Station:</span>
+                      </span>
+                      <span className="text-amber-300 font-bold">{sos.assignedStation || user?.stationOrThana || 'Local Station'}</span>
                     </div>
 
                     {sos.notes && (

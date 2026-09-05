@@ -52,12 +52,20 @@ def get_db():
 
 def init_db():
     Base.metadata.create_all(bind=engine)
-    # Resilient schema migration: ensure assignedOfficerId column exists
+    # Resilient schema migration: ensure assignedOfficerId and assignedStation columns exist
     try:
         with engine.connect() as conn:
             conn.execute(text("ALTER TABLE crime_reports ADD COLUMN assignedOfficerId VARCHAR(64)"))
             conn.commit()
             logger.info("[DB] Added assignedOfficerId column to crime_reports table.")
+    except Exception:
+        pass
+
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE sos_requests ADD COLUMN assignedStation VARCHAR(128)"))
+            conn.commit()
+            logger.info("[DB] Added assignedStation column to sos_requests table.")
     except Exception:
         pass
 

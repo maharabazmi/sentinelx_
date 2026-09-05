@@ -198,6 +198,7 @@ class SOSRequest(Base):
     status = Column(String(32), nullable=False, default="SOS_SENT")
     createdAt = Column(String(64), default=utcnow_iso)
     respondedAt = Column(String(64), nullable=True)
+    assignedStation = Column(String(128), nullable=True)
     assignedUnit = Column(String(128), nullable=True)
     notes = Column(Text, nullable=True)
 
@@ -214,6 +215,7 @@ class SOSRequest(Base):
             "status": self.status,
             "createdAt": self.createdAt,
             "respondedAt": self.respondedAt,
+            "assignedStation": self.assignedStation,
             "assignedUnit": self.assignedUnit,
             "notes": self.notes,
         }

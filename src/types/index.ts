@@ -202,6 +202,7 @@ export interface SOSRequest {
   status: SOSStatus;
   createdAt: string;
   respondedAt?: string;
+  assignedStation?: string;
   assignedUnit?: string;
   notes?: string;
 }
