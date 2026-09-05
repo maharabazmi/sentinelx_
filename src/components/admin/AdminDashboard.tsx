@@ -71,7 +71,8 @@ export const AdminDashboard: React.FC = () => {
   const [newPhone, setNewPhone] = useState('+8801700000000');
   const [newRole, setNewRole] = useState<UserRole>(UserRole.POLICE);
   const [newBadge, setNewBadge] = useState('DMP-');
-  const [newDesignation, setNewDesignation] = useState('Inspector of Police');
+  const [newDesignation, setNewDesignation] = useState('Sub-Inspector (SI)');
+  const [newDepartment, setNewDepartment] = useState('General Investigation & GD Registry');
   const [policeDistrict, setPoliceDistrict] = useState('Dhaka');
   const [policeThana, setPoliceThana] = useState('Gulshan');
   const [newStation, setNewStation] = useState('Gulshan Police Station, Dhaka');
@@ -82,6 +83,15 @@ export const AdminDashboard: React.FC = () => {
     const firstThana = thanas[0] || 'Sadar';
     setPoliceThana(firstThana);
     setNewStation(`${firstThana} Police Station, ${newDistrict}`);
+
+    const distCode = newDistrict.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase();
+    if (newDistrict === 'Dhaka') {
+      setNewBadge('DMP-');
+    } else if (newDistrict === 'Chattogram') {
+      setNewBadge('CMP-');
+    } else {
+      setNewBadge(`BP-${distCode}-`);
+    }
   };
 
   const handlePoliceThanaChange = (newThana: string) => {
@@ -158,6 +168,7 @@ export const AdminDashboard: React.FC = () => {
         role: newRole,
         badgeNumber: newBadge,
         designation: newDesignation,
+        department: newRole === UserRole.POLICE ? newDepartment : undefined,
         stationOrThana: newStation,
         password: newPassword
       });
@@ -839,12 +850,58 @@ export const AdminDashboard: React.FC = () => {
                 <div className="space-y-3 p-3.5 rounded-xl bg-slate-950/60 border border-slate-800">
                   <div className="flex items-center justify-between">
                     <label className="block font-semibold text-slate-300 text-xs">
-                      Police Station Jurisdiction Assignment <span className="text-purple-400">*</span>
+                      Police Station Jurisdiction & Rank Assignment <span className="text-purple-400">*</span>
                     </label>
-                    <span className="text-[10px] text-purple-400 font-mono">Real BD Thana</span>
+                    <span className="text-[10px] text-purple-400 font-mono">Rational Dispatch Active</span>
                   </div>
 
+                  {/* Rank / Designation & Department Specialization */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] text-slate-400 mb-1">Official Rank / Designation</label>
+                      <select
+                        value={newDesignation}
+                        onChange={e => setNewDesignation(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-purple-500"
+                      >
+                        <option value="Sub-Inspector (SI)">Sub-Inspector (SI)</option>
+                        <option value="Inspector (Investigation)">Inspector (Investigation)</option>
+                        <option value="Officer-in-Charge (OC)">Officer-in-Charge (OC)</option>
+                        <option value="Assistant Sub-Inspector (ASI)">Assistant Sub-Inspector (ASI)</option>
+                        <option value="Senior Superintendent of Police (SP)">Senior Superintendent of Police (SP)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] text-slate-400 mb-1">Specialized Division / Dept</label>
+                      <select
+                        value={newDepartment}
+                        onChange={e => setNewDepartment(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-purple-500"
+                      >
+                        <option value="General Investigation & GD Registry">General Investigation & GD Registry</option>
+                        <option value="Cyber Crime & Digital Forensics Cell">Cyber Crime & Digital Forensics Cell</option>
+                        <option value="Women & Children Support Desk">Women & Children Support Desk</option>
+                        <option value="Detective Branch (DB) / Crime Wing">Detective Branch (DB) / Crime Wing</option>
+                        <option value="Traffic & Public Safety">Traffic & Public Safety</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Badge Number & Jurisdiction District */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] text-slate-400 mb-1">Official Badge Number</label>
+                      <input
+                        type="text"
+                        value={newBadge}
+                        onChange={e => setNewBadge(e.target.value)}
+                        placeholder="e.g. BP-MYM-4019"
+                        className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-100 text-xs font-mono focus:outline-none focus:border-purple-500"
+                        required
+                      />
+                    </div>
+
                     <div>
                       <label className="block text-[11px] text-slate-400 mb-1">Assigned District</label>
                       <select
@@ -863,7 +920,10 @@ export const AdminDashboard: React.FC = () => {
                         ))}
                       </select>
                     </div>
+                  </div>
 
+                  {/* Thana & Station Name */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[11px] text-slate-400 mb-1">Thana / Police Station</label>
                       <select
@@ -878,17 +938,17 @@ export const AdminDashboard: React.FC = () => {
                         ))}
                       </select>
                     </div>
-                  </div>
 
-                  <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">Station Record Identifier</label>
-                    <input
-                      type="text"
-                      value={newStation}
-                      onChange={e => setNewStation(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 text-xs font-mono"
-                      required
-                    />
+                    <div>
+                      <label className="block text-[11px] text-slate-400 mb-1">Station Record Identifier</label>
+                      <input
+                        type="text"
+                        value={newStation}
+                        onChange={e => setNewStation(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 text-xs font-mono"
+                        required
+                      />
+                    </div>
                   </div>
                 </div>
               ) : (

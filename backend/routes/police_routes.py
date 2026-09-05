@@ -43,8 +43,29 @@ def dashboard_summary():
     thana_kw = extract_thana_keyword(user.stationOrThana)
 
     with get_db() as db:
-        reports = db.query(CrimeReport).all()
-        sos_list = db.query(SOSRequest).all()
+        if user.role == "POLICE":
+            # Strict Thana-scoped query: only reports for this officer's thana or assigned to them
+            if thana_kw:
+                station_filter = or_(
+                    CrimeReport.thana.ilike(f"%{thana_kw}%"),
+                    func.lower(CrimeReport.thana) == thana_kw.lower(),
+                    CrimeReport.assignedOfficerId == user.id,
+                    CrimeReport.assignedOfficerStation.ilike(f"%{thana_kw}%")
+                )
+            else:
+                station_filter = (CrimeReport.assignedOfficerId == user.id)
+
+            reports = db.query(CrimeReport).filter(station_filter).all()
+            sos_list = db.query(SOSRequest).filter(
+                or_(
+                    SOSRequest.locationName.ilike(f"%{thana_kw}%"),
+                    func.lower(SOSRequest.locationName) == thana_kw.lower()
+                )
+            ).all() if thana_kw else []
+        else:
+            reports = db.query(CrimeReport).all()
+            sos_list = db.query(SOSRequest).all()
+
         alerts = db.query(EmergencyAlert).all()
 
         new_reports = len([r for r in reports if r.status in ("SUBMITTED", "OFFICER_ASSIGNED")])
@@ -52,18 +73,8 @@ def dashboard_summary():
         active_investigations = len([r for r in reports if r.status in ("VERIFIED", "OFFICER_ASSIGNED", "INVESTIGATION")])
         closed_cases = len([r for r in reports if r.status == "CASE_CLOSED"])
 
-        # Station-specific metrics for rapid response
-        if thana_kw:
-            thana_kw_clean = thana_kw.lower()
-            station_reports = [
-                r for r in reports
-                if thana_kw_clean in (r.thana or "").lower() or ((r.thana or "").lower() in thana_kw_clean)
-            ]
-        else:
-            station_reports = reports
-
         station_unassigned = len([
-            r for r in station_reports
+            r for r in reports
             if not r.assignedOfficerId and not r.assignedOfficerName and r.status != "CASE_CLOSED" and r.status != "REJECTED"
         ])
 
@@ -93,11 +104,11 @@ def dashboard_summary():
             }
         })
 
-# 2. Get Crime Reports (Jurisdiction-Aware)
+# 2. Get Crime Reports (Strict Jurisdiction-Aware)
 @police_bp.route("/reports", methods=["GET"])
 def get_reports():
     user = g.user
-    scope = request.args.get("scope", "station")  # "station", "my_cases", "unassigned", "all"
+    scope = request.args.get("scope", "station")  # "station", "my_cases", "unassigned"
     status = request.args.get("status")
     district = request.args.get("district")
     thana = request.args.get("thana")
@@ -110,39 +121,35 @@ def get_reports():
         query = db.query(CrimeReport)
 
         if user.role == "POLICE":
+            # STRICT JURISDICTION ISOLATION:
+            # Police officers can ONLY view cases in their assigned Thana jurisdiction,
+            # or cases specifically assigned to them as investigating officers.
+            # They CANNOT view another thana's cases under any circumstances.
+            if thana_kw:
+                station_condition = or_(
+                    CrimeReport.thana.ilike(f"%{thana_kw}%"),
+                    func.lower(CrimeReport.thana) == thana_kw.lower(),
+                    CrimeReport.assignedOfficerId == user.id,
+                    CrimeReport.assignedOfficerStation.ilike(f"%{thana_kw}%")
+                )
+            else:
+                station_condition = (CrimeReport.assignedOfficerId == user.id)
+
             if scope == "my_cases":
-                # Cases assigned specifically to this officer
                 query = query.filter(
                     (CrimeReport.assignedOfficerId == user.id) |
                     (CrimeReport.assignedOfficerName.ilike(f"%{user.fullName}%"))
                 )
             elif scope == "unassigned":
-                # Unassigned cases in this officer's Thana
-                if thana_kw:
-                    query = query.filter(
-                        or_(
-                            CrimeReport.thana.ilike(f"%{thana_kw}%"),
-                            func.lower(CrimeReport.thana) == thana_kw.lower()
-                        )
-                    )
-                query = query.filter(
+                query = query.filter(station_condition).filter(
                     (CrimeReport.assignedOfficerId == None) |
                     (CrimeReport.assignedOfficerId == "") |
                     (CrimeReport.assignedOfficerName == None) |
                     (CrimeReport.assignedOfficerName == "")
                 )
-            elif scope == "all":
-                # Officer requests national registry overview
-                pass
             else:
-                # Default "station" scope: All reports within this officer's Thana
-                if thana_kw:
-                    query = query.filter(
-                        or_(
-                            CrimeReport.thana.ilike(f"%{thana_kw}%"),
-                            func.lower(CrimeReport.thana) == thana_kw.lower()
-                        )
-                    )
+                # All police scopes (including 'station' and any attempted 'all') are strictly locked to this station!
+                query = query.filter(station_condition)
         elif user.role == "ADMIN":
             if scope == "my_cases":
                 query = query.filter(CrimeReport.assignedOfficerId == user.id)
@@ -197,6 +204,13 @@ def verify_report(report_id):
         report = db.query(CrimeReport).filter(CrimeReport.id == report_id).first()
         if not report:
             return jsonify({"error": "Crime report not found."}), 404
+
+        if user.role == "POLICE":
+            thana_kw = extract_thana_keyword(user.stationOrThana)
+            is_in_station = thana_kw and (thana_kw.lower() in (report.thana or "").lower() or (report.thana or "").lower() in thana_kw.lower())
+            is_assigned = (report.assignedOfficerId == user.id)
+            if not is_in_station and not is_assigned:
+                return jsonify({"error": f"Access Denied: Officer at {user.stationOrThana} cannot verify cases outside their jurisdiction ({report.thana})."}), 403
 
         new_status = "VERIFIED" if action == "VERIFY" else "REJECTED"
         report.status = new_status
@@ -262,6 +276,13 @@ def update_investigation_status(report_id):
         if not report:
             return jsonify({"error": "Crime report not found."}), 404
 
+        if user.role == "POLICE":
+            thana_kw = extract_thana_keyword(user.stationOrThana)
+            is_in_station = thana_kw and (thana_kw.lower() in (report.thana or "").lower() or (report.thana or "").lower() in thana_kw.lower())
+            is_assigned = (report.assignedOfficerId == user.id)
+            if not is_in_station and not is_assigned:
+                return jsonify({"error": f"Access Denied: Officer at {user.stationOrThana} cannot modify cases outside their jurisdiction ({report.thana})."}), 403
+
         if status:
             report.status = status
         if officer_id:
@@ -321,6 +342,13 @@ def assign_or_claim_report(report_id):
         report = db.query(CrimeReport).filter(CrimeReport.id == report_id).first()
         if not report:
             return jsonify({"error": "Crime report not found."}), 404
+
+        if user.role == "POLICE":
+            thana_kw = extract_thana_keyword(user.stationOrThana)
+            is_in_station = thana_kw and (thana_kw.lower() in (report.thana or "").lower() or (report.thana or "").lower() in thana_kw.lower())
+            is_assigned = (report.assignedOfficerId == user.id)
+            if not is_in_station and not is_assigned:
+                return jsonify({"error": f"Access Denied: Officer at {user.stationOrThana} cannot claim or assign cases outside their jurisdiction ({report.thana})."}), 403
 
         if officer_id and officer_id != user.id:
             target_officer = db.query(User).filter(User.id == officer_id, User.role == "POLICE").first()
@@ -433,11 +461,19 @@ def get_crime_heatmap():
 
     with get_db() as db:
         # Strictly only verified incidents (not SUBMITTED, not REJECTED)
-        reports = (
-            db.query(CrimeReport)
-            .filter(CrimeReport.status.notin_(["SUBMITTED", "REJECTED"]))
-            .all()
-        )
+        query = db.query(CrimeReport).filter(CrimeReport.status.notin_(["SUBMITTED", "REJECTED"]))
+        if user.role == "POLICE":
+            thana_kw = extract_thana_keyword(user.stationOrThana)
+            if thana_kw:
+                query = query.filter(
+                    or_(
+                        CrimeReport.thana.ilike(f"%{thana_kw}%"),
+                        func.lower(CrimeReport.thana) == thana_kw.lower(),
+                        CrimeReport.assignedOfficerId == user.id,
+                        CrimeReport.assignedOfficerStation.ilike(f"%{thana_kw}%")
+                    )
+                )
+        reports = query.all()
 
         incidents = []
         for r in reports:
@@ -577,8 +613,19 @@ def toggle_alert_active(alert_id):
 # 7. SOS Dispatch Management
 @police_bp.route("/sos", methods=["GET"])
 def get_police_sos_list():
+    user = g.user
     with get_db() as db:
-        sos_list = db.query(SOSRequest).order_by(SOSRequest.createdAt.desc()).all()
+        query = db.query(SOSRequest)
+        if user.role == "POLICE":
+            thana_kw = extract_thana_keyword(user.stationOrThana)
+            if thana_kw:
+                query = query.filter(
+                    or_(
+                        SOSRequest.locationName.ilike(f"%{thana_kw}%"),
+                        func.lower(SOSRequest.locationName) == thana_kw.lower()
+                    )
+                )
+        sos_list = query.order_by(SOSRequest.createdAt.desc()).all()
         return jsonify({
             "success": True,
             "sosRequests": [s.to_dict() for s in sos_list]
