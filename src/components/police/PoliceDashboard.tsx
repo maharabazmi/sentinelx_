@@ -881,7 +881,7 @@ export const PoliceDashboard: React.FC = () => {
                         <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
                         <span>Coverage Station:</span>
                       </span>
-                      <span className="text-amber-300 font-bold">{sos.assignedStation || user?.stationOrThana || 'Local Station'}</span>
+                      <span className="text-amber-300 font-bold">{sos.assignedStation || 'Pending Station Routing'}</span>
                     </div>
 
                     {sos.notes && (

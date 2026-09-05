@@ -277,6 +277,15 @@ class JurisdictionService:
 
         off_kw = extract_thana_keyword(officer_station).lower()
         off_parts = [p.strip() for p in re.split(r"[/,]", off_kw) if p.strip()]
+        loc_name = (getattr(sos, "locationName", "") or "").lower()
+
+        # Strict Location Thana Matching:
+        # If the emergency beacon location explicitly mentions a known thana (e.g., 'dhanmondi'),
+        # ONLY officers of that specific thana are in jurisdiction.
+        for thana_key in KNOWN_STATION_COORDINATES:
+            if thana_key in loc_name:
+                officer_has_thana = any(thana_key in op for op in off_parts) or (thana_key in off_clean)
+                return officer_has_thana
 
         # If assignedStation was explicitly recorded on the SOS record
         assigned_st = getattr(sos, "assignedStation", None)

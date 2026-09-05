@@ -590,6 +590,17 @@ def get_police_sos_list():
     user = g.user
     with get_db() as db:
         all_sos = db.query(SOSRequest).order_by(SOSRequest.createdAt.desc()).all()
+        # Self-heal any legacy or misassigned SOS records
+        updated_any = False
+        for s in all_sos:
+            loc = (s.locationName or "").lower()
+            if "dhanmondi" in loc and (not s.assignedStation or "dhanmondi" not in s.assignedStation.lower()):
+                s.assignedStation = "Dhanmondi Police Station, Dhaka"
+                s.assignedUnit = "Awaiting Dispatch (Dhanmondi Station)"
+                updated_any = True
+        if updated_any:
+            db.commit()
+
         if user.role == "POLICE":
             filtered_sos = [
                 s for s in all_sos
