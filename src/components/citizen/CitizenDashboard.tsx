@@ -420,16 +420,8 @@ export const CitizenDashboard: React.FC = () => {
           </div>
 
           {/* Quick SOS Trigger Button */}
-          <div className="flex items-center gap-3">
-            {activeSOS ? (
-              <button
-                onClick={() => setActiveTab('sos')}
-                className="px-5 py-3 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-display font-bold text-xs tracking-wider transition shadow-xl shadow-red-600/40 flex items-center gap-2 animate-pulse"
-              >
-                <Radio className="w-4 h-4" />
-                <span>ACTIVE SOS TRACKER</span>
-              </button>
-            ) : (
+          {!activeSOS && (
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowSOSConfirmModal(true)}
                 className="px-5 py-3 rounded-2xl bg-red-950/70 hover:bg-red-900 border border-red-500/40 text-red-300 font-display font-bold text-xs tracking-wider transition shadow-lg shadow-red-950/50 flex items-center gap-2 hover:scale-[1.02] active:scale-95"
@@ -437,8 +429,8 @@ export const CitizenDashboard: React.FC = () => {
                 <Radio className="w-4 h-4 text-red-400" />
                 <span>EMERGENCY SOS (DISPATCH)</span>
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* ACTIVE SOS PERSISTENT BANNER */}
