@@ -629,7 +629,7 @@ def respond_sos(sos_id):
 
         # Verify jurisdiction before allowing police response
         if user.role == "POLICE" and not JurisdictionService.is_sos_in_police_jurisdiction(user.stationOrThana, sos, db):
-            return jsonify({"error": "This distress beacon is outside your police station's coverage jurisdiction."}), 403
+            return jsonify({"error": "Permission Denied: This distress beacon is outside your station's coverage jurisdiction. Only the assigned police station can dispatch units or resolve this SOS."}), 403
 
         sos.status = status
         sos.respondedAt = utcnow_iso()
