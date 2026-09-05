@@ -132,10 +132,12 @@ export const CitizenDashboard: React.FC = () => {
   const [complaintSuccessReceipt, setComplaintSuccessReceipt] = useState<ConsumerComplaint | null>(null);
   const [complaintFormError, setComplaintFormError] = useState<string | null>(null);
 
+  const isOverpriced = issueType === ConsumerIssueType.PRICE_GOUGING;
+
   const complaintSteps: StepItem[] = [
     { id: 1, label: 'Merchant', description: 'Shop & Establishment' },
     { id: 2, label: 'Product', description: 'Item & Brand' },
-    { id: 3, label: 'Pricing', description: 'MRP vs Paid' },
+    { id: 3, label: isOverpriced ? 'Pricing' : 'Grievance', description: isOverpriced ? 'MRP vs Paid' : 'Dispute Details' },
     { id: 4, label: 'Evidence', description: 'Receipts & Proof' },
     { id: 5, label: 'Review', description: 'Submit to DNCRP' }
   ];
@@ -263,9 +265,21 @@ export const CitizenDashboard: React.FC = () => {
       setComplaintFormError('Product or item name is required.');
       return;
     }
-    if (complaintStep === 3 && !complaintDesc.trim()) {
-      setComplaintFormError('Please provide an explanation of the violation.');
-      return;
+    if (complaintStep === 3) {
+      if (isOverpriced) {
+        if (!mrp.trim() || !pricePaid.trim()) {
+          setComplaintFormError('Official MRP and Price Demanded / Paid are required for price overcharging claims.');
+          return;
+        }
+        if (parseFloat(mrp) <= 0 || parseFloat(pricePaid) <= 0) {
+          setComplaintFormError('Please enter valid positive amounts for Official MRP and Price Demanded / Paid.');
+          return;
+        }
+      }
+      if (!complaintDesc.trim()) {
+        setComplaintFormError('Please provide an explanation of the violation.');
+        return;
+      }
     }
     setComplaintStep(prev => Math.min(prev + 1, 5));
   };
@@ -290,8 +304,8 @@ export const CitizenDashboard: React.FC = () => {
         brandName,
         barcode: barcodeInput,
         issueType,
-        pricePaid: pricePaid ? Number(pricePaid) : undefined,
-        mrp: mrp ? Number(mrp) : undefined,
+        pricePaid: (isOverpriced && pricePaid) ? Number(pricePaid) : undefined,
+        mrp: (isOverpriced && mrp) ? Number(mrp) : undefined,
         description: complaintDesc,
         evidence: complaintEvidenceList
       });
@@ -304,6 +318,7 @@ export const CitizenDashboard: React.FC = () => {
         setComplaintDesc('');
         setPricePaid('');
         setMrp('');
+        setIssueType(ConsumerIssueType.PRICE_GOUGING);
         setComplaintEvidenceList([]);
         setComplaintStep(1);
         fetchData();
@@ -1422,7 +1437,14 @@ export const CitizenDashboard: React.FC = () => {
                 </label>
                 <select
                   value={issueType}
-                  onChange={e => setIssueType(e.target.value as ConsumerIssueType)}
+                  onChange={e => {
+                    const selected = e.target.value as ConsumerIssueType;
+                    setIssueType(selected);
+                    if (selected !== ConsumerIssueType.PRICE_GOUGING) {
+                      setMrp('');
+                      setPricePaid('');
+                    }
+                  }}
                   className="w-full px-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-amber-500 transition"
                 >
                   <option value={ConsumerIssueType.PRICE_GOUGING}>Price Gouging / Overcharging above MRP (মূল্য কারচুপি)</option>
@@ -1453,63 +1475,67 @@ export const CitizenDashboard: React.FC = () => {
             </div>
           )}
 
-          {/* STEP 3: PRICING & CALCULATION */}
+          {/* STEP 3: PRICING & GRIEVANCE DETAILS */}
           {complaintStep === 3 && (
             <div className="space-y-5 animate-in fade-in">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                    Official MRP on Pack (৳ BDT)
-                  </label>
-                  <div className="relative">
-                    <span className="text-slate-400 font-bold absolute left-3.5 top-2.5 text-xs">৳</span>
-                    <input
-                      type="number"
-                      step="0.5"
-                      value={mrp}
-                      onChange={e => setMrp(e.target.value)}
-                      placeholder="e.g. 175"
-                      className="w-full pl-8 pr-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs font-mono focus:outline-none focus:border-amber-500 transition"
-                    />
-                  </div>
-                </div>
+              {isOverpriced && (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Official MRP on Pack (৳ BDT) <span className="text-amber-400">*</span>
+                      </label>
+                      <div className="relative">
+                        <span className="text-slate-400 font-bold absolute left-3.5 top-2.5 text-xs">৳</span>
+                        <input
+                          type="number"
+                          step="0.5"
+                          value={mrp}
+                          onChange={e => setMrp(e.target.value)}
+                          placeholder="e.g. 175"
+                          className="w-full pl-8 pr-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs font-mono focus:outline-none focus:border-amber-500 transition"
+                        />
+                      </div>
+                    </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                    Price Demanded / Paid (৳ BDT)
-                  </label>
-                  <div className="relative">
-                    <span className="text-slate-400 font-bold absolute left-3.5 top-2.5 text-xs">৳</span>
-                    <input
-                      type="number"
-                      step="0.5"
-                      value={pricePaid}
-                      onChange={e => setPricePaid(e.target.value)}
-                      placeholder="e.g. 210"
-                      className="w-full pl-8 pr-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs font-mono focus:outline-none focus:border-amber-500 transition"
-                    />
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Price Demanded / Paid (৳ BDT) <span className="text-amber-400">*</span>
+                      </label>
+                      <div className="relative">
+                        <span className="text-slate-400 font-bold absolute left-3.5 top-2.5 text-xs">৳</span>
+                        <input
+                          type="number"
+                          step="0.5"
+                          value={pricePaid}
+                          onChange={e => setPricePaid(e.target.value)}
+                          placeholder="e.g. 210"
+                          className="w-full pl-8 pr-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs font-mono focus:outline-none focus:border-amber-500 transition"
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
 
-              {/* Automatic Calculation Card */}
-              {numPaid > 0 && numMrp > 0 && (
-                <div className={`p-4 rounded-2xl border text-xs space-y-2 ${
-                  priceDiff > 0
-                    ? 'bg-amber-950/40 border-amber-500/40 text-amber-300'
-                    : 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
-                }`}>
-                  <div className="flex items-center justify-between font-bold">
-                    <span className="font-display">Calculated Pricing Discrepancy:</span>
-                    <span className="font-mono text-sm">
-                      {priceDiff > 0 ? `+৳${priceDiff.toFixed(2)} OVERCHARGE` : 'Standard / Discounted'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-[11px] text-slate-300">
-                    <span>Overcharge Rate:</span>
-                    <span className="font-mono font-bold text-amber-400">+{overchargePercent}% above legal MRP</span>
-                  </div>
-                </div>
+                  {/* Automatic Calculation Card */}
+                  {numPaid > 0 && numMrp > 0 && (
+                    <div className={`p-4 rounded-2xl border text-xs space-y-2 ${
+                      priceDiff > 0
+                        ? 'bg-amber-950/40 border-amber-500/40 text-amber-300'
+                        : 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
+                    }`}>
+                      <div className="flex items-center justify-between font-bold">
+                        <span className="font-display">Calculated Pricing Discrepancy:</span>
+                        <span className="font-mono text-sm">
+                          {priceDiff > 0 ? `+৳${priceDiff.toFixed(2)} OVERCHARGE` : 'Standard / Discounted'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-slate-300">
+                        <span>Overcharge Rate:</span>
+                        <span className="font-mono font-bold text-amber-400">+{overchargePercent}% above legal MRP</span>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
 
               <div>
@@ -1520,7 +1546,11 @@ export const CitizenDashboard: React.FC = () => {
                   rows={4}
                   value={complaintDesc}
                   onChange={e => setComplaintDesc(e.target.value)}
-                  placeholder="Explain how the merchant refused official MRP, sold expired item, or behaved upon inquiry..."
+                  placeholder={
+                    isOverpriced
+                      ? "Explain how the merchant refused official MRP, sold above printed price, or behaved upon inquiry..."
+                      : "Explain the details of this violation (e.g. expired date, adulteration, fake seal, or merchant behavior)..."
+                  }
                   className="w-full px-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs placeholder-slate-500 focus:outline-none focus:border-amber-500 transition"
                   required
                 />
@@ -1607,7 +1637,7 @@ export const CitizenDashboard: React.FC = () => {
                   </div>
                 </div>
 
-                {numPaid > 0 && numMrp > 0 && (
+                {isOverpriced && numPaid > 0 && numMrp > 0 && (
                   <div className="pt-2 border-t border-slate-900 grid grid-cols-3 gap-2 font-mono text-center">
                     <div className="p-2 rounded-lg bg-slate-900 border border-slate-800">
                       <span className="text-[10px] text-slate-500 block">MRP</span>
@@ -2062,7 +2092,7 @@ export const CitizenDashboard: React.FC = () => {
                     </p>
 
                     {/* Pricing Discrepancy Card */}
-                    {comp.mrp && comp.pricePaid && (
+                    {comp.issueType === ConsumerIssueType.PRICE_GOUGING && comp.mrp && comp.pricePaid && (
                       <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/60 flex items-center justify-between text-xs font-mono">
                         <div>
                           <span className="text-slate-500 text-[10px] block">Official MRP:</span>
