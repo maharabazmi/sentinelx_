@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Eye,
   Download,
@@ -9,7 +9,12 @@ import {
   Music,
   X,
   File,
-  ZoomIn
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Copy,
+  Check,
+  ShieldCheck
 } from 'lucide-react';
 import { EvidenceFile } from '../../types';
 
@@ -27,6 +32,32 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
   emptyMessage = 'No evidence files attached to this case.'
 }) => {
   const [activePreview, setActivePreview] = useState<EvidenceFile | null>(null);
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
+  const [copiedFilename, setCopiedFilename] = useState(false);
+
+  // Close on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setActivePreview(null);
+        setZoomLevel(1);
+      }
+    };
+    if (activePreview) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activePreview]);
+
+  const handleCopyName = (name: string) => {
+    navigator.clipboard?.writeText(name);
+    setCopiedFilename(true);
+    setTimeout(() => setCopiedFilename(false), 2000);
+  };
+
+  const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 0.25, 3));
+  const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.25, 0.75));
+  const handleResetZoom = () => setZoomLevel(1);
 
   if (!evidence || evidence.length === 0) {
     return (
@@ -107,11 +138,15 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
         {evidence.map((item, idx) => {
           const url = getEffectiveUrl(item);
           const isImage = item.fileType === 'image' || (url && (url.startsWith('data:image') || url.match(/\.(jpg|jpeg|png|gif|webp)$/i)));
+          const fileExt = (item.fileName.split('.').pop() || item.fileType || 'FILE').toUpperCase().slice(0, 4);
 
           return (
             <div
               key={item.id || idx}
-              onClick={() => setActivePreview(item)}
+              onClick={() => {
+                setActivePreview(item);
+                setZoomLevel(1);
+              }}
               className={`p-2.5 rounded-2xl bg-slate-900/90 border border-slate-800 ${colorStyles.border} transition-all cursor-pointer group shadow-sm flex items-center gap-3 relative overflow-hidden`}
             >
               {/* Visual Thumbnail */}
@@ -134,16 +169,22 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
 
               {/* File Details */}
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold text-slate-200 truncate group-hover:text-white transition" title={item.fileName}>
-                  {item.fileName}
-                </p>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                    {fileExt}
+                  </span>
+                  <p className="text-xs font-semibold text-slate-200 truncate group-hover:text-white transition" title={item.fileName}>
+                    {item.fileName}
+                  </p>
+                </div>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-[10px] font-mono text-slate-400">
                     {item.fileSize || 'Standard'}
                   </span>
                   <span className="text-slate-600">•</span>
-                  <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                    {item.fileType || 'Evidence'}
+                  <span className="text-[10px] text-emerald-400/90 flex items-center gap-0.5 font-medium">
+                    <ShieldCheck className="w-3 h-3" />
+                    <span>Verified</span>
                   </span>
                 </div>
               </div>
@@ -161,7 +202,10 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
       {/* FULL LIGHTBOX MODAL */}
       {activePreview && (
         <div
-          onClick={() => setActivePreview(null)}
+          onClick={() => {
+            setActivePreview(null);
+            setZoomLevel(1);
+          }}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md animate-in fade-in"
         >
           <div
@@ -198,6 +242,16 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button
                   type="button"
+                  onClick={() => handleCopyName(activePreview.fileName)}
+                  className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium flex items-center gap-1.5 transition border border-slate-700"
+                  title="Copy filename"
+                >
+                  {copiedFilename ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span className="hidden sm:inline">{copiedFilename ? 'Copied' : 'Copy Name'}</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={() => handleDownload(activePreview)}
                   className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition border border-slate-700"
                   title="Download Evidence"
@@ -208,9 +262,12 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
 
                 <button
                   type="button"
-                  onClick={() => setActivePreview(null)}
+                  onClick={() => {
+                    setActivePreview(null);
+                    setZoomLevel(1);
+                  }}
                   className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition border border-slate-700"
-                  title="Close viewer"
+                  title="Close viewer (Esc)"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -218,7 +275,7 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
             </div>
 
             {/* Modal Body / Media Render */}
-            <div className="p-4 sm:p-6 overflow-y-auto flex-1 flex flex-col items-center justify-center bg-slate-950/40 min-h-[300px]">
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 flex flex-col items-center justify-center bg-slate-950/40 min-h-[300px] relative">
               {(() => {
                 const url = getEffectiveUrl(activePreview);
                 const isImage = activePreview.fileType === 'image' || (url && (url.startsWith('data:image') || url.match(/\.(jpg|jpeg|png|gif|webp)$/i)));
@@ -228,12 +285,48 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
 
                 if (isImage && url) {
                   return (
-                    <div className="max-w-full max-h-[65vh] flex items-center justify-center">
-                      <img
-                        src={url}
-                        alt={activePreview.fileName}
-                        className="max-h-[65vh] max-w-full rounded-2xl object-contain shadow-2xl border border-slate-800"
-                      />
+                    <div className="flex flex-col items-center justify-center w-full">
+                      {/* Floating Zoom Controls */}
+                      <div className="mb-3 flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/90 border border-slate-700/80 shadow-lg text-xs z-10">
+                        <button
+                          type="button"
+                          onClick={handleZoomOut}
+                          className="p-1 text-slate-400 hover:text-white transition"
+                          title="Zoom Out"
+                        >
+                          <ZoomOut className="w-3.5 h-3.5" />
+                        </button>
+                        <span className="font-mono text-[11px] text-slate-300 min-w-[3rem] text-center">
+                          {Math.round(zoomLevel * 100)}%
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleZoomIn}
+                          className="p-1 text-slate-400 hover:text-white transition"
+                          title="Zoom In"
+                        >
+                          <ZoomIn className="w-3.5 h-3.5" />
+                        </button>
+                        {zoomLevel !== 1 && (
+                          <button
+                            type="button"
+                            onClick={handleResetZoom}
+                            className="p-1 text-slate-400 hover:text-amber-400 transition ml-1"
+                            title="Reset Zoom"
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="max-w-full max-h-[60vh] overflow-auto rounded-2xl flex items-center justify-center p-2">
+                        <img
+                          src={url}
+                          alt={activePreview.fileName}
+                          style={{ transform: `scale(${zoomLevel})`, transition: 'transform 0.15s ease-out' }}
+                          className="max-h-[55vh] max-w-full rounded-xl object-contain shadow-2xl border border-slate-800"
+                        />
+                      </div>
                     </div>
                   );
                 }
