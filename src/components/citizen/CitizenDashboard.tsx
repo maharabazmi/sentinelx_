@@ -31,7 +31,8 @@ import {
   Info,
   Calendar,
   MessageSquare,
-  Award
+  Award,
+  ShieldCheck
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { ApiClient } from '../../services/api';
@@ -1055,6 +1056,38 @@ export const CitizenDashboard: React.FC = () => {
                   onChange={setEvidenceList}
                 />
               </div>
+
+              {/* Enhanced Evidence Readiness Preview Card */}
+              {evidenceList.length > 0 ? (
+                <div className="p-4 rounded-2xl bg-emerald-950/20 border border-emerald-500/30 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs font-bold text-emerald-300">
+                      <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                      <span>Evidentiary Dossier Status: Armed & Ready</span>
+                    </div>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                      {evidenceList.length} files attached
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                    Attached media will be hashed client-side and bound to your Thana jurisdiction ({thana || 'Selected Station'}) case record to maintain strict digital chain-of-custody.
+                  </p>
+                  <div className="flex items-center gap-2 pt-1 border-t border-emerald-900/40 text-[10px] text-emerald-400/90 font-mono flex-wrap">
+                    <span>✓ Anti-tamper Hash</span>
+                    <span>•</span>
+                    <span>✓ Station Duty Dispatch Flag</span>
+                    <span>•</span>
+                    <span>✓ Accelerated Verification</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 text-[11px] text-slate-400 flex items-start gap-2.5">
+                  <Info className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                  <span>
+                    <strong>Evidentiary Recommendation:</strong> Cases submitted with photo, audio, or CCTV attachments receive 3× faster investigation response from the station duty officer.
+                  </span>
+                </div>
+              )}
             </div>
           )}
 
@@ -1098,13 +1131,18 @@ export const CitizenDashboard: React.FC = () => {
                   </span>
                 </div>
 
-                {evidenceList.length > 0 && (
+                {evidenceList.length > 0 ? (
                   <div className="pt-2 border-t border-slate-900">
                     <EvidenceViewer
                       evidence={evidenceList}
                       title="Attached Evidence Review"
                       accentColor="emerald"
                     />
+                  </div>
+                ) : (
+                  <div className="p-3 rounded-xl bg-slate-900/50 border border-slate-800 text-[11px] text-slate-500 italic flex items-center justify-between">
+                    <span>No digital evidence attached to this case.</span>
+                    <span className="text-[10px] text-slate-400 not-italic font-mono">Text Deposition Only</span>
                   </div>
                 )}
               </div>
@@ -1507,6 +1545,38 @@ export const CitizenDashboard: React.FC = () => {
                   onChange={setComplaintEvidenceList}
                 />
               </div>
+
+              {/* Enhanced DNCRP Evidentiary Preview Card */}
+              {complaintEvidenceList.length > 0 ? (
+                <div className="p-4 rounded-2xl bg-amber-950/20 border border-amber-500/30 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs font-bold text-amber-300">
+                      <ShieldCheck className="w-4 h-4 text-amber-400" />
+                      <span>DNCRP Enforcement Evidence Ready</span>
+                    </div>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                      {complaintEvidenceList.length} files attached
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                    Under Section 76(1) of the Consumer Rights Protection Act 2009, attaching the receipt and MRP photo constitutes prima facie proof for direct 25% reward qualification upon penalty recovery.
+                  </p>
+                  <div className="flex items-center gap-2 pt-1 border-t border-amber-900/40 text-[10px] text-amber-400/90 font-mono flex-wrap">
+                    <span>✓ Prima Facie Proof</span>
+                    <span>•</span>
+                    <span>✓ Mobile Court Admissible</span>
+                    <span>•</span>
+                    <span>✓ 25% Whistleblower Reward Eligible</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 text-[11px] text-slate-400 flex items-start gap-2.5">
+                  <Info className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                  <span>
+                    <strong>DNCRP Tip:</strong> Receipts or product price tags make it easy for mobile court magistrates to issue instant fines to dishonest sellers.
+                  </span>
+                </div>
+              )}
             </div>
           )}
 
@@ -1559,13 +1629,18 @@ export const CitizenDashboard: React.FC = () => {
                   <p className="text-slate-300 text-xs mt-1 leading-relaxed">{complaintDesc}</p>
                 </div>
 
-                {complaintEvidenceList.length > 0 && (
+                {complaintEvidenceList.length > 0 ? (
                   <div className="pt-2 border-t border-slate-900">
                     <EvidenceViewer
                       evidence={complaintEvidenceList}
                       title="Attached Violation Evidence (Receipts & Labels)"
                       accentColor="amber"
                     />
+                  </div>
+                ) : (
+                  <div className="p-3 rounded-xl bg-slate-900/50 border border-slate-800 text-[11px] text-slate-500 italic flex items-center justify-between">
+                    <span>No receipts or photos attached to this dispute.</span>
+                    <span className="text-[10px] text-slate-400 not-italic font-mono">Written Grievance</span>
                   </div>
                 )}
               </div>
