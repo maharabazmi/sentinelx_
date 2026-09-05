@@ -30,7 +30,8 @@ import {
   DollarSign,
   Info,
   Calendar,
-  MessageSquare
+  MessageSquare,
+  Award
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { ApiClient } from '../../services/api';
@@ -770,21 +771,22 @@ export const CitizenDashboard: React.FC = () => {
         <div className="max-w-3xl mx-auto bg-slate-900/95 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl animate-in fade-in duration-200">
           {/* Header */}
           <div className="border-b border-slate-800 pb-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <span className="text-[11px] font-mono uppercase tracking-widest font-bold text-emerald-400">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <span className="text-[11px] font-mono uppercase tracking-widest font-bold text-emerald-400 block">
                   Official Police Gateway
                 </span>
-                <h2 className="text-xl sm:text-2xl font-bold text-white font-display">
+                <h2 className="text-xl sm:text-2xl font-bold text-white font-display mt-0.5">
                   Lodge Authenticated Crime Report
                 </h2>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-slate-400 mt-1 leading-relaxed">
                   Registered under Bangladesh Police Central Case Registry with digital chain-of-custody.
                 </p>
               </div>
 
-              <div className="hidden sm:block">
-                <span className="px-3 py-1 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-mono font-bold">
+              <div className="hidden sm:block shrink-0 pt-0.5">
+                <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-mono font-bold whitespace-nowrap shadow-sm shadow-emerald-500/10">
+                  <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
                   NID {user?.nidNumber?.slice(-4) ? `•••${user.nidNumber.slice(-4)}` : 'Verified'}
                 </span>
               </div>
@@ -1179,21 +1181,28 @@ export const CitizenDashboard: React.FC = () => {
         <div className="max-w-3xl mx-auto bg-slate-900/95 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl animate-in fade-in duration-200">
           {/* Header */}
           <div className="border-b border-slate-800 pb-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <span className="text-[11px] font-mono uppercase tracking-widest font-bold text-amber-400">
-                  DNCRP Consumer Protection Act 2009
-                </span>
-                <h2 className="text-xl sm:text-2xl font-bold text-white font-display">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-mono uppercase tracking-widest font-bold text-amber-400">
+                    DNCRP Consumer Protection Act 2009
+                  </span>
+                  <span className="sm:hidden inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[10px] font-mono font-bold whitespace-nowrap">
+                    <Award className="w-3 h-3 text-amber-400" />
+                    25% Reward
+                  </span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold text-white font-display mt-0.5">
                   Lodge Consumer Rights Dispute
                 </h2>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-slate-400 mt-1 leading-relaxed">
                   Report illegal overcharging, expired goods, or fake products. Under law, citizens receive 25% of realized fines.
                 </p>
               </div>
 
-              <div className="hidden sm:block">
-                <span className="px-3 py-1 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-mono font-bold">
+              <div className="hidden sm:block shrink-0 pt-0.5">
+                <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-mono font-bold whitespace-nowrap shadow-sm shadow-amber-500/10">
+                  <Award className="w-3.5 h-3.5 text-amber-400" />
                   25% Reward Eligible
                 </span>
               </div>
