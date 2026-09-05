@@ -199,8 +199,9 @@ export class ApiClient {
     return this.request(`/police/emergency-alerts/${id}/toggle-active`, { method: 'POST' });
   }
 
-  static async getPoliceSOSList(): Promise<{ success: boolean; sosRequests: SOSRequest[] }> {
-    return this.request('/police/sos');
+  static async getPoliceSOSList(params?: { scope?: string }): Promise<{ success: boolean; sosRequests: SOSRequest[] }> {
+    const query = params?.scope ? `?scope=${encodeURIComponent(params.scope)}` : '';
+    return this.request(`/police/sos${query}`);
   }
 
   static async respondToSOS(id: string, data: { status: string; assignedUnit?: string; notes?: string }): Promise<{ success: boolean; sos: SOSRequest }> {

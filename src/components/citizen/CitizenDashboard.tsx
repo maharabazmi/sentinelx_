@@ -149,6 +149,7 @@ export const CitizenDashboard: React.FC = () => {
   const [showSOSConfirmModal, setShowSOSConfirmModal] = useState(false);
   const [sosLocationName, setSosLocationName] = useState('Dhanmondi Lake Bridge, Dhaka');
   const [isTriggeringSOS, setIsTriggeringSOS] = useState(false);
+  const [isResolvingSOS, setIsResolvingSOS] = useState(false);
 
   // ----------------------------------------------------
   // BARCODE SCANNER STATE
@@ -373,12 +374,21 @@ export const CitizenDashboard: React.FC = () => {
   };
 
   const handleResolveSOS = async () => {
+    if (isResolvingSOS) return;
+    setIsResolvingSOS(true);
+    const targetSosId = activeSOS?.id;
+    // Optimistically clear the local SOS view
+    setActiveSOS(null);
     try {
-      await ApiClient.resolveActiveSOS(activeSOS?.id);
-      setActiveSOS(null);
-      fetchData();
+      await ApiClient.resolveActiveSOS(targetSosId);
+      await fetchData();
     } catch (err: any) {
-      alert(err.message || 'Failed to resolve active SOS.');
+      console.error('Failed to resolve active SOS:', err);
+      alert(err.message || 'Failed to stand down SOS beacon.');
+      // Refresh to restore accurate backend state if call failed
+      fetchData();
+    } finally {
+      setIsResolvingSOS(false);
     }
   };
 
@@ -466,13 +476,25 @@ export const CitizenDashboard: React.FC = () => {
               </div>
             </div>
 
-            <button
-              onClick={() => setActiveTab('sos')}
-              className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-red-600/30 font-display whitespace-nowrap"
-            >
-              <span>View Response Details</span>
-              <ChevronRight className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+              <button
+                type="button"
+                onClick={handleResolveSOS}
+                disabled={isResolvingSOS}
+                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-emerald-600/30 whitespace-nowrap"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>{isResolvingSOS ? 'Resolving...' : 'I am Safe / Stand Down'}</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('sos')}
+                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-red-600/30 font-display whitespace-nowrap"
+              >
+                <span>View Response Details</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
 
@@ -1830,10 +1852,11 @@ export const CitizenDashboard: React.FC = () => {
                     <button
                       type="button"
                       onClick={handleResolveSOS}
-                      className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-lg shadow-emerald-600/30"
+                      disabled={isResolvingSOS}
+                      className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-lg shadow-emerald-600/30"
                     >
                       <CheckCircle2 className="w-4 h-4" />
-                      <span>Stand Down Beacon / I am Safe</span>
+                      <span>{isResolvingSOS ? 'Resolving...' : 'Stand Down Beacon / I am Safe'}</span>
                     </button>
                   </div>
                 </div>

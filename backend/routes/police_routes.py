@@ -624,6 +624,7 @@ def toggle_alert_active(alert_id):
 @police_bp.route("/sos", methods=["GET"])
 def get_police_sos_list():
     user = g.user
+    scope = request.args.get("scope", "all")  # Default to 'all' so Radar can display both 'My Station' and 'All Stations' tabs
     with get_db() as db:
         all_sos = db.query(SOSRequest).order_by(SOSRequest.createdAt.desc()).all()
         # Self-heal any legacy or misassigned SOS records
@@ -637,7 +638,7 @@ def get_police_sos_list():
         if updated_any:
             db.commit()
 
-        if user.role == "POLICE":
+        if user.role == "POLICE" and scope == "station":
             filtered_sos = [
                 s for s in all_sos
                 if JurisdictionService.is_sos_in_police_jurisdiction(user.stationOrThana, s, db)
