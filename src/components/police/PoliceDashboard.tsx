@@ -83,8 +83,8 @@ export const PoliceDashboard: React.FC = () => {
   const [assignedOfficer, setAssignedOfficer] = useState('Sub-Inspector Faruq Ahmed (Badge DMP-4412)');
   const [isProcessingAction, setIsProcessingAction] = useState(false);
 
-  // Queue Scope & Assignment State
-  const [reportQueueScope, setReportQueueScope] = useState<'station_unassigned' | 'my_cases' | 'all_station' | 'all_national'>('all_station');
+  // Queue Scope & Assignment State (Strictly Station Bound)
+  const [reportQueueScope, setReportQueueScope] = useState<'station_unassigned' | 'my_cases' | 'all_station'>('all_station');
   const [stationOfficers, setStationOfficers] = useState<any[]>([]);
   const [selectedAssigneeId, setSelectedAssigneeId] = useState<string>('');
   const [claimActionLoadingId, setClaimActionLoadingId] = useState<string | null>(null);
@@ -105,7 +105,6 @@ export const PoliceDashboard: React.FC = () => {
       let backendScope = 'station';
       if (scope === 'my_cases') backendScope = 'my_cases';
       else if (scope === 'station_unassigned') backendScope = 'unassigned';
-      else if (scope === 'all_national') backendScope = 'all';
 
       const [sumRes, repRes, heatRes, alertRes, sosRes, offRes] = await Promise.all([
         ApiClient.getPoliceSummary(),
@@ -150,7 +149,7 @@ export const PoliceDashboard: React.FC = () => {
       if (found) {
         setSelectedReport(found);
       } else {
-        ApiClient.getPoliceCrimeReports({ scope: 'all' }).then(res => {
+        ApiClient.getPoliceCrimeReports({ scope: 'station' }).then(res => {
           if (res.success) {
             const target = res.reports.find(r => (relatedId && r.id === relatedId) || (caseId && r.caseId === caseId));
             if (target) setSelectedReport(target);
@@ -163,7 +162,7 @@ export const PoliceDashboard: React.FC = () => {
     return () => window.removeEventListener('open_case_report', handleOpenCase);
   }, [reports]);
 
-  const handleScopeChange = (newScope: 'station_unassigned' | 'my_cases' | 'all_station' | 'all_national') => {
+  const handleScopeChange = (newScope: 'station_unassigned' | 'my_cases' | 'all_station') => {
     setReportQueueScope(newScope);
     fetchPoliceData(newScope);
   };
@@ -312,10 +311,8 @@ export const PoliceDashboard: React.FC = () => {
       statusFilter === 'ALL' ||
       r.status === statusFilter ||
       (statusFilter === ReportStatus.SUBMITTED && (r.status === ReportStatus.SUBMITTED || r.status === ReportStatus.OFFICER_ASSIGNED));
-    const matchesDistrict = selectedDistrict === 'ALL' || r.district.toLowerCase() === selectedDistrict.toLowerCase();
-    const matchesThana = selectedThana === 'ALL' || r.thana.toLowerCase() === selectedThana.toLowerCase();
     const matchesCrime = selectedCrimeType === 'ALL' || r.crimeType === selectedCrimeType;
-    return matchesSearch && matchesStatus && matchesDistrict && matchesThana && matchesCrime;
+    return matchesSearch && matchesStatus && matchesCrime;
   });
 
   // Resolve Coverage Police Station dynamically
@@ -591,18 +588,6 @@ export const PoliceDashboard: React.FC = () => {
                   </span>
                 )}
               </button>
-
-              <button
-                type="button"
-                onClick={() => handleScopeChange('all_national')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                  reportQueueScope === 'all_national'
-                    ? 'bg-slate-800 text-white border border-slate-700 shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-                }`}
-              >
-                National Registry
-              </button>
             </div>
           </div>
 
@@ -614,12 +599,23 @@ export const PoliceDashboard: React.FC = () => {
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search by Case ID or landmark..."
+                placeholder="Search station cases..."
                 className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500"
               />
             </div>
 
             <div className="flex items-center gap-2 flex-wrap w-full md:w-auto">
+              {/* Jurisdiction Locking Indicator */}
+              <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 font-mono text-xs">
+                <MapPin className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                <span className="truncate max-w-[220px] sm:max-w-none">
+                  Station: <strong className="text-white">{user?.stationOrThana || 'Local Thana'}</strong>
+                </span>
+                <span className="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 text-[10px] font-semibold uppercase">
+                  Jurisdiction Locked
+                </span>
+              </div>
+
               <select
                 value={statusFilter}
                 onChange={e => setStatusFilter(e.target.value)}
@@ -633,41 +629,6 @@ export const PoliceDashboard: React.FC = () => {
                 <option value={ReportStatus.CASE_CLOSED}>Case Closed</option>
                 <option value={ReportStatus.REJECTED}>Rejected</option>
               </select>
-
-              <select
-                value={selectedDistrict}
-                onChange={e => {
-                  setSelectedDistrict(e.target.value);
-                  setSelectedThana('ALL');
-                }}
-                className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-blue-500"
-              >
-                <option value="ALL">All Districts</option>
-                {BANGLADESH_DIVISIONS.map(div => (
-                  <optgroup key={div.id} label={`${div.name} Division`}>
-                    {div.districts.map(dist => (
-                      <option key={dist.id} value={dist.name}>
-                        {dist.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-
-              {selectedDistrict !== 'ALL' && (
-                <select
-                  value={selectedThana}
-                  onChange={e => setSelectedThana(e.target.value)}
-                  className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-blue-500"
-                >
-                  <option value="ALL">All Thanas ({selectedDistrict})</option>
-                  {getThanasByDistrict(selectedDistrict).map(t => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-              )}
 
               <select
                 value={selectedCrimeType}
@@ -684,13 +645,11 @@ export const PoliceDashboard: React.FC = () => {
                 <option value={CrimeType.EXTORTION}>Extortion / Chandabaji</option>
               </select>
 
-              {(statusFilter !== 'ALL' || selectedDistrict !== 'ALL' || selectedThana !== 'ALL' || selectedCrimeType !== 'ALL' || searchQuery) && (
+              {(statusFilter !== 'ALL' || selectedCrimeType !== 'ALL' || searchQuery) && (
                 <button
                   type="button"
                   onClick={() => {
                     setStatusFilter('ALL');
-                    setSelectedDistrict('ALL');
-                    setSelectedThana('ALL');
                     setSelectedCrimeType('ALL');
                     setSearchQuery('');
                   }}
@@ -731,31 +690,28 @@ export const PoliceDashboard: React.FC = () => {
                           <p className="text-sm font-semibold text-slate-200">
                             No crime reports match current filter criteria.
                           </p>
-                          {(statusFilter !== 'ALL' || selectedDistrict !== 'ALL' || selectedThana !== 'ALL' || selectedCrimeType !== 'ALL' || searchQuery) ? (
+                          {(statusFilter !== 'ALL' || selectedCrimeType !== 'ALL' || searchQuery) ? (
                             <div className="space-y-2 pt-1 text-xs">
                               <p className="text-slate-500">
                                 Active filters are hiding cases. Filtered by:{' '}
                                 {selectedCrimeType !== 'ALL' && <span className="text-amber-400">[{selectedCrimeType}] </span>}
                                 {statusFilter !== 'ALL' && <span className="text-amber-400">[{statusFilter}] </span>}
-                                {selectedDistrict !== 'ALL' && <span className="text-amber-400">[{selectedDistrict}] </span>}
                               </p>
                               <button
                                 type="button"
                                 onClick={() => {
                                   setStatusFilter('ALL');
-                                  setSelectedDistrict('ALL');
-                                  setSelectedThana('ALL');
                                   setSelectedCrimeType('ALL');
                                   setSearchQuery('');
                                 }}
                                 className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition shadow-md shadow-blue-600/20"
                               >
-                                Clear Filters ({reports.length} Total Cases)
+                                Clear Filters ({reports.length} Station Cases)
                               </button>
                             </div>
                           ) : (
                             <p className="text-xs text-slate-500">
-                              No reports lodged in this jurisdiction yet.
+                              No reports lodged in {user?.stationOrThana || 'this station jurisdiction'} yet.
                             </p>
                           )}
                         </div>
