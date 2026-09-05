@@ -1808,14 +1808,12 @@ export const CitizenDashboard: React.FC = () => {
                       </strong>
                     </div>
 
-                    {activeSOS.assignedStation && (
-                      <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
-                        <span className="text-slate-400 text-[11px] block">Covering Station Jurisdiction:</span>
-                        <strong className="text-amber-300 mt-0.5 block font-semibold">
-                          {activeSOS.assignedStation}
-                        </strong>
-                      </div>
-                    )}
+                    <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+                      <span className="text-slate-400 text-[11px] block">Covering Station Jurisdiction:</span>
+                      <strong className="text-amber-300 mt-0.5 block font-semibold">
+                        {activeSOS.assignedStation || (activeSOS.locationName?.toLowerCase().includes('dhanmondi') ? 'Dhanmondi Police Station, Dhaka' : (activeSOS.locationName?.toLowerCase().includes('gulshan') ? 'Gulshan Police Station, Dhaka' : (activeSOS.locationName?.toLowerCase().includes('uttara') ? 'Uttara Police Station, Dhaka' : 'Dhaka Metropolitan Police')))}
+                      </strong>
+                    </div>
                   </div>
 
                   {activeSOS.notes && (

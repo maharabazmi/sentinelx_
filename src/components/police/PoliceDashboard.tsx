@@ -311,6 +311,46 @@ export const PoliceDashboard: React.FC = () => {
     return matchesSearch && matchesStatus && matchesDistrict && matchesThana && matchesCrime;
   });
 
+  // Resolve Coverage Police Station dynamically
+  const getSOSStation = (sos: SOSRequest): string => {
+    if (sos.assignedStation && sos.assignedStation.trim()) {
+      return sos.assignedStation;
+    }
+    const loc = (sos.locationName || '').toLowerCase();
+    if (loc.includes('dhanmondi')) return 'Dhanmondi Police Station, Dhaka';
+    if (loc.includes('gulshan')) return 'Gulshan Police Station, Dhaka';
+    if (loc.includes('uttara')) return 'Uttara Police Station, Dhaka';
+    if (loc.includes('banani')) return 'Banani Police Station, Dhaka';
+    if (loc.includes('mirpur')) return 'Mirpur Police Station, Dhaka';
+    if (loc.includes('mohammadpur')) return 'Mohammadpur Police Station, Dhaka';
+    if (loc.includes('tejgaon')) return 'Tejgaon Police Station, Dhaka';
+    if (loc.includes('motijheel')) return 'Motijheel Police Station, Dhaka';
+    if (loc.includes('agrabad') || loc.includes('kotwali')) return 'Agrabad / Kotwali, Chattogram';
+    return user?.stationOrThana || 'Dhaka Metropolitan Police';
+  };
+
+  // Determine if an SOS beacon belongs to the logged-in police officer's station
+  const isSOSInOfficerStation = (sos: SOSRequest): boolean => {
+    if (!user?.stationOrThana) return true;
+    const offClean = user.stationOrThana.toLowerCase();
+    if (offClean.includes('central command') || offClean.includes('headquarters') || offClean.includes('hq') || offClean.includes('admin')) {
+      return true;
+    }
+
+    const sosStation = getSOSStation(sos).toLowerCase();
+    const extractThana = (str: string) => {
+      return str.split(',')[0].replace(/(police\s*station|model\s*thana|thana|division|district)/gi, '').trim().toLowerCase();
+    };
+
+    const offKw = extractThana(user.stationOrThana);
+    const sosKw = extractThana(sosStation);
+
+    if (offKw && sosKw) {
+      return offKw === sosKw || offKw.includes(sosKw) || sosKw.includes(offKw);
+    }
+    return false;
+  };
+
   return (
     <div className="w-full max-w-7xl mx-auto px-4 py-8 space-y-8 text-slate-100">
       {/* COMMAND CONTROL IDENTITY HEADER */}
@@ -838,80 +878,83 @@ export const PoliceDashboard: React.FC = () => {
             </button>
           </div>
 
-          {sosRequests.length === 0 ? (
-            <EmptyState
-              icon={Radio}
-              title="Radar Clear: No Active Distress Beacons"
-              description={`No citizen emergency distress signals are currently active within ${user?.stationOrThana || 'this station'} coverage jurisdiction.`}
-            />
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {sosRequests.map(sos => (
-                <div
-                  key={sos.id}
-                  className={`p-6 rounded-3xl border shadow-xl space-y-4 ${
-                    sos.status !== SOSStatus.RESOLVED
-                      ? 'bg-red-950/30 border-red-500/40 ring-1 ring-red-500/20'
-                      : 'bg-slate-900 border-slate-800'
-                  }`}
-                >
-                  <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                    <div>
-                      <span className="font-mono text-xs text-slate-400 block">Distress ID:</span>
-                      <h3 className="font-mono font-bold text-white text-sm">{sos.id}</h3>
-                    </div>
-                    <StatusBadge status={sos.status} size="sm" />
-                  </div>
-
-                  <div className="space-y-2 text-xs">
-                    <div className="flex items-center gap-2 text-slate-200">
-                      <MapPin className="w-4 h-4 text-red-400 flex-shrink-0" />
-                      <span className="font-bold">{sos.locationName}</span>
+          {(() => {
+            const stationScopedSOS = sosRequests.filter(isSOSInOfficerStation);
+            return stationScopedSOS.length === 0 ? (
+              <EmptyState
+                icon={Radio}
+                title="Radar Clear: No Active Distress Beacons"
+                description={`No citizen emergency distress signals are currently active within ${user?.stationOrThana || 'this station'} coverage jurisdiction.`}
+              />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {stationScopedSOS.map(sos => (
+                  <div
+                    key={sos.id}
+                    className={`p-6 rounded-3xl border shadow-xl space-y-4 ${
+                      sos.status !== SOSStatus.RESOLVED
+                        ? 'bg-red-950/30 border-red-500/40 ring-1 ring-red-500/20'
+                        : 'bg-slate-900 border-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                      <div>
+                        <span className="font-mono text-xs text-slate-400 block">Distress ID:</span>
+                        <h3 className="font-mono font-bold text-white text-sm">{sos.id}</h3>
+                      </div>
+                      <StatusBadge status={sos.status} size="sm" />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 text-slate-400 font-mono text-[11px] pt-1">
-                      <span>Lat: {sos.latitude.toFixed(4)}</span>
-                      <span>Lng: {sos.longitude.toFixed(4)}</span>
-                      <span>Time: {new Date(sos.createdAt).toLocaleTimeString()}</span>
-                      <span className="text-blue-300 font-bold">{sos.assignedUnit || 'Unassigned'}</span>
+                    <div className="space-y-2 text-xs">
+                      <div className="flex items-center gap-2 text-slate-200">
+                        <MapPin className="w-4 h-4 text-red-400 flex-shrink-0" />
+                        <span className="font-bold">{sos.locationName}</span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-slate-400 font-mono text-[11px] pt-1">
+                        <span>Lat: {sos.latitude.toFixed(4)}</span>
+                        <span>Lng: {sos.longitude.toFixed(4)}</span>
+                        <span>Time: {new Date(sos.createdAt).toLocaleTimeString()}</span>
+                        <span className="text-blue-300 font-bold">{sos.assignedUnit || 'Unassigned'}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-[11px] font-mono">
+                        <span className="text-slate-400 flex items-center gap-1">
+                          <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+                          <span>Coverage Station:</span>
+                        </span>
+                        <span className="text-amber-300 font-bold">{getSOSStation(sos)}</span>
+                      </div>
+
+                      {sos.notes && (
+                        <p className="text-[11px] text-slate-300 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+                          {sos.notes}
+                        </p>
+                      )}
                     </div>
 
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-[11px] font-mono">
-                      <span className="text-slate-400 flex items-center gap-1">
-                        <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
-                        <span>Coverage Station:</span>
-                      </span>
-                      <span className="text-amber-300 font-bold">{sos.assignedStation || 'Pending Station Routing'}</span>
-                    </div>
+                    {sos.status !== SOSStatus.RESOLVED && (
+                      <div className="pt-2 border-t border-slate-800 flex items-center gap-2">
+                        <button
+                          onClick={() => handleRespondToSOS(sos.id, SOSStatus.RESPONDING, 'Mobile Patrol Unit 04')}
+                          className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition"
+                        >
+                          Dispatch Patrol Unit 04
+                        </button>
 
-                    {sos.notes && (
-                      <p className="text-[11px] text-slate-300 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
-                        {sos.notes}
-                      </p>
+                        <button
+                          onClick={() => handleRespondToSOS(sos.id, SOSStatus.RESOLVED, 'Officer On Scene')}
+                          className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition"
+                        >
+                          Mark Resolved
+                        </button>
+                      </div>
                     )}
                   </div>
-
-                  {sos.status !== SOSStatus.RESOLVED && (
-                    <div className="pt-2 border-t border-slate-800 flex items-center gap-2">
-                      <button
-                        onClick={() => handleRespondToSOS(sos.id, SOSStatus.RESPONDING, 'Mobile Patrol Unit 04')}
-                        className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition"
-                      >
-                        Dispatch Patrol Unit 04
-                      </button>
-
-                      <button
-                        onClick={() => handleRespondToSOS(sos.id, SOSStatus.RESOLVED, 'Officer On Scene')}
-                        className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition"
-                      >
-                        Mark Resolved
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            );
+          })()}
         </div>
       )}
 

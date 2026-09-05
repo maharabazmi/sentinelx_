@@ -203,6 +203,26 @@ class SOSRequest(Base):
     notes = Column(Text, nullable=True)
 
     def to_dict(self):
+        station = self.assignedStation
+        if not station and self.locationName:
+            loc = self.locationName.lower()
+            if "dhanmondi" in loc:
+                station = "Dhanmondi Police Station, Dhaka"
+            elif "gulshan" in loc:
+                station = "Gulshan Police Station, Dhaka"
+            elif "uttara" in loc:
+                station = "Uttara Police Station, Dhaka"
+            elif "mirpur" in loc:
+                station = "Mirpur Police Station, Dhaka"
+            elif "banani" in loc:
+                station = "Banani Police Station, Dhaka"
+            elif "mohammadpur" in loc:
+                station = "Mohammadpur Police Station, Dhaka"
+            elif "agrabad" in loc or "kotwali" in loc:
+                station = "Agrabad / Kotwali, Chattogram"
+            else:
+                station = "Central Command HQ, Dhaka"
+
         return {
             "id": self.id,
             "citizenId": self.citizenId,
@@ -215,8 +235,8 @@ class SOSRequest(Base):
             "status": self.status,
             "createdAt": self.createdAt,
             "respondedAt": self.respondedAt,
-            "assignedStation": self.assignedStation,
-            "assignedUnit": self.assignedUnit,
+            "assignedStation": station,
+            "assignedUnit": self.assignedUnit or "Patrol Unit Dispatched",
             "notes": self.notes,
         }
 
