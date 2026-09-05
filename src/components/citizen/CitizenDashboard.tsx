@@ -369,6 +369,16 @@ export const CitizenDashboard: React.FC = () => {
     }
   };
 
+  const handleResolveSOS = async () => {
+    try {
+      await ApiClient.resolveActiveSOS(activeSOS?.id);
+      setActiveSOS(null);
+      fetchData();
+    } catch (err: any) {
+      alert(err.message || 'Failed to resolve active SOS.');
+    }
+  };
+
   // ----------------------------------------------------
   // BARCODE SCANNER ACTION
   // ----------------------------------------------------
@@ -1797,6 +1807,15 @@ export const CitizenDashboard: React.FC = () => {
                         {activeSOS.assignedUnit || 'Patrol Unit Dispatched'}
                       </strong>
                     </div>
+
+                    {activeSOS.assignedStation && (
+                      <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+                        <span className="text-slate-400 text-[11px] block">Covering Station Jurisdiction:</span>
+                        <strong className="text-amber-300 mt-0.5 block font-semibold">
+                          {activeSOS.assignedStation}
+                        </strong>
+                      </div>
+                    )}
                   </div>
 
                   {activeSOS.notes && (
@@ -1805,6 +1824,17 @@ export const CitizenDashboard: React.FC = () => {
                       <p className="text-slate-200 mt-1">{activeSOS.notes}</p>
                     </div>
                   )}
+
+                  <div className="pt-2 flex items-center justify-end">
+                    <button
+                      type="button"
+                      onClick={handleResolveSOS}
+                      className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-lg shadow-emerald-600/30"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Stand Down Beacon / I am Safe</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Emergency Instructions */}

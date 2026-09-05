@@ -340,6 +340,42 @@ def get_active_sos():
             "activeSOS": active_sos.to_dict() if active_sos else None
         })
 
+@citizen_bp.route("/sos/resolve", methods=["POST"])
+def resolve_active_sos():
+    user = g.user
+    data = request.get_json() or {}
+    sos_id = data.get("sosId")
+
+    with get_db() as db:
+        query = db.query(SOSRequest).filter(SOSRequest.citizenId == user.id, SOSRequest.status != "RESOLVED")
+        if sos_id:
+            query = query.filter(SOSRequest.id == sos_id)
+        active_sos = query.first()
+
+        if not active_sos:
+            return jsonify({"success": True, "message": "No active SOS beacon found."})
+
+        active_sos.status = "RESOLVED"
+        active_sos.notes = (active_sos.notes or "") + " [Resolved/Stood Down by Citizen]"
+        db.commit()
+
+        AuditService.log(
+            user_id=user.id,
+            user_name=user.fullName,
+            user_role=user.role,
+            action="EMERGENCY_SOS_RESOLVED_BY_CITIZEN",
+            resource="SOS_DISPATCH",
+            resource_id=active_sos.id,
+            ip_address=request.remote_addr,
+            status="SUCCESS",
+            details="Citizen marked their active emergency SOS as safe / resolved.",
+        )
+
+        return jsonify({
+            "success": True,
+            "message": "Emergency SOS beacon resolved. You are marked safe."
+        })
+
 # 7. Get Active Emergency Alerts for Citizens
 @citizen_bp.route("/emergency-alerts", methods=["GET"])
 def get_citizen_emergency_alerts():

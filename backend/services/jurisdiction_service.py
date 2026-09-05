@@ -221,7 +221,7 @@ class JurisdictionService:
 
         loc_clean = (location_name or "").lower()
 
-        # 1. Match against registered stations in DB via text
+        # 1. Match against registered stations in DB via text keyword
         for st in registered_stations:
             kw = extract_thana_keyword(st).lower()
             parts = [p.strip() for p in re.split(r"[/,]", kw) if p.strip()]
@@ -229,19 +229,15 @@ class JurisdictionService:
                 if part and len(part) >= 3 and part in loc_clean:
                     return st
 
-        # 2. Check if location_name mentions any known Bangladesh thana and map to closest registered station
+        # 2. Check if location_name mentions any known Bangladesh thana (e.g., 'dhanmondi', 'mirpur', 'uttara')
         for thana_key, thana_coords in KNOWN_STATION_COORDINATES.items():
             if thana_key in loc_clean:
-                best_st = min(
-                    registered_stations,
-                    key=lambda s: haversine_distance_km(
-                        thana_coords[0],
-                        thana_coords[1],
-                        cls.get_station_center_coordinates(s)[0] if cls.get_station_center_coordinates(s) else 23.8103,
-                        cls.get_station_center_coordinates(s)[1] if cls.get_station_center_coordinates(s) else 90.4125,
-                    )
-                )
-                return best_st
+                # Check if any registered station matches this thana
+                for st in registered_stations:
+                    if thana_key in st.lower():
+                        return st
+                # If no officer currently registered for this thana, assign to that thana's station
+                return f"{thana_key.capitalize()} Police Station, Dhaka"
 
         # 3. GPS Proximity matching to registered police stations
         if latitude and longitude and (abs(latitude) > 0.01 or abs(longitude) > 0.01):
