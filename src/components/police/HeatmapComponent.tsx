@@ -18,6 +18,7 @@ import {
 import { CrimeType, CrimeSeverity, AIForecastZone, HotspotAnomaly } from '../../types';
 import { ApiClient } from '../../services/api';
 import { getCoordinatesForLocation } from '../../data/bangladeshGeo';
+import { ALL_64_DISTRICTS } from '../../data/bangladeshCoordinates';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -59,6 +60,17 @@ const DISTRICT_CENTERS: Record<string, { lat: number; lng: number; zoom: number 
   Barishal: { lat: 22.7010, lng: 90.3535, zoom: 12 },
   Mymensingh: { lat: 24.7471, lng: 90.4203, zoom: 12 },
   Rangpur: { lat: 25.7439, lng: 89.2752, zoom: 12 }
+};
+
+const getDistrictCenter = (district: string): { lat: number; lng: number; zoom: number } => {
+  if (DISTRICT_CENTERS[district]) {
+    return DISTRICT_CENTERS[district];
+  }
+  const clean = (district || '').toLowerCase().trim();
+  if (ALL_64_DISTRICTS[clean]) {
+    return { lat: ALL_64_DISTRICTS[clean].lat, lng: ALL_64_DISTRICTS[clean].lng, zoom: 12 };
+  }
+  return DISTRICT_CENTERS['ALL'];
 };
 
 export const HeatmapComponent: React.FC<HeatmapProps> = ({
@@ -179,7 +191,7 @@ export const HeatmapComponent: React.FC<HeatmapProps> = ({
       mapInstanceRef.current = null;
     }
 
-    const center = DISTRICT_CENTERS[selectedDistrict] || DISTRICT_CENTERS['ALL'];
+    const center = getDistrictCenter(selectedDistrict);
     const map = L.map(mapContainerRef.current, {
       center: [center.lat, center.lng],
       zoom: center.zoom,
@@ -262,7 +274,7 @@ export const HeatmapComponent: React.FC<HeatmapProps> = ({
       isAnomalyZoomRef.current = false;
       return;
     }
-    const center = DISTRICT_CENTERS[selectedDistrict] || DISTRICT_CENTERS['ALL'];
+    const center = getDistrictCenter(selectedDistrict);
     mapInstanceRef.current.setView([center.lat, center.lng], center.zoom, { animate: true });
   }, [selectedDistrict]);
 
