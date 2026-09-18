@@ -1,4 +1,23 @@
-import { User, UserRole, CrimeReport, ConsumerComplaint, EmergencyAlert, SOSRequest, NIDVerificationResult, AIPredictionData, AuditLog, NotificationItem, ShopReputation, BarcodeVerification, CaseMessage } from '../types';
+import {
+  User,
+  UserRole,
+  CrimeReport,
+  ConsumerComplaint,
+  EmergencyAlert,
+  SOSRequest,
+  NIDVerificationResult,
+  AIPredictionData,
+  AuditLog,
+  NotificationItem,
+  ShopReputation,
+  BarcodeVerification,
+  CaseMessage,
+  OperationalDirective,
+  ComparativeRiskRank,
+  ResourceAllocationAdvice,
+  HotspotAnomaly,
+  AIForecastZone
+} from '../types';
 
 const API_BASE = '/api';
 
@@ -180,8 +199,28 @@ export class ApiClient {
     return this.request(`/police/officers${query}`);
   }
 
-  static async getPoliceCrimeHeatmap(): Promise<{ success: boolean; totalVerifiedIncidents: number; incidents: any[] }> {
+  static async getPoliceCrimeHeatmap(): Promise<{
+    success: boolean;
+    totalVerifiedIncidents: number;
+    incidents: any[];
+    aiForecastZones: AIForecastZone[];
+    hotspotAnomalies: HotspotAnomaly[];
+  }> {
     return this.request('/police/heatmap');
+  }
+
+  static async takePoliceHeatmapAction(data: {
+    actionType: 'DISPATCH_PATROL' | 'SET_CHECKPOST' | 'ACKNOWLEDGE_DIRECTIVE';
+    directiveId?: string;
+    locationName?: string;
+    latitude?: number;
+    longitude?: number;
+    notes?: string;
+  }): Promise<{ success: boolean; message: string; directive?: OperationalDirective; dispatchReference?: string; checkpostReference?: string }> {
+    return this.request('/police/heatmap/action', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
   }
 
   static async getPoliceEmergencyAlerts(): Promise<{ success: boolean; alerts: EmergencyAlert[] }> {
@@ -266,9 +305,39 @@ export class ApiClient {
     });
   }
 
-  static async getAdminAIPredictions(district?: string, thana?: string): Promise<{ success: boolean; disclaimer: string; predictions: AIPredictionData[] }> {
+  static async getAdminAIPredictions(district?: string, thana?: string): Promise<{
+    success: boolean;
+    disclaimer: string;
+    predictions: AIPredictionData[];
+    riskMatrix: ComparativeRiskRank[];
+    resourceAllocations: ResourceAllocationAdvice[];
+    directives: OperationalDirective[];
+  }> {
     const query = district ? `?district=${encodeURIComponent(district)}${thana ? `&thana=${encodeURIComponent(thana)}` : ''}` : '';
     return this.request(`/admin/ai-predictions${query}`);
+  }
+
+  static async issueAdminDirective(data: {
+    targetDistrict: string;
+    targetThana: string;
+    predictedRiskLevel?: string;
+    threatLevel?: string;
+    primaryRiskCrimeType?: string;
+    timeWindow?: string;
+    recommendedAction?: string;
+    patrolStrategy?: string;
+    recommendedUnits?: number;
+    latitude?: number;
+    longitude?: number;
+  }): Promise<{ success: boolean; message: string; directive: OperationalDirective }> {
+    return this.request('/admin/ai-predictions/directives', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  static async getAdminDirectives(): Promise<{ success: boolean; directives: OperationalDirective[] }> {
+    return this.request('/admin/ai-predictions/directives');
   }
 
   static async generateAIScenario(data: any): Promise<{ success: boolean; prediction: AIPredictionData }> {

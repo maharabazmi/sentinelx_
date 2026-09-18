@@ -30,7 +30,10 @@ import {
   UserRole,
   AIPredictionData,
   AuditLog,
-  CrimeType
+  CrimeType,
+  ComparativeRiskRank,
+  ResourceAllocationAdvice,
+  OperationalDirective
 } from '../../types';
 import { BANGLADESH_DIVISIONS, getThanasByDistrict } from '../../data/bangladeshGeo';
 import { StatusBadge } from '../ui/StatusBadge';
@@ -45,6 +48,11 @@ export const AdminDashboard: React.FC = () => {
   const [systemStats, setSystemStats] = useState<any>(null);
   const [usersList, setUsersList] = useState<User[]>([]);
   const [predictions, setPredictions] = useState<AIPredictionData[]>([]);
+  const [riskMatrix, setRiskMatrix] = useState<ComparativeRiskRank[]>([]);
+  const [resourceAllocations, setResourceAllocations] = useState<ResourceAllocationAdvice[]>([]);
+  const [directivesList, setDirectivesList] = useState<OperationalDirective[]>([]);
+  const [isIssuingDirective, setIsIssuingDirective] = useState(false);
+  const [directiveSuccessNotice, setDirectiveSuccessNotice] = useState<string | null>(null);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -120,7 +128,12 @@ export const AdminDashboard: React.FC = () => {
 
       if (statsRes.success) setSystemStats(statsRes.stats);
       if (usersRes.success) setUsersList(usersRes.users);
-      if (predRes.success) setPredictions(predRes.predictions);
+      if (predRes.success) {
+        setPredictions(predRes.predictions || []);
+        if ((predRes as any).riskMatrix) setRiskMatrix((predRes as any).riskMatrix);
+        if ((predRes as any).resourceAllocations) setResourceAllocations((predRes as any).resourceAllocations);
+        if ((predRes as any).directives) setDirectivesList((predRes as any).directives);
+      }
       if (logsRes.success) setAuditLogs(logsRes.logs);
     } catch (err) {
       console.error('Error loading admin data:', err);
@@ -132,6 +145,34 @@ export const AdminDashboard: React.FC = () => {
   useEffect(() => {
     fetchAdminData();
   }, []);
+
+  // Issue Operational Command Directive to Station Police
+  const handleIssueDirective = async () => {
+    if (!simResult) return;
+    setIsIssuingDirective(true);
+    try {
+      const res = await ApiClient.issueAdminDirective({
+        targetDistrict: simResult.targetDistrict || (simResult as any).district || simDistrict,
+        targetThana: simResult.targetThana || (simResult as any).thana || simThana,
+        predictedRiskLevel: simResult.predictedRiskLevel,
+        primaryRiskCrimeType: simResult.primaryRiskCrimeType || (simResult as any).crimeType,
+        timeWindow: simResult.timeWindow || '19:00 - 02:00 (Peak Threat Window)',
+        recommendedAction: (simResult as any).recommendedAction || simResult.recommendedPatrolStrategy,
+        recommendedUnits: (simResult as any).recommendedUnits || 2,
+        latitude: (simResult as any).latitude,
+        longitude: (simResult as any).longitude
+      });
+      if (res.success) {
+        setDirectiveSuccessNotice(`✓ Operational Directive ${res.directive.directiveCode} officially dispatched to ${res.directive.targetThana} Police!`);
+        setDirectivesList(prev => [res.directive, ...prev]);
+        setTimeout(() => setDirectiveSuccessNotice(null), 7000);
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to issue directive.');
+    } finally {
+      setIsIssuingDirective(false);
+    }
+  };
 
   // Generate Interactive AI Simulation
   const handleGenerateSimulation = async (e: React.FormEvent) => {
@@ -430,6 +471,13 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </div>
 
+          {directiveSuccessNotice && (
+            <div className="p-3.5 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs flex items-center gap-2.5 animate-in slide-in-from-top">
+              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+              <span className="font-medium">{directiveSuccessNotice}</span>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Interactive Simulation Parameters Form */}
             <div className="lg:col-span-1 p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
@@ -590,9 +638,37 @@ export const AdminDashboard: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 text-xs text-slate-300 space-y-1">
-                    <span className="font-bold text-white font-display block">Recommended Command Action:</span>
-                    <p className="leading-relaxed">{simResult.recommendedAction}</p>
+                  <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 text-xs text-slate-300 space-y-3">
+                    <div>
+                      <span className="font-bold text-white font-display block">Recommended Command Action:</span>
+                      <p className="leading-relaxed mt-0.5">{simResult.recommendedAction}</p>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="text-[11px] text-purple-300">
+                        <span>Recommended Reinforcement: </span>
+                        <strong className="text-white font-mono">{(simResult as any).recommendedUnits || 2} Patrol Units</strong>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleIssueDirective}
+                        disabled={isIssuingDirective}
+                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs transition shadow-lg shadow-purple-600/30 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+                      >
+                        {isIssuingDirective ? (
+                          <>
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                            <span>Transmitting Directive to Station...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Radio className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+                            <span>Issue Operational Command Directive</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -622,6 +698,216 @@ export const AdminDashboard: React.FC = () => {
               )}
             </div>
           </div>
+
+          {/* 1. National Comparative Risk Matrix */}
+          {riskMatrix.length > 0 && (
+            <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                <div>
+                  <h3 className="text-base font-bold text-white font-display flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-purple-400" />
+                    National Comparative Risk Matrix
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Live cross-jurisdictional threat rankings based on spatial-temporal incident velocity.
+                  </p>
+                </div>
+                <span className="text-xs font-mono text-purple-400 font-bold bg-purple-500/10 px-3 py-1 rounded-xl border border-purple-500/20">
+                  {riskMatrix.length} Monitored Sectors
+                </span>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-800 text-slate-400 font-mono text-[11px]">
+                      <th className="py-2.5 px-3">Jurisdiction</th>
+                      <th className="py-2.5 px-3">Risk Level</th>
+                      <th className="py-2.5 px-3">Risk Index</th>
+                      <th className="py-2.5 px-3">Primary Threat</th>
+                      <th className="py-2.5 px-3">7-Day Trend</th>
+                      <th className="py-2.5 px-3">Active Incidents</th>
+                      <th className="py-2.5 px-3">Tactical Recommendation</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60 font-sans">
+                    {riskMatrix.map((item, idx) => (
+                      <tr key={idx} className="hover:bg-slate-800/30 transition">
+                        <td className="py-3 px-3 font-semibold text-white">
+                          {item.thana}, <span className="text-slate-400 font-normal">{item.district}</span>
+                        </td>
+                        <td className="py-3 px-3 font-mono">
+                          <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold border ${
+                            item.riskLevel === 'CRITICAL'
+                              ? 'bg-red-500/20 text-red-300 border-red-500/40'
+                              : item.riskLevel === 'HIGH'
+                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                              : 'bg-blue-500/20 text-blue-300 border-blue-500/40'
+                          }`}>
+                            {item.riskLevel}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 font-mono text-purple-400 font-bold">
+                          {item.riskIndex}%
+                        </td>
+                        <td className="py-3 px-3 text-slate-300">
+                          {item.primaryThreat}
+                        </td>
+                        <td className="py-3 px-3 font-mono">
+                          <span className={`font-bold ${
+                            item.trendDirection === 'UP' ? 'text-red-400' : item.trendDirection === 'DOWN' ? 'text-emerald-400' : 'text-slate-400'
+                          }`}>
+                            {item.sevenDayTrend}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 font-mono text-slate-300">
+                          {item.activeIncidents}
+                        </td>
+                        <td className="py-3 px-3 text-slate-400 max-w-xs truncate" title={item.recommendedAction}>
+                          {item.recommendedAction}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* 2. Resource Reallocation Advisor */}
+          {resourceAllocations.length > 0 && (
+            <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
+              <div className="border-b border-slate-800 pb-3">
+                <h3 className="text-base font-bold text-white font-display flex items-center gap-2">
+                  <Cpu className="w-4 h-4 text-emerald-400" />
+                  Strategic Force Multiplier & Resource Allocation Advisor
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Algorithmic reallocation recommendations: reassign patrol units from low-risk zones to high-risk bottlenecks during peak threat windows.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {resourceAllocations.map(alloc => (
+                  <div key={alloc.id} className="p-5 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between text-[11px] font-mono">
+                      <span className="text-emerald-400 font-bold">{alloc.id}</span>
+                      <span className="text-slate-400">{alloc.timeWindow}</span>
+                    </div>
+
+                    <div className="space-y-1 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500">Source (Low Risk):</span>
+                        <span className="font-semibold text-slate-300">{alloc.sourceStation}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500">Target (Surge Risk):</span>
+                        <span className="font-semibold text-red-400">{alloc.targetStation}</span>
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-purple-950/30 border border-purple-500/30 text-[11px] text-purple-200">
+                      <strong>Recommended Units:</strong> {alloc.recommendedUnits}
+                    </div>
+
+                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                      {alloc.tacticalRationale}
+                    </p>
+
+                    <div className="text-[10px] text-emerald-400 font-mono pt-2 border-t border-slate-800/80">
+                      Impact: {alloc.expectedImpact}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 3. Operational Directives Execution Tracker */}
+          {directivesList.length > 0 && (
+            <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                <div>
+                  <h3 className="text-base font-bold text-white font-display flex items-center gap-2">
+                    <Radio className="w-4 h-4 text-purple-400" />
+                    HQ Operational Directives Execution Tracker
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Real-time execution status of tactical directives dispatched to Bangladesh Police stations.
+                  </p>
+                </div>
+                <span className="text-xs font-mono text-slate-400">
+                  {directivesList.filter(d => d.status === 'DEPLOYED').length} Deployed &bull; {directivesList.filter(d => d.status === 'ACTIVE').length} Awaiting Response
+                </span>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-800 text-slate-400 font-mono text-[11px]">
+                      <th className="py-2.5 px-3">Directive Code</th>
+                      <th className="py-2.5 px-3">Target Thana</th>
+                      <th className="py-2.5 px-3">Threat Level</th>
+                      <th className="py-2.5 px-3">Crime Type</th>
+                      <th className="py-2.5 px-3">Time Window</th>
+                      <th className="py-2.5 px-3">Units</th>
+                      <th className="py-2.5 px-3">Status</th>
+                      <th className="py-2.5 px-3">Deployment Log</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60 font-sans">
+                    {directivesList.map(dir => (
+                      <tr key={dir.id} className="hover:bg-slate-800/30 transition">
+                        <td className="py-3 px-3 font-mono font-bold text-purple-400">
+                          {dir.directiveCode}
+                        </td>
+                        <td className="py-3 px-3 font-semibold text-white">
+                          {dir.targetThana}
+                        </td>
+                        <td className="py-3 px-3 font-mono">
+                          <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold border ${
+                            dir.threatLevel === 'CRITICAL' || dir.threatLevel === 'EXTREME'
+                              ? 'bg-red-500/20 text-red-300 border-red-500/40'
+                              : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                          }`}>
+                            {dir.threatLevel}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-slate-300">
+                          {dir.primaryRiskCrimeType}
+                        </td>
+                        <td className="py-3 px-3 text-slate-400 font-mono text-[11px]">
+                          {dir.timeWindow}
+                        </td>
+                        <td className="py-3 px-3 font-mono text-purple-300 font-bold">
+                          {dir.recommendedUnits} Patrols
+                        </td>
+                        <td className="py-3 px-3 font-mono">
+                          <span className={`px-2.5 py-1 rounded-xl text-[10px] font-bold border flex items-center gap-1 w-fit ${
+                            dir.status === 'DEPLOYED'
+                              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                              : 'bg-amber-500/20 text-amber-300 border-amber-500/40 animate-pulse'
+                          }`}>
+                            {dir.status === 'DEPLOYED' && <CheckCircle2 className="w-3 h-3" />}
+                            {dir.status}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-[11px] text-slate-400">
+                          {dir.acknowledgedBy ? (
+                            <span className="text-emerald-400 font-medium">
+                              {dir.acknowledgedBy}
+                            </span>
+                          ) : (
+                            <span className="text-slate-500 italic">Pending Station Acknowledgement</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

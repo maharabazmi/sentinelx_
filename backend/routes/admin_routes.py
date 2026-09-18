@@ -148,12 +148,17 @@ def create_user():
         "user": user_dict
     }), 201
 
-# 3. AI Crime Predictions
+# 3. AI Crime Predictions & Strategic Command
 @admin_bp.route("/ai-predictions", methods=["GET"])
 def get_ai_predictions():
     district = request.args.get("district")
     thana = request.args.get("thana")
-    predictions = ai_prediction_service.get_predictions(district, thana)
+
+    with get_db() as db:
+        predictions = ai_prediction_service.get_predictions(district, thana)
+        risk_matrix = ai_prediction_service.get_comparative_risk_matrix(db)
+        resource_allocations = ai_prediction_service.get_resource_allocation_advice(db)
+        directives = ai_prediction_service.get_directives(db)
 
     AuditService.log(
         user_id=g.user.id,
@@ -163,13 +168,16 @@ def get_ai_predictions():
         resource="AI_PREDICTION_ENGINE",
         ip_address=request.remote_addr,
         status="SUCCESS",
-        details="Admin accessed AI crime prediction spatial-temporal analysis results.",
+        details="Admin accessed AI crime prediction spatial-temporal analysis and comparative risk matrix.",
     )
 
     return jsonify({
         "success": True,
-        "disclaimer": "Demonstration Prediction - Model results for strategic planning and resource deployment evaluation only.",
-        "predictions": predictions
+        "disclaimer": "Demonstration Prediction - Model results for strategic planning and resource deployment evaluation.",
+        "predictions": predictions,
+        "riskMatrix": risk_matrix,
+        "resourceAllocations": resource_allocations,
+        "directives": directives,
     })
 
 @admin_bp.route("/ai-predictions/generate", methods=["POST"])
@@ -185,14 +193,16 @@ def generate_ai_scenario():
     if not district or not thana:
         return jsonify({"error": "Target District and Thana are required."}), 400
 
-    analysis = ai_prediction_service.generate_predictive_analysis(
-        district=district.strip(),
-        thana=thana.strip(),
-        target_date=target_date,
-        crime_type=crime_type,
-        weather=weather,
-        is_festival=is_festival,
-    )
+    with get_db() as db:
+        analysis = ai_prediction_service.generate_predictive_analysis(
+            district=district.strip(),
+            thana=thana.strip(),
+            target_date=target_date,
+            crime_type=crime_type,
+            weather=weather,
+            is_festival=is_festival,
+            db=db,
+        )
 
     AuditService.log(
         user_id=g.user.id,
@@ -208,6 +218,30 @@ def generate_ai_scenario():
     return jsonify({
         "success": True,
         "prediction": analysis
+    })
+
+@admin_bp.route("/ai-predictions/directives", methods=["POST"])
+def issue_directive():
+    data = request.get_json() or {}
+    if not data.get("targetDistrict") or not data.get("targetThana"):
+        return jsonify({"error": "targetDistrict and targetThana are required to issue an operational directive."}), 400
+
+    with get_db() as db:
+        directive = ai_prediction_service.issue_operational_directive(db, g.user, data)
+
+    return jsonify({
+        "success": True,
+        "message": f"Operational directive ({directive['directiveCode']}) issued to {directive['targetThana']} police.",
+        "directive": directive
+    }), 201
+
+@admin_bp.route("/ai-predictions/directives", methods=["GET"])
+def list_directives():
+    with get_db() as db:
+        directives = ai_prediction_service.get_directives(db)
+    return jsonify({
+        "success": True,
+        "directives": directives
     })
 
 # 4. Audit Logs
