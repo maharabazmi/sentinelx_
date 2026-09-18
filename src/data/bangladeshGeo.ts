@@ -1140,3 +1140,98 @@ export function findDistrictForThana(thanaName: string): string | null {
   }
   return null;
 }
+
+export const THANA_COORDINATES_MAP: Record<string, { lat: number; lng: number }> = {
+  // Hotspots & Mymensingh
+  'assim': { lat: 24.5828, lng: 90.2655 },
+  'assim bazar': { lat: 24.5828, lng: 90.2655 },
+  'fulbaria': { lat: 24.6358, lng: 90.2673 },
+  'fulbaria bus stand': { lat: 24.6358, lng: 90.2673 },
+  'trishal': { lat: 24.5833, lng: 90.3958 },
+  'bhaluka': { lat: 24.3750, lng: 90.3778 },
+  'muktagacha': { lat: 24.7667, lng: 90.2667 },
+  'gafargaon': { lat: 24.4333, lng: 90.5500 },
+  'mymensingh sadar': { lat: 24.7471, lng: 90.4203 },
+  // Dhaka
+  'gulshan': { lat: 23.7925, lng: 90.4078 },
+  'banani': { lat: 23.7937, lng: 90.4043 },
+  'uttara': { lat: 23.8759, lng: 90.3795 },
+  'mirpur': { lat: 23.8069, lng: 90.3687 },
+  'dhanmondi': { lat: 23.7461, lng: 90.3742 },
+  'motijheel': { lat: 23.7330, lng: 90.4172 },
+  'paltan': { lat: 23.7358, lng: 90.4125 },
+  'badda': { lat: 23.7805, lng: 90.4267 },
+  'ramna': { lat: 23.7410, lng: 90.4030 },
+  'tejgaon': { lat: 23.7598, lng: 90.3912 },
+  // Chattogram
+  'panchlaish': { lat: 22.3590, lng: 91.8215 },
+  'agrabad': { lat: 22.3275, lng: 91.8122 },
+  'kotwali ctg': { lat: 22.3350, lng: 91.8325 },
+  // Khulna
+  'khalishpur': { lat: 22.8589, lng: 89.5398 },
+  'khulna sadar': { lat: 22.8157, lng: 89.5681 },
+  // Sylhet
+  'zindabazar': { lat: 24.8949, lng: 91.8687 },
+  'hobiganj': { lat: 24.3840, lng: 91.4169 },
+  'sylhet sadar': { lat: 24.8949, lng: 91.8687 },
+  // Rajshahi
+  'boalia': { lat: 24.3685, lng: 88.6042 },
+  'motihar': { lat: 24.3639, lng: 88.6283 },
+  // Barishal
+  'barishal sadar': { lat: 22.7010, lng: 90.3535 },
+  // Rangpur
+  'rangpur sadar': { lat: 25.7439, lng: 89.2752 },
+};
+
+export const DISTRICT_CENTER_MAP: Record<string, { lat: number; lng: number }> = {
+  'mymensingh': { lat: 24.7471, lng: 90.4203 },
+  'dhaka': { lat: 23.8103, lng: 90.4125 },
+  'chattogram': { lat: 22.3569, lng: 91.7832 },
+  'sylhet': { lat: 24.8949, lng: 91.8687 },
+  'rajshahi': { lat: 24.3745, lng: 88.6042 },
+  'khulna': { lat: 22.8456, lng: 89.5403 },
+  'barishal': { lat: 22.7010, lng: 90.3535 },
+  'rangpur': { lat: 25.7439, lng: 89.2752 },
+};
+
+export function getCoordinatesForLocation(
+  locationName?: string,
+  thana?: string,
+  district?: string
+): { lat: number; lng: number } {
+  const loc = (locationName || '').toLowerCase().trim();
+  const th = (thana || '').toLowerCase().trim();
+  const dist = (district || '').toLowerCase().trim();
+
+  // 1. Check direct location keyword (e.g. 'assim')
+  for (const [key, coords] of Object.entries(THANA_COORDINATES_MAP)) {
+    if (loc.includes(key) || (loc && key.includes(loc))) {
+      return coords;
+    }
+  }
+
+  // 2. Check thana
+  if (th) {
+    const pureThana = th.replace(/(thana|upazila|ps|police\s*station|sadar)/gi, '').trim();
+    for (const [key, coords] of Object.entries(THANA_COORDINATES_MAP)) {
+      if (pureThana && (key.includes(pureThana) || pureThana.includes(key))) {
+        return coords;
+      }
+      if (th.includes(key)) {
+        return coords;
+      }
+    }
+  }
+
+  // 3. Fallback to district center
+  if (dist) {
+    for (const [key, coords] of Object.entries(DISTRICT_CENTER_MAP)) {
+      if (dist.includes(key)) {
+        return coords;
+      }
+    }
+  }
+
+  return { lat: 23.8103, lng: 90.4125 };
+}
+
