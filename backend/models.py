@@ -466,3 +466,46 @@ class CaseMessage(Base):
             "timestamp": self.timestamp,
         }
 
+
+class OperationalDirective(Base):
+    __tablename__ = "operational_directives"
+
+    id = Column(String(64), primary_key=True)
+    directiveCode = Column(String(64), unique=True, index=True)
+    targetDistrict = Column(String(128), nullable=False)
+    targetThana = Column(String(128), nullable=False, index=True)
+    threatLevel = Column(String(32), nullable=False, default="HIGH")
+    primaryRiskCrimeType = Column(String(64), nullable=False)
+    timeWindow = Column(String(128), nullable=True)
+    patrolStrategy = Column(Text, nullable=False)
+    recommendedUnits = Column(Integer, default=2)
+    status = Column(String(32), default="ACTIVE")  # ACTIVE, ACKNOWLEDGED, DEPLOYED, COMPLETED
+    acknowledgedBy = Column(String(128), nullable=True)
+    acknowledgedAt = Column(String(64), nullable=True)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+    radiusMeters = Column(Integer, default=650)
+    issuedBy = Column(String(128), default="National Command HQ")
+    createdAt = Column(String(64), default=utcnow_iso)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "directiveCode": self.directiveCode,
+            "targetDistrict": self.targetDistrict,
+            "targetThana": self.targetThana,
+            "threatLevel": self.threatLevel,
+            "primaryRiskCrimeType": self.primaryRiskCrimeType,
+            "timeWindow": self.timeWindow,
+            "patrolStrategy": self.patrolStrategy,
+            "recommendedUnits": self.recommendedUnits,
+            "status": self.status,
+            "acknowledgedBy": self.acknowledgedBy,
+            "acknowledgedAt": self.acknowledgedAt,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+            "radiusMeters": self.radiusMeters,
+            "issuedBy": self.issuedBy,
+            "createdAt": self.createdAt,
+        }
+

@@ -64,6 +64,8 @@ export const PoliceDashboard: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
   const [reports, setReports] = useState<CrimeReport[]>([]);
   const [heatmapIncidents, setHeatmapIncidents] = useState<any[]>([]);
+  const [aiForecastZones, setAiForecastZones] = useState<any[]>([]);
+  const [hotspotAnomalies, setHotspotAnomalies] = useState<any[]>([]);
   const [alerts, setAlerts] = useState<EmergencyAlert[]>([]);
   const [sosRequests, setSosRequests] = useState<SOSRequest[]>([]);
   const [sosRadarScope, setSosRadarScope] = useState<'station' | 'all'>('station');
@@ -117,7 +119,11 @@ export const PoliceDashboard: React.FC = () => {
 
       if (sumRes.success) setStats(sumRes.stats);
       if (repRes.success) setReports(repRes.reports);
-      if (heatRes.success) setHeatmapIncidents(heatRes.incidents);
+      if (heatRes.success) {
+        setHeatmapIncidents(heatRes.incidents || []);
+        setAiForecastZones(heatRes.aiForecastZones || []);
+        setHotspotAnomalies(heatRes.hotspotAnomalies || []);
+      }
       if (alertRes.success) setAlerts(alertRes.alerts);
       if (sosRes.success) setSosRequests(sosRes.sosRequests);
       if (offRes.success) setStationOfficers(offRes.officers);
@@ -819,10 +825,13 @@ export const PoliceDashboard: React.FC = () => {
 
           <HeatmapComponent
             incidents={heatmapIncidents}
+            aiForecastZones={aiForecastZones}
+            hotspotAnomalies={hotspotAnomalies}
             selectedDistrict={selectedDistrict}
             onSelectDistrict={setSelectedDistrict}
             selectedCrimeType={selectedCrimeType}
             onSelectCrimeType={setSelectedCrimeType}
+            onRefreshData={fetchPoliceData}
           />
         </div>
       )}

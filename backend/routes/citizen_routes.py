@@ -15,6 +15,7 @@ from ..middleware.auth import verify_auth, require_roles
 from ..services.notification_service import NotificationService
 from ..services.audit_service import AuditService
 from ..services.jurisdiction_service import JurisdictionService, extract_thana_keyword
+from ..services.geocoding_service import GeocodingService
 
 citizen_bp = Blueprint("citizen", __name__, url_prefix="/api/citizen")
 
@@ -67,8 +68,20 @@ def submit_crime_report():
         locationName=location_name.strip(),
         district=district.strip(),
         thana=thana.strip(),
-        latitude=float(latitude) if latitude is not None else 23.8103,
-        longitude=float(longitude) if longitude is not None else 90.4125,
+        latitude=GeocodingService.resolve_coordinates(
+            location_name=location_name,
+            thana=thana,
+            district=district,
+            latitude=float(latitude) if latitude is not None else None,
+            longitude=float(longitude) if longitude is not None else None
+        )[0],
+        longitude=GeocodingService.resolve_coordinates(
+            location_name=location_name,
+            thana=thana,
+            district=district,
+            latitude=float(latitude) if latitude is not None else None,
+            longitude=float(longitude) if longitude is not None else None
+        )[1],
         occurredAt=occurred_at or now_iso,
         submittedAt=now_iso,
         severity=severity,
@@ -266,8 +279,11 @@ def trigger_sos():
     longitude = data.get("longitude")
 
     sos_id = f"sos-{int(time.time() * 1000)}"
-    lat_val = float(latitude) if latitude is not None else 23.8103
-    lng_val = float(longitude) if longitude is not None else 90.4125
+    lat_val, lng_val = GeocodingService.resolve_coordinates(
+        location_name=location_name,
+        latitude=float(latitude) if latitude is not None else None,
+        longitude=float(longitude) if longitude is not None else None
+    )
     loc_val = location_name or "Current GPS Pinpoint Location"
 
     with get_db() as db:

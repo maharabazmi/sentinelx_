@@ -1140,3 +1140,63 @@ export function findDistrictForThana(thanaName: string): string | null {
   }
   return null;
 }
+
+import { ALL_64_DISTRICTS, ALL_THANAS } from './bangladeshCoordinates';
+
+export const THANA_COORDINATES_MAP = ALL_THANAS;
+export const DISTRICT_CENTER_MAP = ALL_64_DISTRICTS;
+
+export function getCoordinatesForLocation(
+  locationName?: string,
+  thana?: string,
+  district?: string
+): { lat: number; lng: number } {
+  const loc = (locationName || '').toLowerCase().trim();
+  const th = (thana || '').toLowerCase().trim();
+  const dist = (district || '').toLowerCase().trim();
+
+  // 1. Direct match on location name
+  if (loc && ALL_THANAS[loc]) {
+    return ALL_THANAS[loc];
+  }
+
+  // 2. Direct match on thana name
+  if (th && ALL_THANAS[th]) {
+    return ALL_THANAS[th];
+  }
+
+  // 3. Strip administrative suffixes
+  const pureThana = th.replace(/(thana|upazila|ps|police\s*station|sadar)/gi, '').trim();
+  if (pureThana && ALL_THANAS[pureThana]) {
+    return ALL_THANAS[pureThana];
+  }
+
+  // 4. Check if location contains any known thana
+  if (loc) {
+    for (const [key, coords] of Object.entries(ALL_THANAS)) {
+      if (key.length >= 4 && loc.includes(key)) {
+        return coords;
+      }
+    }
+  }
+
+  // 5. Fallback to all 64 district centers
+  if (dist && ALL_64_DISTRICTS[dist]) {
+    return ALL_64_DISTRICTS[dist];
+  }
+  const pureDist = dist.replace(/(district|division|zila)/gi, '').trim();
+  if (pureDist && ALL_64_DISTRICTS[pureDist]) {
+    return ALL_64_DISTRICTS[pureDist];
+  }
+
+  if (dist) {
+    for (const [key, coords] of Object.entries(ALL_64_DISTRICTS)) {
+      if (dist.includes(key) || (pureDist && key.includes(pureDist))) {
+        return coords;
+      }
+    }
+  }
+
+  return { lat: 23.8103, lng: 90.4125 };
+}
+
