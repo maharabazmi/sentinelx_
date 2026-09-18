@@ -57,6 +57,19 @@ def extract_thana_keyword(station_or_thana: str) -> str:
     ).strip()
     return cleaned or first_part
 
+def _thana_names(station_or_thana: str) -> set[str]:
+    """Return normalized Thana names represented by a station posting."""
+    if not station_or_thana:
+        return set()
+    return {
+        extract_thana_keyword(part).strip().casefold()
+        for part in re.split(r"[/|]", station_or_thana.split(",")[0])
+        if extract_thana_keyword(part).strip()
+    }
+
+def is_same_thana(officer_station: str, report_thana: str) -> bool:
+    return bool(_thana_names(officer_station).intersection(_thana_names(report_thana)))
+
 def is_officer_in_jurisdiction(officer_station: str, report_thana: str, report_district: str = None) -> bool:
     if not officer_station or not report_thana:
         return False
@@ -65,7 +78,7 @@ def is_officer_in_jurisdiction(officer_station: str, report_thana: str, report_d
     th_clean = report_thana.strip().lower()
     thana_kw = extract_thana_keyword(officer_station).lower()
 
-    if thana_kw and (thana_kw == th_clean or thana_kw in th_clean or th_clean in thana_kw):
+    if is_same_thana(officer_station, report_thana):
         return True
 
     if th_clean in st_clean or st_clean in th_clean:
@@ -218,167 +231,6 @@ class JurisdictionService:
         return []
 
     @classmethod
-    def get_or_create_thana_duty_officer(cls, db, thana: str, district: str) -> User:
-        """
-        Guarantees that every thana in Bangladesh has an official Station Duty Officer.
-        If no officer is yet registered, provisions an official Duty Officer on the fly.
-        """
-        thana_title = thana.strip().title()
-        dist_title = (district or "Dhaka").strip().title()
-        dist_code = re.sub(r"[^A-Za-z]", "", dist_title)[:3].upper()
-
-        station_name = f"{thana_title} Police Station, {dist_title}"
-        existing = db.query(User).filter(
-            User.role == "POLICE",
-            User.stationOrThana.ilike(f"%{thana_title}%")
-        ).first()
-
-        if existing:
-            return existing
-
-        officer_name = random.choice(DUTY_OFFICER_NAMES)
-        badge_num = f"BP-{dist_code}-{random.randint(1000, 9999)}"
-        clean_email = f"duty.{thana_title.lower().replace(' ', '')}@{dist_code.lower()}.police.gov.bd"
-
-        duty_officer = User(
-            id=f"user-pol-{int(time.time() * 1000)}",
-            nidNumber=str(random.randint(1000000000, 9999999999)),
-            fullName=officer_name,
-            email=clean_email,
-            phone=f"+880171{random.randint(1000000, 9999999)}",
-            role="POLICE",
-            badgeNumber=badge_num,
-            designation="Sub-Inspector (Station Duty Officer)",
-            department="General Investigation & Station GD Desk",
-            stationOrThana=station_name,
-            isNIDVerified=True,
-            passwordHash="$2b$08$9H65Gq1X4qGZ/WqA5g5s0O02l0vH2Oq7m9bM4L6gUq6P5r4x9uW1y",  # demo1234
-            createdAt=utcnow_iso(),
-        )
-        db.add(duty_officer)
-        db.flush()
-        logger.info(f"[Jurisdiction] Provisioned new Station Duty Officer {duty_officer.fullName} for {station_name}.")
-        return duty_officer
-
-    @classmethod
-    def assign_report_to_jurisdiction_officer(cls, db, report: CrimeReport, notify: bool = True) -> Optional[User]:
-        officers = cls.find_officers_for_jurisdiction(db, report.thana, report.district)
-        if not officers:
-            # Auto-provision verified Station Duty Officer for the Thana
-            duty_officer = cls.get_or_create_thana_duty_officer(db, report.thana, report.district)
-            officers = [duty_officer]
-
-        # Evaluate rational suitability score for every candidate officer
-        candidates_evaluated = []
-        for o in officers:
-            active_cases = db.query(CrimeReport).filter(
-                CrimeReport.assignedOfficerId == o.id,
-                CrimeReport.status.notin_(["CASE_CLOSED", "REJECTED"])
-            ).count()
-            score, rationale_bullets = calculate_officer_suitability(o, report, active_cases)
-            candidates_evaluated.append((score, o, rationale_bullets, active_cases))
-
-        # Sort by rational suitability score descending
-        candidates_evaluated.sort(key=lambda x: x[0], reverse=True)
-        best_score, best_officer, rationale_bullets, active_count = candidates_evaluated[0]
-
-        formal_title, badge = format_officer_credentials(best_officer, report.district)
-
-        now_iso = utcnow_iso()
-        report.assignedOfficerId = best_officer.id
-        report.assignedOfficerName = formal_title
-        report.assignedOfficerBadge = badge
-        report.assignedOfficerStation = best_officer.stationOrThana
-
-        if report.status in ("SUBMITTED", None):
-            report.status = "OFFICER_ASSIGNED"
-
-        rationale_summary = "; ".join(rationale_bullets[:3])
-        assignment_note = (
-            f"Report automatically routed & assigned to Investigating Officer {formal_title} ({badge}) at {best_officer.stationOrThana}. "
-            f"Rationale: {rationale_summary}."
-        )
-
-        updates = list(report.investigationUpdates or [])
-        updates.append({
-            "id": f"inv-{int(time.time() * 1000)}",
-            "timestamp": now_iso,
-            "officerName": f"Station Command ({formal_title})",
-            "status": "OFFICER_ASSIGNED",
-            "note": assignment_note
-        })
-        report.investigationUpdates = updates
-
-        logger.info(
-            f"[Jurisdiction] Assigned case {report.caseId} ({report.thana}) to officer {formal_title} (Score: {best_score:.1f})."
-        )
-
-        if notify:
-            try:
-                NotificationService.create_case_notification(
-                    user_id=best_officer.id,
-                    title=f"New Case Assigned: {report.caseId}",
-                    message=f"Case '{report.title}' in {report.thana}, {report.district} has been assigned to you. Rationale: {rationale_summary}.",
-                    related_id=report.id
-                )
-            except Exception as e:
-                logger.warning(f"[Jurisdiction] Failed to send notification to officer {best_officer.id}: {e}")
-
-        return best_officer
-
-    @classmethod
-    def auto_assign_pending_reports_for_officer(cls, db, officer: User) -> int:
-        if officer.role != "POLICE" or not officer.stationOrThana:
-            return 0
-
-        unassigned_reports = db.query(CrimeReport).filter(
-            (CrimeReport.assignedOfficerId == None) |
-            (CrimeReport.assignedOfficerId == "") |
-            (CrimeReport.assignedOfficerName == None) |
-            (CrimeReport.assignedOfficerName == "")
-        ).all()
-
-        matching_reports = [
-            r for r in unassigned_reports
-            if is_officer_in_jurisdiction(officer.stationOrThana, r.thana, r.district)
-            and r.status not in ("CASE_CLOSED", "REJECTED")
-        ]
-
-        count = 0
-        for report in matching_reports:
-            cls.assign_report_to_jurisdiction_officer(db, report, notify=True)
-            count += 1
-
-        if count > 0:
-            db.commit()
-            logger.info(f"[Jurisdiction] Auto-assigned {count} pending report(s) to officer {officer.fullName}.")
-
-        return count
-
-    @classmethod
-    def auto_sync_all_unassigned_reports(cls, db) -> int:
-        unassigned_reports = db.query(CrimeReport).filter(
-            (CrimeReport.assignedOfficerId == None) |
-            (CrimeReport.assignedOfficerId == "") |
-            (CrimeReport.assignedOfficerName == None) |
-            (CrimeReport.assignedOfficerName == "")
-        ).all()
-
-        count = 0
-        for report in unassigned_reports:
-            if report.status in ("CASE_CLOSED", "REJECTED"):
-                continue
-            officer = cls.assign_report_to_jurisdiction_officer(db, report, notify=False)
-            if officer:
-                count += 1
-
-        if count > 0:
-            db.commit()
-            logger.info(f"[Jurisdiction] Global sync assigned {count} orphan report(s) to their respective thana officers.")
-
-        return count
-
-    @classmethod
     def get_station_center_coordinates(cls, station_or_thana: str) -> Optional[tuple]:
         if not station_or_thana:
             return None
@@ -392,18 +244,15 @@ class JurisdictionService:
 
     @classmethod
     def find_officers_for_station(cls, db, station_or_thana: str) -> List[User]:
-        if not station_or_thana:
+        report_thana_names = _thana_names(station_or_thana)
+        if not report_thana_names:
             return []
-        st_kw = extract_thana_keyword(station_or_thana).lower()
         officers = db.query(User).filter(User.role == "POLICE").all()
-        matching = []
-        for o in officers:
-            if not o.stationOrThana:
-                continue
-            o_kw = extract_thana_keyword(o.stationOrThana).lower()
-            if st_kw in o_kw or o_kw in st_kw or o.stationOrThana.strip().lower() == station_or_thana.strip().lower():
-                matching.append(o)
-        return matching
+        return [
+            officer
+            for officer in officers
+            if report_thana_names.intersection(_thana_names(officer.stationOrThana))
+        ]
 
     @classmethod
     def determine_sos_station(cls, db, location_name: str, latitude: float, longitude: float, citizen_station: str = None) -> str:

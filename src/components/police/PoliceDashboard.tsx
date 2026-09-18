@@ -527,11 +527,11 @@ export const PoliceDashboard: React.FC = () => {
                   {user?.stationOrThana ? `${user.stationOrThana} Station Roster` : 'Police Jurisdiction Queue'}
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-[10px] font-mono font-bold text-blue-400">
-                  AUTO-ROUTED
+                  SHARED QUEUE
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                Citizen incident reports in your Thana are routed directly here. Claim cases to lead investigations or assign to fellow officers.
+                Citizen incident reports in your Thana are placed in this shared queue. Any officer can accept, reject, or reassign a case within the Thana.
               </p>
             </div>
 
@@ -773,10 +773,10 @@ export const PoliceDashboard: React.FC = () => {
                                 }}
                                 disabled={claimActionLoadingId === report.id}
                                 className="px-2.5 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-semibold transition flex items-center gap-1"
-                                title="Claim this case directly into your investigation queue"
+                                title="Accept this case into your investigation queue"
                               >
                                 <UserCheck className="w-3.5 h-3.5" />
-                                <span>{claimActionLoadingId === report.id ? 'Claiming...' : 'Claim'}</span>
+                                <span>{claimActionLoadingId === report.id ? 'Accepting...' : 'Accept'}</span>
                               </button>
                             )}
                             <button
@@ -1305,7 +1305,7 @@ export const PoliceDashboard: React.FC = () => {
                           disabled={claimActionLoadingId === selectedReport.id || isProcessingAction}
                           className="px-3 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-300 font-semibold text-xs transition"
                         >
-                          {claimActionLoadingId === selectedReport.id ? 'Reassigning...' : 'Take Over Case'}
+                          {claimActionLoadingId === selectedReport.id ? 'Reassigning...' : 'Reassign to Me'}
                         </button>
                       )}
                     </div>
@@ -1332,7 +1332,7 @@ export const PoliceDashboard: React.FC = () => {
                         className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow-md shadow-emerald-600/20 flex items-center gap-1.5"
                       >
                         <UserCheck className="w-3.5 h-3.5" />
-                        <span>{claimActionLoadingId === selectedReport.id ? 'Claiming...' : 'Claim Case Now'}</span>
+                        <span>{claimActionLoadingId === selectedReport.id ? 'Accepting...' : 'Accept Case'}</span>
                       </button>
                     </div>
                   )}
@@ -1341,7 +1341,7 @@ export const PoliceDashboard: React.FC = () => {
                   <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="block font-semibold text-slate-300 text-xs">
-                        {selectedReport.assignedOfficerName ? 'Transfer Case to Another Officer' : 'Assign to Station Officer'}
+                        {selectedReport.assignedOfficerName ? 'Reassign to Another Thana Officer' : 'Assign to Thana Officer'}
                       </label>
                       <span className="text-[10px] text-slate-500 font-mono">
                         {stationOfficers.length} Officer(s) on Roster
@@ -1366,7 +1366,7 @@ export const PoliceDashboard: React.FC = () => {
                         onClick={() => handleAssignCase(selectedReport.id, selectedAssigneeId)}
                         className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-600 text-white font-semibold text-xs transition"
                       >
-                        Assign
+                        Reassign
                       </button>
                     </div>
                   </div>

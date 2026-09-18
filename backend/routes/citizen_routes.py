@@ -85,20 +85,30 @@ def submit_crime_report():
 
     with get_db() as db:
         db.add(new_report)
-        assigned_officer = JurisdictionService.assign_report_to_jurisdiction_officer(db, new_report, notify=True)
         db.commit()
         report_dict = new_report.to_dict()
 
-    notif_msg = (
-        f'Your report "{title}" ({case_id}) has been lodged and auto-assigned to Investigating Officer {assigned_officer.fullName} at {assigned_officer.stationOrThana}.'
-        if assigned_officer
-        else f'Your report "{title}" has been registered with status SUBMITTED. Tracking case ID is {case_id}.'
+    thana_officers = []
+    with get_db() as db:
+        thana_officers = JurisdictionService.find_officers_for_station(db, new_report.thana)
+
+    NotificationService.notify_police_thana(
+        officers=thana_officers,
+        title=f"New Thana Queue Case ({case_id})",
+        message=(
+            f'A new crime report "{title}" was added to the shared {thana} queue. '
+            "Any officer at this Thana may accept, reject, or reassign it."
+        ),
+        related_id=report_id,
     )
 
     NotificationService.create_case_notification(
         user_id=user.id,
         title=f"Crime Report Lodged ({case_id})",
-        message=notif_msg,
+        message=(
+            f'Your report "{title}" has been registered with status SUBMITTED and placed in '
+            f'the shared {thana} Police Station queue. Tracking case ID is {case_id}.'
+        ),
         related_id=report_id,
     )
 
@@ -111,14 +121,17 @@ def submit_crime_report():
         resource_id=report_id,
         ip_address=request.remote_addr,
         status="SUCCESS",
-        details=f"Crime report [{crime_type}] lodged in {thana}, {district}. Assigned officer: {assigned_officer.fullName if assigned_officer else 'Awaiting Station Officer'}.",
+        details=(
+            f"Crime report [{crime_type}] lodged in {thana}, {district}. "
+            f"Notified {len(thana_officers)} Thana officer(s); awaiting officer acceptance."
+        ),
     )
 
     return jsonify({
         "success": True,
         "report": report_dict,
-        "assignedOfficer": assigned_officer.fullName if assigned_officer else None,
-        "message": f"Report successfully submitted and routed to {assigned_officer.fullName if assigned_officer else thana + ' Police Station'}."
+        "assignedOfficer": None,
+        "message": f"Report successfully submitted to the shared {thana} Police Station queue."
     }), 201
 
 # 2. Get Citizen's Own Reports

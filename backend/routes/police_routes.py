@@ -14,7 +14,7 @@ from ..models import (
 from ..middleware.auth import verify_auth, require_roles
 from ..services.notification_service import NotificationService
 from ..services.audit_service import AuditService
-from ..services.jurisdiction_service import JurisdictionService
+from ..services.jurisdiction_service import JurisdictionService, is_same_thana
 
 police_bp = Blueprint("police", __name__, url_prefix="/api/police")
 
@@ -194,6 +194,12 @@ def get_reports():
             query = query.filter(CrimeReport.crimeType == crime_type)
 
         reports = query.order_by(CrimeReport.submittedAt.desc()).all()
+        if user.role == "POLICE":
+            reports = [
+                report for report in reports
+                if is_same_thana(user.stationOrThana, report.thana)
+                or report.assignedOfficerId == user.id
+            ]
         return jsonify({
             "success": True,
             "reports": [r.to_dict() for r in reports],
@@ -217,7 +223,7 @@ def verify_report(report_id):
 
         if user.role == "POLICE":
             thana_kw = extract_thana_keyword(user.stationOrThana)
-            is_in_station = thana_kw and (thana_kw.lower() in (report.thana or "").lower() or (report.thana or "").lower() in thana_kw.lower())
+            is_in_station = is_same_thana(user.stationOrThana, report.thana)
             is_assigned = (report.assignedOfficerId == user.id)
             if not is_in_station and not is_assigned:
                 return jsonify({"error": f"Access Denied: Officer at {user.stationOrThana} cannot verify cases outside their jurisdiction ({report.thana})."}), 403
@@ -288,7 +294,7 @@ def update_investigation_status(report_id):
 
         if user.role == "POLICE":
             thana_kw = extract_thana_keyword(user.stationOrThana)
-            is_in_station = thana_kw and (thana_kw.lower() in (report.thana or "").lower() or (report.thana or "").lower() in thana_kw.lower())
+            is_in_station = is_same_thana(user.stationOrThana, report.thana)
             is_assigned = (report.assignedOfficerId == user.id)
             if not is_in_station and not is_assigned:
                 return jsonify({"error": f"Access Denied: Officer at {user.stationOrThana} cannot modify cases outside their jurisdiction ({report.thana})."}), 403
@@ -355,7 +361,7 @@ def assign_or_claim_report(report_id):
 
         if user.role == "POLICE":
             thana_kw = extract_thana_keyword(user.stationOrThana)
-            is_in_station = thana_kw and (thana_kw.lower() in (report.thana or "").lower() or (report.thana or "").lower() in thana_kw.lower())
+            is_in_station = is_same_thana(user.stationOrThana, report.thana)
             is_assigned = (report.assignedOfficerId == user.id)
             if not is_in_station and not is_assigned:
                 return jsonify({"error": f"Access Denied: Officer at {user.stationOrThana} cannot claim or assign cases outside their jurisdiction ({report.thana})."}), 403
@@ -364,6 +370,9 @@ def assign_or_claim_report(report_id):
             target_officer = db.query(User).filter(User.id == officer_id, User.role == "POLICE").first()
             if not target_officer:
                 return jsonify({"error": "Target police officer not found."}), 404
+            same_thana_officers = JurisdictionService.find_officers_for_station(db, report.thana)
+            if target_officer.id not in {officer.id for officer in same_thana_officers}:
+                return jsonify({"error": "Cases can only be assigned to an officer in the same Thana."}), 400
         else:
             target_officer = user
 
@@ -399,6 +408,15 @@ def assign_or_claim_report(report_id):
         user_id=report.reporterId,
         title=f"Investigator Assigned: {report.caseId}",
         message=f"{target_officer.fullName} (Badge #{target_officer.badgeNumber or 'N/A'}, {target_officer.stationOrThana}) has been assigned to investigate your report.",
+        related_id=report.id,
+    )
+    NotificationService.create_case_notification(
+        user_id=target_officer.id,
+        title=f"Case {'Accepted' if is_self_claim else 'Reassigned'}: {report.caseId}",
+        message=(
+            f'Case "{report.title}" from the {report.thana} shared queue is now assigned to you by '
+            f"{user.fullName}."
+        ),
         related_id=report.id,
     )
 
