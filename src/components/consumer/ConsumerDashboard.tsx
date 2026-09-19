@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   Scale,
   Barcode,
@@ -297,7 +297,7 @@ export const ConsumerDashboard: React.FC = () => {
               <select
                 value={statusFilter}
                 onChange={e => setStatusFilter(e.target.value)}
-                className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-amber-500"
+                className="sx-input !w-auto"
               >
                 <option value="ALL">All Statuses</option>
                 <option value={ComplaintStatus.SUBMITTED}>Submitted (New)</option>
@@ -311,7 +311,7 @@ export const ConsumerDashboard: React.FC = () => {
               <select
                 value={issueFilter}
                 onChange={e => setIssueFilter(e.target.value)}
-                className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-amber-500"
+                className="sx-input !w-auto"
               >
                 <option value="ALL">All Violations</option>
                 <option value={ConsumerIssueType.PRICE_GOUGING}>Price Gouging / Overpricing</option>
@@ -565,7 +565,7 @@ export const ConsumerDashboard: React.FC = () => {
                       value={fineAmount}
                       onChange={e => setFineAmount(e.target.value)}
                       placeholder="e.g. 50000"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-100 font-mono text-xs"
+                      className="sx-input font-mono"
                     />
                     <p className="text-[11px] text-emerald-400 mt-1">
                       Citizen Reward: <strong>৳{(Number(fineAmount || 0) * 0.25).toLocaleString()}</strong> (25% statutory entitlement under Section 76)
@@ -579,7 +579,7 @@ export const ConsumerDashboard: React.FC = () => {
                       value={inspectorNotes}
                       onChange={e => setInspectorNotes(e.target.value)}
                       placeholder="Record mobile court findings, shop trade license verification, and fine realization details..."
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-100 text-xs"
+                      className="sx-input"
                     />
                   </div>
 
@@ -645,7 +645,7 @@ export const ConsumerDashboard: React.FC = () => {
                   value={newBarcode}
                   onChange={e => setNewBarcode(e.target.value)}
                   placeholder="e.g. 8941100998877"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-100 font-mono"
+                  className="sx-input font-mono"
                   required
                 />
               </div>
@@ -657,7 +657,7 @@ export const ConsumerDashboard: React.FC = () => {
                   value={newProductName}
                   onChange={e => setNewProductName(e.target.value)}
                   placeholder="e.g. Fortified Mustard Oil 500ml"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-100"
+                  className="sx-input"
                   required
                 />
               </div>
@@ -669,7 +669,7 @@ export const ConsumerDashboard: React.FC = () => {
                   value={newCompanyName}
                   onChange={e => setNewCompanyName(e.target.value)}
                   placeholder="e.g. Pran-RFL Consumer Products"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-100"
+                  className="sx-input"
                   required
                 />
               </div>
@@ -681,7 +681,7 @@ export const ConsumerDashboard: React.FC = () => {
                     type="number"
                     value={newMRP}
                     onChange={e => setNewMRP(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-100 font-mono"
+                    className="sx-input font-mono"
                     required
                   />
                 </div>
@@ -691,7 +691,7 @@ export const ConsumerDashboard: React.FC = () => {
                   <select
                     value={newBarcodeStatus}
                     onChange={e => setNewBarcodeStatus(e.target.value as any)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-100"
+                    className="sx-input"
                   >
                     <option value="AUTHENTIC">Authentic BSTI</option>
                     <option value="COUNTERFEIT_FLAGGED">Counterfeit Flagged</option>

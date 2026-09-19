@@ -28,6 +28,21 @@ class NotificationService:
         return cls._create_item(user_id, "CASE_STATUS", title, message, severity="INFO", related_id=related_id)
 
     @classmethod
+    def notify_police_thana(cls, officers, title: str, message: str, related_id: str = None):
+        """Notify every officer currently posted to a report's Thana."""
+        notifications = []
+        for officer in officers:
+            notifications.append(
+                cls.create_case_notification(
+                    user_id=officer.id,
+                    title=title,
+                    message=message,
+                    related_id=related_id,
+                )
+            )
+        return notifications
+
+    @classmethod
     def create_complaint_notification(cls, user_id: str, title: str, message: str, related_id: str = None):
         return cls._create_item(user_id, "COMPLAINT_UPDATE", title, message, severity="INFO", related_id=related_id)
 

@@ -93,13 +93,9 @@ def init_db():
             else:
                 logger.info(f"Database already populated ({user_count} users found).")
 
-        # Auto-sync any unassigned reports to stationed officers
         try:
             from .services.jurisdiction_service import JurisdictionService, extract_thana_keyword
             from .models import SOSRequest
-            synced_count = JurisdictionService.auto_sync_all_unassigned_reports(db)
-            if synced_count > 0:
-                logger.info(f"[DB] Auto-routed {synced_count} pending cases to stationed police officers.")
 
             # Auto-sync/correct existing SOS records
             all_sos = db.query(SOSRequest).all()

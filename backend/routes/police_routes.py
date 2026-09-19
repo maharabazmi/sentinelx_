@@ -9,12 +9,14 @@ from ..models import (
     CrimeReport,
     EmergencyAlert,
     SOSRequest,
+    OperationalDirective,
     utcnow_iso,
 )
 from ..middleware.auth import verify_auth, require_roles
 from ..services.notification_service import NotificationService
 from ..services.audit_service import AuditService
-from ..services.jurisdiction_service import JurisdictionService
+from ..services.jurisdiction_service import JurisdictionService, is_same_thana
+from ..services.geocoding_service import GeocodingService
 
 police_bp = Blueprint("police", __name__, url_prefix="/api/police")
 
@@ -194,6 +196,12 @@ def get_reports():
             query = query.filter(CrimeReport.crimeType == crime_type)
 
         reports = query.order_by(CrimeReport.submittedAt.desc()).all()
+        if user.role == "POLICE":
+            reports = [
+                report for report in reports
+                if is_same_thana(user.stationOrThana, report.thana)
+                or report.assignedOfficerId == user.id
+            ]
         return jsonify({
             "success": True,
             "reports": [r.to_dict() for r in reports],
@@ -217,7 +225,7 @@ def verify_report(report_id):
 
         if user.role == "POLICE":
             thana_kw = extract_thana_keyword(user.stationOrThana)
-            is_in_station = thana_kw and (thana_kw.lower() in (report.thana or "").lower() or (report.thana or "").lower() in thana_kw.lower())
+            is_in_station = is_same_thana(user.stationOrThana, report.thana)
             is_assigned = (report.assignedOfficerId == user.id)
             if not is_in_station and not is_assigned:
                 return jsonify({"error": f"Access Denied: Officer at {user.stationOrThana} cannot verify cases outside their jurisdiction ({report.thana})."}), 403
@@ -288,7 +296,7 @@ def update_investigation_status(report_id):
 
         if user.role == "POLICE":
             thana_kw = extract_thana_keyword(user.stationOrThana)
-            is_in_station = thana_kw and (thana_kw.lower() in (report.thana or "").lower() or (report.thana or "").lower() in thana_kw.lower())
+            is_in_station = is_same_thana(user.stationOrThana, report.thana)
             is_assigned = (report.assignedOfficerId == user.id)
             if not is_in_station and not is_assigned:
                 return jsonify({"error": f"Access Denied: Officer at {user.stationOrThana} cannot modify cases outside their jurisdiction ({report.thana})."}), 403
@@ -355,7 +363,7 @@ def assign_or_claim_report(report_id):
 
         if user.role == "POLICE":
             thana_kw = extract_thana_keyword(user.stationOrThana)
-            is_in_station = thana_kw and (thana_kw.lower() in (report.thana or "").lower() or (report.thana or "").lower() in thana_kw.lower())
+            is_in_station = is_same_thana(user.stationOrThana, report.thana)
             is_assigned = (report.assignedOfficerId == user.id)
             if not is_in_station and not is_assigned:
                 return jsonify({"error": f"Access Denied: Officer at {user.stationOrThana} cannot claim or assign cases outside their jurisdiction ({report.thana})."}), 403
@@ -364,6 +372,9 @@ def assign_or_claim_report(report_id):
             target_officer = db.query(User).filter(User.id == officer_id, User.role == "POLICE").first()
             if not target_officer:
                 return jsonify({"error": "Target police officer not found."}), 404
+            same_thana_officers = JurisdictionService.find_officers_for_station(db, report.thana)
+            if target_officer.id not in {officer.id for officer in same_thana_officers}:
+                return jsonify({"error": "Cases can only be assigned to an officer in the same Thana."}), 400
         else:
             target_officer = user
 
@@ -399,6 +410,15 @@ def assign_or_claim_report(report_id):
         user_id=report.reporterId,
         title=f"Investigator Assigned: {report.caseId}",
         message=f"{target_officer.fullName} (Badge #{target_officer.badgeNumber or 'N/A'}, {target_officer.stationOrThana}) has been assigned to investigate your report.",
+        related_id=report.id,
+    )
+    NotificationService.create_case_notification(
+        user_id=target_officer.id,
+        title=f"Case {'Accepted' if is_self_claim else 'Reassigned'}: {report.caseId}",
+        message=(
+            f'Case "{report.title}" from the {report.thana} shared queue is now assigned to you by '
+            f"{user.fullName}."
+        ),
         related_id=report.id,
     )
 
@@ -452,7 +472,27 @@ def get_police_officers():
             ]
         })
 
-# 5. POLICE-ONLY Crime Heatmap Data
+def categorize_time_of_day(iso_timestamp: str) -> str:
+    if not iso_timestamp:
+        return "EVENING"
+    try:
+        hour_match = re.search(r"T(\d{2}):", str(iso_timestamp))
+        if hour_match:
+            hour = int(hour_match.group(1))
+        else:
+            hour = 19
+        if 6 <= hour < 12:
+            return "MORNING"
+        elif 12 <= hour < 17:
+            return "AFTERNOON"
+        elif 17 <= hour < 22:
+            return "EVENING"
+        else:
+            return "NIGHT"
+    except Exception:
+        return "EVENING"
+
+# 5. POLICE-ONLY Crime Heatmap Data & Tactical Actions
 @police_bp.route("/heatmap", methods=["GET"])
 def get_crime_heatmap():
     user = g.user
@@ -472,6 +512,7 @@ def get_crime_heatmap():
     with get_db() as db:
         # Strictly only verified incidents (not SUBMITTED, not REJECTED)
         query = db.query(CrimeReport).filter(CrimeReport.status.notin_(["SUBMITTED", "REJECTED"]))
+        thana_kw = ""
         if user.role == "POLICE":
             thana_kw = extract_thana_keyword(user.stationOrThana)
             if thana_kw:
@@ -486,28 +527,155 @@ def get_crime_heatmap():
         reports = query.all()
 
         incidents = []
+        location_counts = {}
         for r in reports:
             multiplier = 1.0 if r.severity == "CRITICAL" else 0.75 if r.severity == "HIGH" else 0.5 if r.severity == "MEDIUM" else 0.25
+            time_cat = categorize_time_of_day(r.occurredAt or r.submittedAt)
+            inc_lat, inc_lng = GeocodingService.resolve_coordinates(
+                location_name=r.locationName,
+                thana=r.thana,
+                district=r.district,
+                latitude=r.latitude,
+                longitude=r.longitude
+            )
             incidents.append({
                 "id": r.id,
                 "caseId": r.caseId,
+                "title": r.title,
                 "crimeType": r.crimeType,
                 "severity": r.severity,
                 "locationName": r.locationName,
                 "district": r.district,
                 "thana": r.thana,
-                "latitude": r.latitude,
-                "longitude": r.longitude,
+                "latitude": inc_lat,
+                "longitude": inc_lng,
                 "occurredAt": r.occurredAt,
                 "verifiedAt": r.submittedAt,
                 "intensity": multiplier,
+                "timeCategory": time_cat,
             })
+            loc = (r.locationName or "").strip()
+            if loc:
+                location_counts[loc] = location_counts.get(loc, 0) + 1
+
+        # Calculate cluster anomalies (locations with >= 2 verified incidents)
+        hotspot_anomalies = []
+        for loc, count in location_counts.items():
+            if count >= 2:
+                matching_reports = [r for r in reports if (r.locationName or "").strip() == loc]
+                highest_sev = "HIGH"
+                if any(r.severity == "CRITICAL" for r in matching_reports):
+                    highest_sev = "CRITICAL"
+                sample_crime = matching_reports[0].crimeType if matching_reports else "THEFT_ROBBERY"
+                rep0 = matching_reports[0] if matching_reports else None
+                sample_district = rep0.district if rep0 and rep0.district else "Mymensingh"
+                sample_thana = rep0.thana if rep0 and rep0.thana else "Fulbaria"
+                anomaly_lat, anomaly_lng = GeocodingService.resolve_coordinates(
+                    location_name=loc,
+                    thana=sample_thana,
+                    district=sample_district,
+                    latitude=rep0.latitude if rep0 else None,
+                    longitude=rep0.longitude if rep0 else None
+                )
+                hotspot_anomalies.append({
+                    "locationName": loc,
+                    "incidentCount": count,
+                    "severity": highest_sev,
+                    "primaryCrime": sample_crime,
+                    "district": sample_district,
+                    "thana": sample_thana,
+                    "latitude": anomaly_lat,
+                    "longitude": anomaly_lng,
+                    "message": f"Cluster Alert: {count} verified {sample_crime.replace('_', ' ')} incidents clustered around {loc}.",
+                })
+
+        # Fetch active AI Operational Directives (Forecast Zones)
+        dir_query = db.query(OperationalDirective).filter(OperationalDirective.status != "COMPLETED")
+        if user.role == "POLICE" and thana_kw:
+            dir_query = dir_query.filter(OperationalDirective.targetThana.ilike(f"%{thana_kw}%"))
+        directives = dir_query.order_by(OperationalDirective.createdAt.desc()).all()
+
+        ai_forecast_zones = [d.to_dict() for d in directives]
 
         return jsonify({
             "success": True,
             "totalVerifiedIncidents": len(incidents),
-            "incidents": incidents
+            "incidents": incidents,
+            "aiForecastZones": ai_forecast_zones,
+            "hotspotAnomalies": hotspot_anomalies,
         })
+
+@police_bp.route("/heatmap/action", methods=["POST"])
+def take_heatmap_action():
+    user = g.user
+    data = request.get_json() or {}
+    action_type = data.get("actionType")  # DISPATCH_PATROL, SET_CHECKPOST, ACKNOWLEDGE_DIRECTIVE
+    directive_id = data.get("directiveId")
+    location_name = data.get("locationName")
+    lat = data.get("latitude")
+    lng = data.get("longitude")
+    notes = data.get("notes", "")
+
+    with get_db() as db:
+        if action_type == "ACKNOWLEDGE_DIRECTIVE":
+            if not directive_id:
+                return jsonify({"error": "directiveId is required to acknowledge a directive."}), 400
+            directive = db.query(OperationalDirective).filter(OperationalDirective.id == directive_id).first()
+            if not directive:
+                return jsonify({"error": "Directive not found."}), 404
+            directive.status = "DEPLOYED"
+            directive.acknowledgedBy = f"{user.designation or 'Officer'} {user.fullName} ({user.stationOrThana})"
+            directive.acknowledgedAt = utcnow_iso()
+            db.commit()
+
+            AuditService.log(
+                user_id=user.id,
+                user_name=user.fullName,
+                user_role=user.role,
+                action="DEPLOY_DIRECTIVE_PATROL",
+                resource=directive.directiveCode,
+                status="SUCCESS",
+                details=f"Officer deployed patrol teams in response to HQ Directive ({directive.directiveCode}).",
+            )
+            return jsonify({
+                "success": True,
+                "message": f"Operational directive ({directive.directiveCode}) acknowledged and patrol deployment confirmed.",
+                "directive": directive.to_dict()
+            })
+
+        elif action_type == "DISPATCH_PATROL":
+            AuditService.log(
+                user_id=user.id,
+                user_name=user.fullName,
+                user_role=user.role,
+                action="HEATMAP_PATROL_DISPATCH",
+                resource=f"{location_name or 'Hotspot'}",
+                status="SUCCESS",
+                details=f"Officer {user.fullName} dispatched a mobile patrol unit to {location_name} (Lat: {lat}, Lng: {lng}). Notes: {notes}",
+            )
+            return jsonify({
+                "success": True,
+                "message": f"Mobile patrol unit dispatched to {location_name or 'target coordinates'}.",
+                "dispatchReference": f"DISP-{int(time.time()*1000)}"
+            })
+
+        elif action_type == "SET_CHECKPOST":
+            AuditService.log(
+                user_id=user.id,
+                user_name=user.fullName,
+                user_role=user.role,
+                action="ESTABLISH_TACTICAL_CHECKPOST",
+                resource=f"{location_name or 'Tactical Node'}",
+                status="SUCCESS",
+                details=f"Static security checkpoint established at {location_name} by {user.fullName}.",
+            )
+            return jsonify({
+                "success": True,
+                "message": f"Static security checkpost established at {location_name or 'coordinates'}.",
+                "checkpostReference": f"CHK-{int(time.time()*1000)}"
+            })
+        else:
+            return jsonify({"error": f"Unknown actionType: {action_type}"}), 400
 
 # 6. Emergency Alerts Management
 @police_bp.route("/emergency-alerts", methods=["GET"])

@@ -334,3 +334,79 @@ export interface CaseMessage {
   timestamp: string;
 }
 
+export interface OperationalDirective {
+  id: string;
+  directiveCode: string;
+  targetDistrict: string;
+  targetThana: string;
+  threatLevel: 'CRITICAL' | 'EXTREME' | 'HIGH' | 'MEDIUM' | 'LOW';
+  primaryRiskCrimeType: CrimeType | string;
+  timeWindow?: string;
+  patrolStrategy: string;
+  recommendedUnits: number;
+  status: 'ACTIVE' | 'ACKNOWLEDGED' | 'DEPLOYED' | 'COMPLETED';
+  acknowledgedBy?: string;
+  acknowledgedAt?: string;
+  latitude?: number;
+  longitude?: number;
+  radiusMeters?: number;
+  issuedBy?: string;
+  createdAt: string;
+}
+
+export interface ComparativeRiskRank {
+  thana: string;
+  district: string;
+  riskLevel: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  riskIndex: number;
+  primaryThreat: CrimeType | string;
+  sevenDayTrend: string;
+  trendDirection: 'UP' | 'DOWN' | 'STABLE';
+  activeIncidents: number;
+  recommendedAction: string;
+}
+
+export interface ResourceAllocationAdvice {
+  id: string;
+  sourceStation: string;
+  sourceRisk: string;
+  targetStation: string;
+  targetRisk: string;
+  recommendedUnits: string;
+  timeWindow: string;
+  tacticalRationale: string;
+  expectedImpact: string;
+}
+
+export interface HotspotAnomaly {
+  locationName: string;
+  incidentCount: number;
+  severity: CrimeSeverity | string;
+  primaryCrime: CrimeType | string;
+  district?: string;
+  thana?: string;
+  latitude?: number;
+  longitude?: number;
+  message: string;
+}
+
+export interface AIForecastZone {
+  id: string;
+  directiveCode: string;
+  targetDistrict: string;
+  targetThana: string;
+  threatLevel: 'CRITICAL' | 'EXTREME' | 'HIGH' | 'MEDIUM' | 'LOW';
+  crimeType: CrimeType | string;
+  timeWindow?: string;
+  patrolStrategy: string;
+  recommendedUnits: number;
+  status: 'ACTIVE' | 'ACKNOWLEDGED' | 'DEPLOYED' | 'COMPLETED';
+  latitude: number;
+  longitude: number;
+  radiusMeters: number;
+  acknowledgedBy?: string;
+  acknowledgedAt?: string;
+  issuedBy?: string;
+  createdAt: string;
+}
+

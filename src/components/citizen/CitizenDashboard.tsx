@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   ShieldAlert,
   FilePlus,
@@ -2510,7 +2510,7 @@ export const CitizenDashboard: React.FC = () => {
                 type="text"
                 value={sosLocationName}
                 onChange={e => setSosLocationName(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-red-500 transition"
+                className="sx-input"
               />
             </div>
 

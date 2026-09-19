@@ -15,6 +15,7 @@ from ..middleware.auth import verify_auth, require_roles
 from ..services.notification_service import NotificationService
 from ..services.audit_service import AuditService
 from ..services.jurisdiction_service import JurisdictionService, extract_thana_keyword
+from ..services.geocoding_service import GeocodingService
 
 citizen_bp = Blueprint("citizen", __name__, url_prefix="/api/citizen")
 
@@ -67,8 +68,20 @@ def submit_crime_report():
         locationName=location_name.strip(),
         district=district.strip(),
         thana=thana.strip(),
-        latitude=float(latitude) if latitude is not None else 23.8103,
-        longitude=float(longitude) if longitude is not None else 90.4125,
+        latitude=GeocodingService.resolve_coordinates(
+            location_name=location_name,
+            thana=thana,
+            district=district,
+            latitude=float(latitude) if latitude is not None else None,
+            longitude=float(longitude) if longitude is not None else None
+        )[0],
+        longitude=GeocodingService.resolve_coordinates(
+            location_name=location_name,
+            thana=thana,
+            district=district,
+            latitude=float(latitude) if latitude is not None else None,
+            longitude=float(longitude) if longitude is not None else None
+        )[1],
         occurredAt=occurred_at or now_iso,
         submittedAt=now_iso,
         severity=severity,
@@ -85,20 +98,30 @@ def submit_crime_report():
 
     with get_db() as db:
         db.add(new_report)
-        assigned_officer = JurisdictionService.assign_report_to_jurisdiction_officer(db, new_report, notify=True)
         db.commit()
         report_dict = new_report.to_dict()
 
-    notif_msg = (
-        f'Your report "{title}" ({case_id}) has been lodged and auto-assigned to Investigating Officer {assigned_officer.fullName} at {assigned_officer.stationOrThana}.'
-        if assigned_officer
-        else f'Your report "{title}" has been registered with status SUBMITTED. Tracking case ID is {case_id}.'
+    thana_officers = []
+    with get_db() as db:
+        thana_officers = JurisdictionService.find_officers_for_station(db, new_report.thana)
+
+    NotificationService.notify_police_thana(
+        officers=thana_officers,
+        title=f"New Thana Queue Case ({case_id})",
+        message=(
+            f'A new crime report "{title}" was added to the shared {thana} queue. '
+            "Any officer at this Thana may accept, reject, or reassign it."
+        ),
+        related_id=report_id,
     )
 
     NotificationService.create_case_notification(
         user_id=user.id,
         title=f"Crime Report Lodged ({case_id})",
-        message=notif_msg,
+        message=(
+            f'Your report "{title}" has been registered with status SUBMITTED and placed in '
+            f'the shared {thana} Police Station queue. Tracking case ID is {case_id}.'
+        ),
         related_id=report_id,
     )
 
@@ -111,14 +134,17 @@ def submit_crime_report():
         resource_id=report_id,
         ip_address=request.remote_addr,
         status="SUCCESS",
-        details=f"Crime report [{crime_type}] lodged in {thana}, {district}. Assigned officer: {assigned_officer.fullName if assigned_officer else 'Awaiting Station Officer'}.",
+        details=(
+            f"Crime report [{crime_type}] lodged in {thana}, {district}. "
+            f"Notified {len(thana_officers)} Thana officer(s); awaiting officer acceptance."
+        ),
     )
 
     return jsonify({
         "success": True,
         "report": report_dict,
-        "assignedOfficer": assigned_officer.fullName if assigned_officer else None,
-        "message": f"Report successfully submitted and routed to {assigned_officer.fullName if assigned_officer else thana + ' Police Station'}."
+        "assignedOfficer": None,
+        "message": f"Report successfully submitted to the shared {thana} Police Station queue."
     }), 201
 
 # 2. Get Citizen's Own Reports
@@ -253,8 +279,11 @@ def trigger_sos():
     longitude = data.get("longitude")
 
     sos_id = f"sos-{int(time.time() * 1000)}"
-    lat_val = float(latitude) if latitude is not None else 23.8103
-    lng_val = float(longitude) if longitude is not None else 90.4125
+    lat_val, lng_val = GeocodingService.resolve_coordinates(
+        location_name=location_name,
+        latitude=float(latitude) if latitude is not None else None,
+        longitude=float(longitude) if longitude is not None else None
+    )
     loc_val = location_name or "Current GPS Pinpoint Location"
 
     with get_db() as db:
