@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 import {
   Shield,
   Layers,
@@ -674,7 +674,7 @@ export const HeatmapComponent: React.FC<HeatmapProps> = ({
           <select
             value={selectedDistrict}
             onChange={e => onSelectDistrict(e.target.value)}
-            className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-blue-500 font-medium text-xs"
+            className="sx-input !w-auto"
           >
             <option value="ALL">All Bangladesh Divisions</option>
             <option value="Dhaka">Dhaka Division</option>
@@ -690,7 +690,7 @@ export const HeatmapComponent: React.FC<HeatmapProps> = ({
           <select
             value={selectedCrimeType}
             onChange={e => onSelectCrimeType(e.target.value)}
-            className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-blue-500 font-medium text-xs"
+            className="sx-input !w-auto"
           >
             <option value="ALL">All Crime Categories</option>
             <option value={CrimeType.THEFT_ROBBERY}>Robbery / Snatching</option>

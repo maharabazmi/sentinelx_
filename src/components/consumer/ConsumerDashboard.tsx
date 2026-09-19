@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   Scale,
   Barcode,
@@ -161,33 +161,35 @@ export const ConsumerDashboard: React.FC = () => {
   return (
     <div className="w-full max-w-7xl mx-auto px-4 py-8 space-y-8 text-slate-100">
       {/* DNCRP IDENTITY HEADER */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-slate-900/90 border border-slate-800/80 shadow-2xl backdrop-blur-md relative overflow-hidden">
+      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-[#090e1a]/95 via-[#070b14]/95 to-[#05070e]/95 border border-[#02baff]/20 shadow-2xl backdrop-blur-md relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-32 h-1 bg-gradient-to-r from-amber-500 to-[#02baff]" />
+
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 text-xs font-bold font-mono border border-amber-500/30 flex items-center gap-1.5">
+              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 text-xs font-bold font-['Orbitron'] border border-amber-500/30 flex items-center gap-1.5">
                 <Scale className="w-3.5 h-3.5 text-amber-400" />
-                DIRECTORATE OF NATIONAL CONSUMER RIGHT PROTECTION (DNCRP)
+                DNCRP MARKET SURVEILLANCE & ENFORCEMENT
               </span>
             </div>
 
-            <h1 className="text-2xl sm:text-4xl font-extrabold text-white font-display tracking-tight">
-              Inspector: {user?.fullName}
+            <h1 className="text-2xl sm:text-3xl font-black text-white font-['Orbitron'] tracking-tight">
+              INSPECTOR CONSOLE: {user?.fullName?.toUpperCase()}
             </h1>
 
-            <p className="text-xs text-slate-400 flex items-center gap-3">
-              <span>Department: <strong className="text-slate-200">{user?.department || 'National Market Surveillance Cell'}</strong></span>
+            <p className="text-xs text-slate-400 flex items-center gap-3 font-mono">
+              <span>Cell: <strong className="text-slate-200">{user?.department || 'National Market Surveillance Cell'}</strong></span>
               <span>•</span>
               <span>Designation: <strong className="text-slate-200">{user?.designation || 'Deputy Director'}</strong></span>
               <span>•</span>
-              <span>Enforcement Authority: <strong className="text-amber-400">Mobile Court Warrant Active</strong></span>
+              <span>Status: <strong className="text-amber-400">Mobile Court Warrant Active</strong></span>
             </p>
           </div>
 
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowAddBarcodeModal(true)}
-              className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs tracking-wide transition shadow-lg shadow-blue-600/25 flex items-center gap-2 font-display active:scale-95"
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#0147bf] to-[#02baff] hover:from-[#013ab0] hover:to-[#00a8e8] text-white font-bold text-xs font-['Orbitron'] tracking-wider transition shadow-lg shadow-[#0147bf]/30 flex items-center gap-2 active:scale-95"
             >
               <Barcode className="w-4 h-4" />
               <span>Register Barcode</span>
@@ -195,7 +197,7 @@ export const ConsumerDashboard: React.FC = () => {
 
             <button
               onClick={fetchConsumerData}
-              className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
+              className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-[#02baff]/20 transition hover:border-[#02baff]/50"
               title="Refresh telemetry"
             >
               <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
@@ -204,36 +206,36 @@ export const ConsumerDashboard: React.FC = () => {
         </div>
 
         {/* NAVIGATION TABS */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pt-6 mt-6 border-t border-slate-800/80 text-xs no-scrollbar">
-          <button
-            onClick={() => setActiveTab('complaints')}
-            className={`px-4 py-2.5 rounded-xl font-medium whitespace-nowrap transition flex items-center gap-2 ${
-              activeTab === 'complaints'
-                ? 'bg-slate-800 text-amber-400 font-bold border border-amber-500/30 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-            }`}
-          >
-            <Gavel className="w-3.5 h-3.5 text-amber-400" />
-            <span>Disputes & Mobile Court Inspection</span>
-            {complaints.filter(c => c.status === ComplaintStatus.SUBMITTED).length > 0 && (
-              <span className="px-2 py-0.2 rounded-full bg-amber-500/20 text-[10px] font-mono text-amber-300 font-bold">
-                {complaints.filter(c => c.status === ComplaintStatus.SUBMITTED).length} New
-              </span>
-            )}
-          </button>
-
-          <button
-            onClick={() => setActiveTab('barcodes')}
-            className={`px-4 py-2.5 rounded-xl font-medium whitespace-nowrap transition flex items-center gap-2 ${
-              activeTab === 'barcodes'
-                ? 'bg-slate-800 text-blue-400 font-bold border border-blue-500/30 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-            }`}
-          >
-            <Barcode className="w-3.5 h-3.5 text-blue-400" />
-            <span>BSTI Barcode Standards Registry ({barcodes.length})</span>
-          </button>
+        <div className="flex items-center gap-1 overflow-x-auto pt-5 mt-5 border-t border-white/5 text-xs no-scrollbar">
+          {[
+            {
+              id: 'complaints',
+              label: 'Disputes & Inspection',
+              badge: complaints.filter(c => c.status === ComplaintStatus.SUBMITTED).length > 0
+                ? `${complaints.filter(c => c.status === ComplaintStatus.SUBMITTED).length} New`
+                : null
+            },
+            { id: 'barcodes', label: `BSTI Registry (${barcodes.length})` },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`px-3.5 py-2 rounded-lg font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                activeTab === tab.id
+                  ? 'bg-[#0147bf]/20 text-[#02baff] border border-[#02baff]/30 font-semibold'
+                  : 'text-slate-500 hover:text-slate-300 hover:bg-white/5 border border-transparent'
+              }`}
+            >
+              <span>{tab.label}</span>
+              {tab.badge && (
+                <span className="px-1.5 rounded-full bg-white/10 text-[10px] font-mono text-slate-300">
+                  {tab.badge}
+                </span>
+              )}
+            </button>
+          ))}
         </div>
+
       </div>
 
       {/* METRICS STRIP */}
@@ -287,7 +289,7 @@ export const ConsumerDashboard: React.FC = () => {
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Search tracking # or shop name..."
-                className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                className="sx-input"
               />
             </div>
 
@@ -295,7 +297,7 @@ export const ConsumerDashboard: React.FC = () => {
               <select
                 value={statusFilter}
                 onChange={e => setStatusFilter(e.target.value)}
-                className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-amber-500"
+                className="sx-input !w-auto"
               >
                 <option value="ALL">All Statuses</option>
                 <option value={ComplaintStatus.SUBMITTED}>Submitted (New)</option>
@@ -309,7 +311,7 @@ export const ConsumerDashboard: React.FC = () => {
               <select
                 value={issueFilter}
                 onChange={e => setIssueFilter(e.target.value)}
-                className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-amber-500"
+                className="sx-input !w-auto"
               >
                 <option value="ALL">All Violations</option>
                 <option value={ConsumerIssueType.PRICE_GOUGING}>Price Gouging / Overpricing</option>
@@ -563,7 +565,7 @@ export const ConsumerDashboard: React.FC = () => {
                       value={fineAmount}
                       onChange={e => setFineAmount(e.target.value)}
                       placeholder="e.g. 50000"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-100 font-mono text-xs"
+                      className="sx-input font-mono"
                     />
                     <p className="text-[11px] text-emerald-400 mt-1">
                       Citizen Reward: <strong>৳{(Number(fineAmount || 0) * 0.25).toLocaleString()}</strong> (25% statutory entitlement under Section 76)
@@ -577,7 +579,7 @@ export const ConsumerDashboard: React.FC = () => {
                       value={inspectorNotes}
                       onChange={e => setInspectorNotes(e.target.value)}
                       placeholder="Record mobile court findings, shop trade license verification, and fine realization details..."
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-100 text-xs"
+                      className="sx-input"
                     />
                   </div>
 
@@ -643,7 +645,7 @@ export const ConsumerDashboard: React.FC = () => {
                   value={newBarcode}
                   onChange={e => setNewBarcode(e.target.value)}
                   placeholder="e.g. 8941100998877"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-100 font-mono"
+                  className="sx-input font-mono"
                   required
                 />
               </div>
@@ -655,7 +657,7 @@ export const ConsumerDashboard: React.FC = () => {
                   value={newProductName}
                   onChange={e => setNewProductName(e.target.value)}
                   placeholder="e.g. Fortified Mustard Oil 500ml"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-100"
+                  className="sx-input"
                   required
                 />
               </div>
@@ -667,7 +669,7 @@ export const ConsumerDashboard: React.FC = () => {
                   value={newCompanyName}
                   onChange={e => setNewCompanyName(e.target.value)}
                   placeholder="e.g. Pran-RFL Consumer Products"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-100"
+                  className="sx-input"
                   required
                 />
               </div>
@@ -679,7 +681,7 @@ export const ConsumerDashboard: React.FC = () => {
                     type="number"
                     value={newMRP}
                     onChange={e => setNewMRP(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-100 font-mono"
+                    className="sx-input font-mono"
                     required
                   />
                 </div>
@@ -689,7 +691,7 @@ export const ConsumerDashboard: React.FC = () => {
                   <select
                     value={newBarcodeStatus}
                     onChange={e => setNewBarcodeStatus(e.target.value as any)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-100"
+                    className="sx-input"
                   >
                     <option value="AUTHENTIC">Authentic BSTI</option>
                     <option value="COUNTERFEIT_FLAGGED">Counterfeit Flagged</option>

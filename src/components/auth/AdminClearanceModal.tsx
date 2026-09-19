@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { X, ShieldAlert, KeyRound, Lock, AlertCircle, RefreshCw, Eye, EyeOff, Terminal, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -88,19 +88,19 @@ export const AdminClearanceModal: React.FC<AdminClearanceModalProps> = ({
 
         {/* Header with Classified Branding */}
         <div className="flex items-center gap-3.5 mb-6">
-          <div className="w-12 h-12 rounded-2xl bg-purple-500/15 border border-purple-500/40 flex items-center justify-center text-purple-400 shadow-md flex-shrink-0">
-            <ShieldAlert className="w-6 h-6 stroke-[2]" />
+          <div className="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center p-2 shadow-md flex-shrink-0">
+            <img src="/Sentinalx_Only Logo Mark-01.svg" alt="SentinelX" className="w-full h-full object-contain" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono font-bold text-purple-400 uppercase tracking-widest block bg-purple-950/60 px-2 py-0.5 rounded border border-purple-500/30">
+              <span className="text-[10px] font-['Orbitron'] font-bold text-purple-400 uppercase tracking-widest block bg-purple-950/60 px-2 py-0.5 rounded border border-purple-500/30">
                 Classified Gateway • Level 5
               </span>
             </div>
-            <h3 className="text-xl font-bold text-white font-display mt-0.5">
-              Executive Higher Authority Clearance
+            <h3 className="text-xl font-bold text-white font-['Orbitron'] mt-0.5">
+              Higher Authority Clearance
             </h3>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-slate-400 font-mono">
               National Security & Cabinet Appointee Console
             </p>
           </div>
@@ -161,7 +161,7 @@ export const AdminClearanceModal: React.FC<AdminClearanceModalProps> = ({
               value={identifier}
               onChange={e => setIdentifier(e.target.value)}
               placeholder="e.g. admin@sentinelx.gov.bd"
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-400 transition font-mono"
+              className="sx-input"
               required
             />
           </div>
@@ -176,7 +176,7 @@ export const AdminClearanceModal: React.FC<AdminClearanceModalProps> = ({
               value={password}
               onChange={e => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-400 transition font-mono"
+              className="sx-input"
               required
             />
           </div>

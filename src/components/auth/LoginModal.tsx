@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { X, Lock, AlertCircle, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -74,14 +74,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
         {/* Dialog Header */}
         <div className="flex items-center gap-3.5 mb-6">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-sm flex-shrink-0">
-            <Lock className="w-6 h-6 stroke-[2]" />
+          <div className="w-12 h-12 rounded-2xl bg-[#0147bf]/20 border border-[#02baff]/30 flex items-center justify-center p-2 shadow-sm flex-shrink-0">
+            <img src="/Sentinalx_Only Logo Mark-01.svg" alt="SentinelX" className="w-full h-full object-contain" />
           </div>
           <div>
-            <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-widest block">
-              National Security Gateway
+            <span className="text-[10px] font-['Orbitron'] font-bold text-[#02baff] uppercase tracking-widest block">
+              NATIONAL GATEWAY
             </span>
-            <h3 className="text-xl font-bold text-white font-display">Sign In to SentinelX</h3>
+            <h3 className="text-xl font-bold text-white font-['Orbitron']">Sign In to SentinelX</h3>
           </div>
         </div>
 
@@ -102,7 +102,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               value={identifier}
               onChange={e => setIdentifier(e.target.value)}
               placeholder="e.g. citizen.tanvir@example.com or DMP-84920"
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition font-mono"
+              className="sx-input font-mono"
               required
             />
           </div>
@@ -116,18 +116,18 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               value={password}
               onChange={e => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition font-mono"
+              className="sx-input font-mono"
               required
             />
-            <p className="text-[11px] text-slate-500 mt-1">
-              Demo accounts default password: <code className="text-emerald-400 font-mono font-bold">demo1234</code>
+            <p className="text-[11px] text-slate-500 mt-1 font-mono">
+              Demo accounts default password: <code className="text-[#02baff] font-mono font-bold">demo1234</code>
             </p>
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold tracking-wide transition shadow-lg shadow-emerald-500/20 active:scale-95 disabled:opacity-50 font-display flex items-center justify-center gap-2"
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-[#0147bf] to-[#02baff] hover:from-[#013ab0] hover:to-[#00a8e8] text-white font-bold tracking-wide transition shadow-lg shadow-[#0147bf]/30 active:scale-95 disabled:opacity-50 font-['Orbitron'] text-xs flex items-center justify-center gap-2"
           >
             {isLoading ? (
               <>
@@ -135,7 +135,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 <span>Validating Cryptographic Token...</span>
               </>
             ) : (
-              <span>Sign In to Console</span>
+              <span>SIGN IN TO CONSOLE</span>
             )}
           </button>
         </form>
@@ -149,7 +149,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 onClose();
                 onSwitchToRegister();
               }}
-              className="text-emerald-400 font-semibold hover:underline"
+              className="text-[#02baff] font-semibold hover:underline font-mono"
             >
               Verify NID & Register
             </button>
