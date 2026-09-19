@@ -30,9 +30,11 @@ import {
   Check,
   Layers,
   MessageSquare,
-  RotateCcw
+  RotateCcw,
+  Printer
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { GDDocketModal } from '../common/GDDocketModal';
 import { ApiClient } from '../../services/api';
 import {
   CrimeReport,
@@ -80,6 +82,7 @@ export const PoliceDashboard: React.FC = () => {
 
   // Selected Report Review & Action Drawer / Modal
   const [selectedReport, setSelectedReport] = useState<CrimeReport | null>(null);
+  const [docketReport, setDocketReport] = useState<CrimeReport | null>(null);
   const [reviewModalTab, setReviewModalTab] = useState<'details' | 'chat'>('details');
   const [officerNote, setOfficerNote] = useState('');
   const [assignedOfficer, setAssignedOfficer] = useState('Sub-Inspector Faruq Ahmed (Badge DMP-4412)');
@@ -786,6 +789,17 @@ export const PoliceDashboard: React.FC = () => {
                               </button>
                             )}
                             <button
+                              type="button"
+                              onClick={e => {
+                                e.stopPropagation();
+                                setDocketReport(report);
+                              }}
+                              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs transition cursor-pointer"
+                              title="Print Official Police GD Docket Slip"
+                            >
+                              <Printer className="w-3.5 h-3.5 text-emerald-400" />
+                            </button>
+                            <button
                               onClick={e => {
                                 e.stopPropagation();
                                 setSelectedReport(report);
@@ -1201,12 +1215,21 @@ export const PoliceDashboard: React.FC = () => {
             </button>
 
             <div className="border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2.5 flex-wrap">
                 <span className="font-mono font-bold text-xs text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/30">
                   {selectedReport.caseId}
                 </span>
                 <StatusBadge status={selectedReport.status} size="sm" />
                 <StatusBadge status={selectedReport.severity} size="sm" />
+                <button
+                  type="button"
+                  onClick={() => setDocketReport(selectedReport)}
+                  className="px-2.5 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-semibold flex items-center gap-1.5 transition shadow-sm ml-auto mr-8 cursor-pointer"
+                  title="Print Official Police GD Docket Slip"
+                >
+                  <Printer className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Official GD Docket</span>
+                </button>
               </div>
               <h3 className="text-lg font-bold text-white font-display mt-2">
                 {selectedReport.title}
@@ -1439,6 +1462,17 @@ export const PoliceDashboard: React.FC = () => {
             )}
           </div>
         </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: OFFICIAL POLICE GD DOCKET RECORD SLIP                              */}
+      {/* ========================================================================= */}
+      {docketReport && (
+        <GDDocketModal
+          report={docketReport}
+          onClose={() => setDocketReport(null)}
+          viewerRole="POLICE"
+        />
       )}
     </div>
   );

@@ -476,4 +476,55 @@ html.light thead,
 html.light td,
 .light td {
   border-color: #cbd5e1 !important;
-}
+}
+
+/* 6. High-Fidelity Printable Dockets & Slips */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm 15mm;
+  }
+
+  body {
+    background-color: #ffffff !important;
+    color: #020617 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide background elements, navigation, and interactive buttons when printing */
+  header,
+  nav,
+  aside,
+  footer,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Reset modal positioning and backdrop for clean paper rendering */
+  [role="dialog"] {
+    position: static !important;
+    background: transparent !important;
+    padding: 0 !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+  }
+
+  [role="dialog"] > div {
+    border: 2px solid #0f172a !important;
+    box-shadow: none !important;
+    border-radius: 8px !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    overflow: visible !important;
+    margin: 0 !important;
+  }
+
+  /* Avoid unwanted page splits inside docket sections */
+  .grid,
+  .border-b,
+  .rounded-xl {
+    break-inside: avoid;
+  }
+}
+
