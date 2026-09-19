@@ -418,27 +418,30 @@ export const CitizenDashboard: React.FC = () => {
   return (
     <div className="w-full max-w-7xl mx-auto px-4 py-8 space-y-8 text-slate-100">
       {/* CITIZEN PROFILE HEADER */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-slate-900/90 border border-slate-800/80 shadow-2xl backdrop-blur-md relative overflow-hidden">
+      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-[#090e1a]/95 via-[#070b14]/95 to-[#05070e]/95 border border-[#02baff]/20 shadow-2xl backdrop-blur-md relative overflow-hidden">
+        {/* Futuristic top accent */}
+        <div className="absolute top-0 left-0 w-32 h-1 bg-gradient-to-r from-[#0147bf] to-[#02baff]" />
+
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div className="space-y-2">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 text-xs font-bold font-mono border border-emerald-500/30 flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="px-2.5 py-0.5 rounded-full bg-[#0147bf]/20 text-[#02baff] text-xs font-bold font-['Orbitron'] border border-[#02baff]/30 flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#02baff]" />
                 NID VERIFIED CITIZEN
               </span>
               <span className="text-xs text-slate-400 font-mono">
                 NID: <strong className="text-slate-200">{user?.nidNumber}</strong>
               </span>
             </div>
-            <h1 className="text-2xl sm:text-4xl font-extrabold text-white font-display tracking-tight">
-              Welcome, {user?.fullName}
+            <h1 className="text-2xl sm:text-3xl font-black text-white font-['Orbitron'] tracking-tight">
+              WELCOME, {user?.fullName?.toUpperCase()}
             </h1>
-            <p className="text-xs text-slate-400 flex items-center gap-3">
+            <p className="text-xs text-slate-400 flex items-center gap-3 font-mono">
               <span>Thana: <strong className="text-slate-300">{user?.stationOrThana || 'Uttara, Dhaka'}</strong></span>
               <span>•</span>
               <span>Phone: <strong className="text-slate-300">{user?.phone}</strong></span>
               <span>•</span>
-              <span>Account Status: <strong className="text-emerald-400">Authenticated Citizen</strong></span>
+              <span>Account: <strong className="text-[#02baff]">Active Citizen Console</strong></span>
             </p>
           </div>
 
@@ -447,9 +450,9 @@ export const CitizenDashboard: React.FC = () => {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowSOSConfirmModal(true)}
-                className="px-5 py-3 rounded-2xl bg-red-950/70 hover:bg-red-900 border border-red-500/40 text-red-300 font-display font-bold text-xs tracking-wider transition shadow-lg shadow-red-950/50 flex items-center gap-2 hover:scale-[1.02] active:scale-95"
+                className="px-5 py-3 rounded-2xl bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-['Orbitron'] font-bold text-xs tracking-wider transition shadow-lg shadow-red-950/60 flex items-center gap-2 hover:scale-[1.02] active:scale-95 border border-red-500/50"
               >
-                <Radio className="w-4 h-4 text-red-400" />
+                <Radio className="w-4 h-4 text-white animate-pulse" />
                 <span>EMERGENCY SOS (DISPATCH)</span>
               </button>
             </div>
@@ -499,97 +502,36 @@ export const CitizenDashboard: React.FC = () => {
         )}
 
         {/* SUB-NAVIGATION BAR */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pt-6 mt-6 border-t border-slate-800/80 text-xs no-scrollbar">
-          <button
-            onClick={() => setActiveTab('overview')}
-            className={`px-4 py-2.5 rounded-xl font-medium whitespace-nowrap transition flex items-center gap-2 ${
-              activeTab === 'overview'
-                ? 'bg-slate-800 text-white font-bold border border-slate-700 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-            }`}
-          >
-            <span>Overview</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('report_crime')}
-            className={`px-4 py-2.5 rounded-xl font-medium whitespace-nowrap transition flex items-center gap-2 ${
-              activeTab === 'report_crime'
-                ? 'bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-            }`}
-          >
-            <FilePlus className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Report Crime</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('my_reports')}
-            className={`px-4 py-2.5 rounded-xl font-medium whitespace-nowrap transition flex items-center gap-2 ${
-              activeTab === 'my_reports'
-                ? 'bg-slate-800 text-white font-bold border border-slate-700'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-            }`}
-          >
-            <span>My Crime Cases</span>
-            {myReports.length > 0 && (
-              <span className="px-1.5 py-0.2 rounded bg-slate-700 text-[10px] font-mono text-emerald-400 font-bold">
-                {myReports.length}
-              </span>
-            )}
-          </button>
-
-          <button
-            onClick={() => setActiveTab('consumer_dispute')}
-            className={`px-4 py-2.5 rounded-xl font-medium whitespace-nowrap transition flex items-center gap-2 ${
-              activeTab === 'consumer_dispute'
-                ? 'bg-amber-500/15 text-amber-400 font-bold border border-amber-500/30'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-            }`}
-          >
-            <Scale className="w-3.5 h-3.5 text-amber-400" />
-            <span>Consumer Dispute</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('my_complaints')}
-            className={`px-4 py-2.5 rounded-xl font-medium whitespace-nowrap transition flex items-center gap-2 ${
-              activeTab === 'my_complaints'
-                ? 'bg-slate-800 text-white font-bold border border-slate-700'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-            }`}
-          >
-            <span>My Disputes</span>
-            {myComplaints.length > 0 && (
-              <span className="px-1.5 py-0.2 rounded bg-slate-700 text-[10px] font-mono text-amber-400 font-bold">
-                {myComplaints.length}
-              </span>
-            )}
-          </button>
-
-          <button
-            onClick={() => setActiveTab('barcode_scanner')}
-            className={`px-4 py-2.5 rounded-xl font-medium whitespace-nowrap transition flex items-center gap-2 ${
-              activeTab === 'barcode_scanner'
-                ? 'bg-blue-500/15 text-blue-400 font-bold border border-blue-500/30'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-            }`}
-          >
-            <Barcode className="w-3.5 h-3.5 text-blue-400" />
-            <span>BSTI Barcode Checker</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('sos')}
-            className={`px-4 py-2.5 rounded-xl font-medium whitespace-nowrap transition flex items-center gap-2 ${
-              activeTab === 'sos'
-                ? 'bg-red-950/60 text-red-300 font-bold border border-red-500/40'
-                : 'text-red-400 hover:bg-red-950/30'
-            }`}
-          >
-            <Radio className="w-3.5 h-3.5 text-red-400 animate-pulse" />
-            <span>SOS Distress Center</span>
-          </button>
+        <div className="flex items-center gap-1 overflow-x-auto pt-5 mt-5 border-t border-white/5 text-xs no-scrollbar">
+          {[
+            { id: 'overview', label: 'Overview', icon: null },
+            { id: 'report_crime', label: 'Report Crime', icon: null },
+            { id: 'my_reports', label: 'My Cases', badge: myReports.length > 0 ? myReports.length : null },
+            { id: 'consumer_dispute', label: 'File Dispute', icon: null },
+            { id: 'my_complaints', label: 'My Disputes', badge: myComplaints.length > 0 ? myComplaints.length : null },
+            { id: 'barcode_scanner', label: 'Barcode Check', icon: null },
+            { id: 'sos', label: 'SOS', icon: null, isSOS: true },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`px-3.5 py-2 rounded-lg font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                activeTab === tab.id
+                  ? tab.isSOS
+                    ? 'bg-red-500/15 text-red-400 border border-red-500/30 font-semibold'
+                    : 'bg-[#0147bf]/20 text-[#02baff] border border-[#02baff]/30 font-semibold'
+                  : 'text-slate-500 hover:text-slate-300 hover:bg-white/5 border border-transparent'
+              }`}
+            >
+              {tab.isSOS && <Radio className="w-3 h-3 text-red-400 animate-pulse flex-shrink-0" />}
+              <span>{tab.label}</span>
+              {tab.badge != null && (
+                <span className="px-1.5 rounded-full bg-white/10 text-[10px] font-mono text-slate-300">
+                  {tab.badge}
+                </span>
+              )}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -610,8 +552,8 @@ export const CitizenDashboard: React.FC = () => {
                 onClick={() => setActiveTab('report_crime')}
                 className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800/80 hover:border-emerald-500/40 hover:-translate-y-0.5 transition cursor-pointer group shadow-lg"
               >
-                <div className="w-12 h-12 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-4 group-hover:scale-105 transition">
-                  <FilePlus className="w-6 h-6 stroke-[2]" />
+                <div className="w-11 h-11 rounded-xl bg-white/6 border border-white/10 flex items-center justify-center text-emerald-400 mb-4 group-hover:scale-105 transition">
+                  <FilePlus className="w-5 h-5 stroke-[2]" />
                 </div>
                 <h4 className="text-base font-bold text-white font-display group-hover:text-emerald-400 transition">
                   Report a Crime
@@ -630,8 +572,8 @@ export const CitizenDashboard: React.FC = () => {
                 onClick={() => setActiveTab('consumer_dispute')}
                 className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800/80 hover:border-amber-500/40 hover:-translate-y-0.5 transition cursor-pointer group shadow-lg"
               >
-                <div className="w-12 h-12 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-4 group-hover:scale-105 transition">
-                  <Scale className="w-6 h-6 stroke-[2]" />
+                <div className="w-11 h-11 rounded-xl bg-white/6 border border-white/10 flex items-center justify-center text-amber-400 mb-4 group-hover:scale-105 transition">
+                  <Scale className="w-5 h-5 stroke-[2]" />
                 </div>
                 <h4 className="text-base font-bold text-white font-display group-hover:text-amber-400 transition">
                   Consumer Grievance
@@ -670,8 +612,8 @@ export const CitizenDashboard: React.FC = () => {
                 onClick={() => setActiveTab('barcode_scanner')}
                 className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800/80 hover:border-blue-500/40 hover:-translate-y-0.5 transition cursor-pointer group shadow-lg"
               >
-                <div className="w-12 h-12 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-400 mb-4 group-hover:scale-105 transition">
-                  <Barcode className="w-6 h-6 stroke-[2]" />
+                <div className="w-11 h-11 rounded-xl bg-white/6 border border-white/10 flex items-center justify-center text-[#02baff] mb-4 group-hover:scale-105 transition">
+                  <Barcode className="w-5 h-5 stroke-[2]" />
                 </div>
                 <h4 className="text-base font-bold text-white font-display group-hover:text-blue-400 transition">
                   Verify Product
@@ -897,7 +839,7 @@ export const CitizenDashboard: React.FC = () => {
                 <select
                   value={crimeType}
                   onChange={e => setCrimeType(e.target.value as CrimeType)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-emerald-500 transition"
+                  className="sx-input"
                 >
                   <option value={CrimeType.THEFT_ROBBERY}>Theft & Armed Robbery (ডাকাতি / চুরি)</option>
                   <option value={CrimeType.HARASSMENT}>Harassment & Stalking (হয়রানি / ইভটিজিং)</option>
@@ -960,7 +902,7 @@ export const CitizenDashboard: React.FC = () => {
                   <select
                     value={district}
                     onChange={e => handleDistrictChange(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-emerald-500 transition"
+                    className="sx-input"
                   >
                     {BANGLADESH_DIVISIONS.map(div => (
                       <optgroup key={div.id} label={`${div.name} Division (${div.nameBn})`}>
@@ -981,7 +923,7 @@ export const CitizenDashboard: React.FC = () => {
                   <select
                     value={thana}
                     onChange={e => setThana(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-emerald-500 transition"
+                    className="sx-input"
                     required
                   >
                     {getThanasByDistrict(district).map(t => (
@@ -1004,7 +946,7 @@ export const CitizenDashboard: React.FC = () => {
                     value={locationName}
                     onChange={e => setLocationName(e.target.value)}
                     placeholder="e.g. Road 11, Block D, Near Banani Supermarket"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition"
+                    className="sx-input"
                     required
                   />
                 </div>
@@ -1020,7 +962,7 @@ export const CitizenDashboard: React.FC = () => {
                     type="datetime-local"
                     value={occurredAt}
                     onChange={e => setOccurredAt(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-emerald-500 transition"
+                    className="sx-input"
                     required
                   />
                 </div>
@@ -1040,7 +982,7 @@ export const CitizenDashboard: React.FC = () => {
                   value={crimeTitle}
                   onChange={e => setCrimeTitle(e.target.value)}
                   placeholder="e.g. Armed motorcycle snatching incident at Kamal Ataturk Ave"
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition"
+                  className="sx-input"
                   required
                 />
               </div>
@@ -1054,7 +996,7 @@ export const CitizenDashboard: React.FC = () => {
                   value={crimeDesc}
                   onChange={e => setCrimeDesc(e.target.value)}
                   placeholder="Describe the sequence of events, suspect descriptions, vehicles, stolen property, and any other relevant facts..."
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition"
+                  className="sx-input"
                   required
                 />
               </div>
@@ -1352,7 +1294,7 @@ export const CitizenDashboard: React.FC = () => {
                   value={shopName}
                   onChange={e => setShopName(e.target.value)}
                   placeholder="e.g. Al-Madina Super Shop, Swapno Express"
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs placeholder-slate-500 focus:outline-none focus:border-amber-500 transition"
+                  className="sx-input"
                   required
                 />
               </div>
@@ -1365,7 +1307,7 @@ export const CitizenDashboard: React.FC = () => {
                   <select
                     value={shopDistrict}
                     onChange={e => handleShopDistrictChange(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-amber-500 transition"
+                    className="sx-input"
                   >
                     {BANGLADESH_DIVISIONS.map(div => (
                       <optgroup key={div.id} label={`${div.name} Division (${div.nameBn})`}>
@@ -1386,7 +1328,7 @@ export const CitizenDashboard: React.FC = () => {
                   <select
                     value={shopThana}
                     onChange={e => setShopThana(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-amber-500 transition"
+                    className="sx-input"
                     required
                   >
                     {getThanasByDistrict(shopDistrict).map(t => (
@@ -1407,7 +1349,7 @@ export const CitizenDashboard: React.FC = () => {
                   value={tradeLicense}
                   onChange={e => setTradeLicense(e.target.value)}
                   placeholder="e.g. TR-DHA-2024-8849"
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs font-mono placeholder-slate-500 focus:outline-none focus:border-amber-500 transition"
+                  className="sx-input"
                 />
               </div>
 
@@ -1420,7 +1362,7 @@ export const CitizenDashboard: React.FC = () => {
                   value={shopAddress}
                   onChange={e => setShopAddress(e.target.value)}
                   placeholder="e.g. Shop #14, Ground Floor, Rapa Plaza"
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs placeholder-slate-500 focus:outline-none focus:border-amber-500 transition"
+                  className="sx-input"
                 />
               </div>
             </div>
@@ -1439,7 +1381,7 @@ export const CitizenDashboard: React.FC = () => {
                     value={productName}
                     onChange={e => setProductName(e.target.value)}
                     placeholder="e.g. Fortified Soybean Oil 1L, Baby Milk Powder"
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs placeholder-slate-500 focus:outline-none focus:border-amber-500 transition"
+                    className="sx-input"
                     required
                   />
                 </div>
@@ -1453,7 +1395,7 @@ export const CitizenDashboard: React.FC = () => {
                     value={brandName}
                     onChange={e => setBrandName(e.target.value)}
                     placeholder="e.g. Teer, Fresh, Rupchanda"
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs placeholder-slate-500 focus:outline-none focus:border-amber-500 transition"
+                    className="sx-input"
                   />
                 </div>
               </div>
@@ -1472,7 +1414,7 @@ export const CitizenDashboard: React.FC = () => {
                       setPricePaid('');
                     }
                   }}
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-amber-500 transition"
+                  className="sx-input"
                 >
                   <option value={ConsumerIssueType.PRICE_GOUGING}>Price Gouging / Overcharging above MRP (মূল্য কারচুপি)</option>
                   <option value={ConsumerIssueType.EXPIRED_GOODS}>Selling Expired Goods / Tampered Dates (মেয়াদোত্তীর্ণ পণ্য)</option>
@@ -1495,7 +1437,7 @@ export const CitizenDashboard: React.FC = () => {
                     value={barcodeInput}
                     onChange={e => setBarcodeInput(e.target.value)}
                     placeholder="e.g. 8941100234012"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs font-mono placeholder-slate-500 focus:outline-none focus:border-amber-500 transition"
+                    className="sx-input"
                   />
                 </div>
               </div>
@@ -1520,7 +1462,7 @@ export const CitizenDashboard: React.FC = () => {
                           value={mrp}
                           onChange={e => setMrp(e.target.value)}
                           placeholder="e.g. 175"
-                          className="w-full pl-8 pr-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs font-mono focus:outline-none focus:border-amber-500 transition"
+                          className="sx-input"
                         />
                       </div>
                     </div>
@@ -1537,7 +1479,7 @@ export const CitizenDashboard: React.FC = () => {
                           value={pricePaid}
                           onChange={e => setPricePaid(e.target.value)}
                           placeholder="e.g. 210"
-                          className="w-full pl-8 pr-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs font-mono focus:outline-none focus:border-amber-500 transition"
+                          className="sx-input"
                         />
                       </div>
                     </div>
@@ -1578,7 +1520,7 @@ export const CitizenDashboard: React.FC = () => {
                       ? "Explain how the merchant refused official MRP, sold above printed price, or behaved upon inquiry..."
                       : "Explain the details of this violation (e.g. expired date, adulteration, fake seal, or merchant behavior)..."
                   }
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs placeholder-slate-500 focus:outline-none focus:border-amber-500 transition"
+                  className="sx-input"
                   required
                 />
               </div>
@@ -2423,7 +2365,7 @@ export const CitizenDashboard: React.FC = () => {
                     value={lookupBarcode}
                     onChange={e => setLookupBarcode(e.target.value)}
                     placeholder="e.g. 8941100234012"
-                    className="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-sm font-mono placeholder-slate-500 focus:outline-none focus:border-blue-500 transition"
+                    className="sx-input"
                     required
                   />
                 </div>

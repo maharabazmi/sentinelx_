@@ -13,6 +13,7 @@ import { ConsumerDashboard } from './components/consumer/ConsumerDashboard';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { UserRole } from './types';
 import { Shield, Lock, PhoneCall } from 'lucide-react';
+import { BrandLogo } from './components/common/BrandLogo';
 
 const AppContent: React.FC = () => {
   const { user, activeAlerts } = useAuth();
@@ -50,8 +51,12 @@ const AppContent: React.FC = () => {
   React.useEffect(() => {
     if (!user) {
       setCurrentTab('home');
+    } else {
+      // Auto-redirect to dashboard on login / registration
+      setCurrentTab('dashboard');
     }
   }, [user]);
+
 
   const renderMainContent = () => {
     // 1. Initial run or explicit 'home' tab selection: Always land on Public Landing Page
@@ -100,34 +105,32 @@ const AppContent: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="w-full bg-[var(--bg-body)] border-t border-slate-200 dark:border-slate-800/80 py-8 px-4 text-xs text-slate-500 dark:text-slate-400 transition-colors duration-250">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
-              <Shield className="w-3.5 h-3.5" />
-            </div>
+      <footer className="w-full bg-[#05070e] border-t border-[#02baff]/15 py-8 px-4 text-xs text-slate-400 transition-colors duration-250">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-3">
+            <BrandLogo variant="mark" size="sm" />
             <div>
-              <span className="font-bold text-slate-700 dark:text-slate-300 font-['Space_Grotesk']">
-                Sentinel<span className="text-emerald-500 dark:text-emerald-400">X</span> Bangladesh
+              <span className="font-bold text-white font-['Orbitron'] tracking-wider text-xs">
+                SENTINEL<span className="text-[#02baff]">X</span> BANGLADESH
               </span>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              <p className="text-[10px] text-slate-500 font-mono">
                 National Public Safety & Consumer Integrity Platform
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-6 text-[11px] text-slate-500 dark:text-slate-400">
-            <span className="flex items-center gap-1">
-              <Lock className="w-3 h-3 text-emerald-500 dark:text-emerald-400" />
+          <div className="flex items-center gap-6 text-[11px] font-mono">
+            <span className="flex items-center gap-1.5 text-slate-300">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#02baff] animate-pulse" />
               NID Verification Standard
             </span>
-            <span className="flex items-center gap-1">
-              <PhoneCall className="w-3 h-3 text-red-500 dark:text-red-400" />
-              Emergency Police 999 • DNCRP 16121
+            <span className="flex items-center gap-1.5 text-slate-300">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+              Emergency 999 • DNCRP 16121
             </span>
           </div>
 
-          <div className="text-[11px] text-slate-500 dark:text-slate-400">
+          <div className="text-[10px] text-slate-500 font-mono">
             &copy; {new Date().getFullYear()} Government of Bangladesh • Civil Safety Initiative
           </div>
         </div>

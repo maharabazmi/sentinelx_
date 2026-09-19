@@ -10,7 +10,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { UserRole } from '../../types';
-import { ThemeToggle } from './ThemeToggle.tsx';
+
+import { BrandLogo } from './BrandLogo';
 
 interface HeaderProps {
   onOpenLogin: () => void;
@@ -115,30 +116,13 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Brand Emblem */}
         <div
           onClick={handleEmblemClick}
-          className="flex items-center gap-3 cursor-pointer group select-none flex-shrink-0"
+          className="cursor-pointer group select-none flex-shrink-0"
         >
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center shadow-lg shadow-emerald-500/20 ring-1 ring-emerald-400/40 group-hover:scale-105 transition duration-200">
-            <Shield className="w-5 h-5 text-slate-950 stroke-[2.5]" />
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-display font-extrabold text-lg sm:text-xl tracking-tight text-slate-900 dark:text-white">
-                Sentinel<span className="text-emerald-500 dark:text-emerald-400">X</span>
-              </span>
-              <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 uppercase tracking-widest font-mono font-bold">
-                BD
-              </span>
-            </div>
-            <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium tracking-tight">
-              National Public Safety & Consumer Protection
-            </p>
-          </div>
+          <BrandLogo variant="full" size="md" showBadge={true} badgeText="BD" />
         </div>
 
         {/* Right Action Bar */}
         <div className="flex items-center gap-2 sm:gap-2.5">
-          {/* Custom Theme Switcher (Dark / Light / Cyber / Auto) */}
-          <ThemeToggle />
 
           {/* Emergency Hotlines Dropdown */}
           <div className="relative" ref={hotlineRef}>
@@ -303,14 +287,14 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={onOpenLogin}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-slate-200 transition border border-slate-800"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900/90 hover:bg-slate-800 text-slate-200 transition border border-[#02baff]/30 hover:border-[#02baff]/60 hover:text-white"
               >
-                <LogIn className="w-3.5 h-3.5" />
+                <LogIn className="w-3.5 h-3.5 text-[#02baff]" />
                 <span>Sign In</span>
               </button>
               <button
                 onClick={onOpenRegister}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition font-medium shadow-md shadow-emerald-500/20"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-[#0147bf] to-[#02baff] hover:from-[#013ab0] hover:to-[#00a8e8] text-white transition font-['Orbitron'] tracking-wider shadow-lg shadow-[#0147bf]/30"
               >
                 <UserPlus className="w-3.5 h-3.5" />
                 <span>NID Register</span>

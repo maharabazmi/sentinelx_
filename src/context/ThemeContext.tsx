@@ -1,66 +1,31 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect } from 'react';
 
-export type ThemeMode = 'dark' | 'light' | 'cyber' | 'system';
+// Theme is locked to dark mode. No toggle exposed to users.
+export type ThemeMode = 'dark';
 
 interface ThemeContextType {
     theme: ThemeMode;
     setTheme: (theme: ThemeMode) => void;
-    resolvedTheme: 'dark' | 'light' | 'cyber';
+    resolvedTheme: 'dark';
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [theme, setThemeState] = useState<ThemeMode>(() => {
-        const saved = localStorage.getItem('sentinelx_theme');
-        if (saved === 'dark' || saved === 'light' || saved === 'cyber' || saved === 'system') {
-            return saved as ThemeMode;
-        }
-        return 'dark';
-    });
-
-    const [resolvedTheme, setResolvedTheme] = useState<'dark' | 'light' | 'cyber'>('dark');
-
     useEffect(() => {
-        localStorage.setItem('sentinelx_theme', theme);
         const root = document.documentElement;
+        root.classList.remove('light', 'cyber');
+        root.classList.add('dark');
+        root.removeAttribute('data-theme');
+        localStorage.setItem('sentinelx_theme', 'dark');
+    }, []);
 
-        const applyTheme = (mode: 'dark' | 'light' | 'cyber') => {
-            setResolvedTheme(mode);
-            root.classList.remove('dark', 'light');
-            root.removeAttribute('data-theme');
-
-            if (mode === 'dark') {
-                root.classList.add('dark');
-            } else if (mode === 'light') {
-                root.classList.add('light');
-            } else if (mode === 'cyber') {
-                root.setAttribute('data-theme', 'cyber');
-                root.classList.add('dark'); // Cyber mode inherits dark variant contrasts
-            }
-        };
-
-        if (theme === 'system') {
-            const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            applyTheme(systemDark ? 'dark' : 'light');
-
-            const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-            const listener = (e: MediaQueryListEvent) => {
-                applyTheme(e.matches ? 'dark' : 'light');
-            };
-            mediaQuery.addEventListener('change', listener);
-            return () => mediaQuery.removeEventListener('change', listener);
-        } else {
-            applyTheme(theme);
-        }
-    }, [theme]);
-
-    const setTheme = (newTheme: ThemeMode) => {
-        setThemeState(newTheme);
+    const setTheme = (_: ThemeMode) => {
+        // No-op: theme is locked to dark
     };
 
     return (
-        <ThemeContext.Provider value={{ theme, setTheme, resolvedTheme }}>
+        <ThemeContext.Provider value={{ theme: 'dark', setTheme, resolvedTheme: 'dark' }}>
             {children}
         </ThemeContext.Provider>
     );

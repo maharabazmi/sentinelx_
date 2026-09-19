@@ -30,18 +30,18 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         <Icon className="w-7 h-7 stroke-[1.5]" />
       </div>
 
-      <h4 className="text-base font-bold text-white font-display tracking-tight mb-1.5">
+      <h4 className="text-base font-bold text-white font-['Orbitron'] tracking-tight mb-1.5">
         {title}
       </h4>
 
-      <p className="text-xs text-slate-400 max-w-sm leading-relaxed mb-5">
+      <p className="text-xs text-slate-400 max-w-sm leading-relaxed mb-5 font-mono">
         {description}
       </p>
 
       {action && (
         <button
           onClick={action.onClick}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition shadow-md shadow-emerald-500/20 active:scale-95"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#0147bf] to-[#02baff] hover:from-[#013ab0] hover:to-[#00a8e8] text-white text-xs font-bold font-['Orbitron'] tracking-wider transition shadow-md shadow-[#0147bf]/30 active:scale-95"
         >
           {ActionIcon && <ActionIcon className="w-3.5 h-3.5" />}
           <span>{action.label}</span>

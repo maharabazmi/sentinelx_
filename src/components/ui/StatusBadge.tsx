@@ -67,8 +67,8 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
       case ComplaintStatus.VERIFIED:
       case ComplaintStatus.INVESTIGATION:
         return {
-          bg: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
-          dot: 'bg-blue-400',
+          bg: 'bg-[#0147bf]/15 text-[#02baff] border-[#02baff]/30',
+          dot: 'bg-[#02baff] animate-pulse',
           icon: ShieldCheck,
           label: status.replace(/_/g, ' ')
         };

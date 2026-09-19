@@ -6,39 +6,39 @@
 
 @layer base {
 
-  /* Default Theme (Dark Obsidian) */
+  /* Default Theme (Futuristic Brand Obsidian) */
   :root {
-    --font-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-orbitron: 'Orbitron', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-display: 'Space Grotesk', 'Orbitron', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-sans: 'Inter', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+    /* Official Brand Colors */
+    --brand-primary: #0147bf;
+    --brand-cyan: #02baff;
+    --brand-glow: rgba(2, 186, 255, 0.25);
 
     /* Base Surfaces & Text: Dark Mode */
-    --bg-body: #020617;
-    /* slate-950 */
-    --bg-card: #0f172a;
-    /* slate-900 */
-    --bg-header: rgba(2, 6, 23, 0.95);
-    --bg-modal: #0f172a;
-    --text-body: #f8fafc;
-    /* slate-50 */
-    --text-muted: #94a3b8;
-    /* slate-400 */
+    --bg-body: #05070e;
+    --bg-card: #090e1a;
+    --bg-header: rgba(5, 7, 14, 0.88);
+    --bg-modal: #0b1220;
+    --text-body: #f1f5f9;
+    --text-muted: #8493a8;
 
-    --border-color: #1e293b;
-    /* slate-800 */
-    --border-subtle: #334155;
-    /* slate-700 */
+    --border-color: #121c2e;
+    --border-subtle: rgba(2, 186, 255, 0.18);
 
-    --scrollbar-track: #020617;
-    --scrollbar-thumb: #1e293b;
-    --scrollbar-thumb-hover: #334155;
+    --scrollbar-track: #05070e;
+    --scrollbar-thumb: #121c2e;
+    --scrollbar-thumb-hover: #02baff;
 
-    /* Glassmorphism: Dark Mode */
-    --glass-bg: rgba(15, 23, 42, 0.75);
-    --glass-border: rgba(51, 65, 85, 0.4);
-    --glass-elevated-bg: rgba(15, 23, 42, 0.9);
-    --glass-elevated-border: rgba(71, 85, 105, 0.4);
-    --glass-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
-    --subtle-border: rgba(51, 65, 85, 0.5);
+    /* Glassmorphism: Futuristic Brand Obsidian */
+    --glass-bg: rgba(9, 14, 26, 0.72);
+    --glass-border: rgba(2, 186, 255, 0.15);
+    --glass-elevated-bg: rgba(11, 18, 32, 0.85);
+    --glass-elevated-border: rgba(2, 186, 255, 0.3);
+    --glass-shadow: 0 20px 30px -10px rgba(1, 71, 191, 0.35), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+    --subtle-border: rgba(2, 186, 255, 0.2);
   }
 
   /* Light Theme Variables (High Contrast Daylight) */
@@ -188,6 +188,79 @@
 
 .subtle-border {
   border-color: var(--subtle-border);
+}
+
+/* =====================================================
+   SentinelX Standard Input — use .sx-input on every
+   input, select, textarea across the whole app.
+   ===================================================== */
+.sx-input {
+  width: 100%;
+  padding: 0.625rem 1rem;          /* py-2.5 px-4 */
+  border-radius: 0.75rem;          /* rounded-xl */
+  background: #0d1525;             /* darker than card */
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f1f5f9;                  /* slate-100 */
+  font-size: 0.75rem;              /* text-xs */
+  line-height: 1.5;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.sx-input::placeholder {
+  color: #475569; /* slate-600 */
+}
+.sx-input:focus {
+  border-color: #02baff;
+  box-shadow: 0 0 0 2px rgba(2, 186, 255, 0.18);
+}
+.sx-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+
+/* Futuristic Brand Utilities Inspired by Fixile AI Interface */
+.font-orbitron {
+  font-family: var(--font-orbitron);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 20px -3px rgba(2, 186, 255, 0.4);
+}
+
+.glow-blue {
+  box-shadow: 0 0 25px -4px rgba(1, 71, 191, 0.5);
+}
+
+.glow-text-cyan {
+  text-shadow: 0 0 12px rgba(2, 186, 255, 0.6);
+}
+
+.border-brand-glow {
+  border-color: rgba(2, 186, 255, 0.25);
+  transition: all 0.2s ease;
+}
+
+.border-brand-glow:hover {
+  border-color: rgba(2, 186, 255, 0.6);
+  box-shadow: 0 0 18px -4px rgba(2, 186, 255, 0.35);
+}
+
+.cyber-card {
+  background: linear-gradient(135deg, rgba(9, 14, 26, 0.85) 0%, rgba(5, 8, 16, 0.95) 100%);
+  border: 1px solid rgba(2, 186, 255, 0.15);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7);
+  position: relative;
+}
+
+.cyber-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 24px;
+  height: 2px;
+  background: #02baff;
 }
 
 /* Animations */

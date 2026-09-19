@@ -26,7 +26,7 @@ export const StepProgress: React.FC<StepProgressProps> = ({
       <div className="hidden sm:flex items-center justify-between relative">
         <div className="absolute top-4 left-6 right-6 h-0.5 bg-slate-800 -z-0" />
         <div
-          className="absolute top-4 left-6 h-0.5 bg-emerald-500 transition-all duration-300 -z-0"
+          className="absolute top-4 left-6 h-0.5 bg-gradient-to-r from-[#0147bf] to-[#02baff] transition-all duration-300 -z-0"
           style={{
             width: `${((currentStep - 1) / (steps.length - 1)) * 100}%`
           }}
@@ -46,11 +46,11 @@ export const StepProgress: React.FC<StepProgressProps> = ({
               }`}
             >
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold font-mono transition-all duration-200 border-2 ${
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold font-['Orbitron'] transition-all duration-200 border-2 ${
                   isCompleted
-                    ? 'bg-emerald-500 border-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
+                    ? 'bg-gradient-to-r from-[#0147bf] to-[#02baff] border-[#02baff] text-white shadow-md shadow-[#0147bf]/30'
                     : isCurrent
-                    ? 'bg-slate-950 border-emerald-400 text-emerald-400 ring-4 ring-emerald-500/20'
+                    ? 'bg-slate-950 border-[#02baff] text-[#02baff] ring-4 ring-[#02baff]/20'
                     : 'bg-slate-900 border-slate-700 text-slate-400'
                 }`}
               >

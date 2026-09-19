@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   X,
   CheckCircle2,
@@ -164,15 +164,15 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
         {/* Dialog Header with Stepper */}
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-              <ShieldCheck className="w-5 h-5 stroke-[2]" />
+            <div className="w-10 h-10 rounded-2xl bg-[#0147bf]/20 border border-[#02baff]/30 flex items-center justify-center p-1.5 shadow-sm">
+              <img src="/Sentinalx_Only Logo Mark-01.svg" alt="SentinelX" className="w-full h-full object-contain" />
             </div>
             <div>
-              <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-widest block">
-                Official Bangladesh NID Gateway
+              <span className="text-[10px] font-['Orbitron'] font-bold text-[#02baff] uppercase tracking-widest block">
+                BANGLADESH NID GATEWAY
               </span>
-              <h3 className="text-xl font-bold text-white font-display">
-                Citizen NID Verification & Registration
+              <h3 className="text-xl font-bold text-white font-['Orbitron']">
+                Citizen Identity Verification
               </h3>
             </div>
           </div>
@@ -223,7 +223,7 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
                 value={nidNumber}
                 onChange={e => setNidNumber(e.target.value)}
                 placeholder="10-digit Smart Card, 13-digit, or 17-digit NID"
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 font-mono text-xs focus:outline-none focus:border-emerald-500 transition"
+                className="sx-input"
                 required
               />
               <div className="flex flex-wrap items-center gap-2 mt-2 text-[11px] text-slate-400">
@@ -254,7 +254,7 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
                 type="date"
                 value={dob}
                 onChange={e => setDob(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-emerald-500 transition"
+                className="sx-input"
                 required
               />
             </div>
@@ -373,7 +373,7 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
                   value={phone}
                   onChange={e => setPhone(e.target.value)}
                   placeholder="+8801711234567"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 font-mono text-xs focus:outline-none focus:border-emerald-500"
+                  className="sx-input"
                   required
                 />
               </div>
@@ -386,7 +386,7 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-emerald-500"
+                  className="sx-input"
                   required
                 />
               </div>
@@ -402,7 +402,7 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="Minimum 8 characters"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-emerald-500"
+                  className="sx-input"
                   required
                 />
               </div>
@@ -416,7 +416,7 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
                   value={confirmPassword}
                   onChange={e => setConfirmPassword(e.target.value)}
                   placeholder="Repeat password"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-emerald-500"
+                  className="sx-input"
                   required
                 />
               </div>

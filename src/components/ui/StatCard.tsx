@@ -6,7 +6,7 @@ interface StatCardProps {
   value: string | number;
   subtitle?: string;
   icon: LucideIcon;
-  variant?: 'emerald' | 'blue' | 'amber' | 'red' | 'purple' | 'slate';
+  variant?: 'emerald' | 'blue' | 'amber' | 'red' | 'purple' | 'slate' | 'cyan';
   trend?: {
     value: string;
     isPositive?: boolean;
@@ -20,71 +20,54 @@ export const StatCard: React.FC<StatCardProps> = ({
   value,
   subtitle,
   icon: Icon,
-  variant = 'emerald',
+  variant = 'cyan',
   trend,
   onClick,
   className = ''
 }) => {
-  const variantStyles = {
-    emerald: {
-      bg: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
-      iconBg: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
-      highlight: 'text-emerald-400',
-      borderGlow: 'hover:border-emerald-500/40'
-    },
-    blue: {
-      bg: 'bg-blue-500/10 border-blue-500/20 text-blue-400',
-      iconBg: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
-      highlight: 'text-blue-400',
-      borderGlow: 'hover:border-blue-500/40'
-    },
-    amber: {
-      bg: 'bg-amber-500/10 border-amber-500/20 text-amber-400',
-      iconBg: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
-      highlight: 'text-amber-400',
-      borderGlow: 'hover:border-amber-500/40'
-    },
-    red: {
-      bg: 'bg-red-500/10 border-red-500/20 text-red-400',
-      iconBg: 'bg-red-500/15 text-red-400 border-red-500/30',
-      highlight: 'text-red-400',
-      borderGlow: 'hover:border-red-500/40'
-    },
-    purple: {
-      bg: 'bg-purple-500/10 border-purple-500/20 text-purple-400',
-      iconBg: 'bg-purple-500/15 text-purple-400 border-purple-500/30',
-      highlight: 'text-purple-400',
-      borderGlow: 'hover:border-purple-500/40'
-    },
-    slate: {
-      bg: 'bg-slate-800/40 border-slate-700/50 text-slate-300',
-      iconBg: 'bg-slate-800 text-slate-300 border-slate-700',
-      highlight: 'text-slate-200',
-      borderGlow: 'hover:border-slate-600'
-    }
+  // Icon color only — container is always the same dark neutral
+  const iconColor: Record<string, string> = {
+    emerald: 'text-emerald-400',
+    blue: 'text-[#02baff]',
+    cyan: 'text-[#02baff]',
+    amber: 'text-amber-400',
+    red: 'text-red-400',
+    purple: 'text-purple-400',
+    slate: 'text-slate-300',
   };
 
-  const style = variantStyles[variant];
+  const accentColor: Record<string, string> = {
+    emerald: 'text-emerald-400',
+    blue: 'text-[#02baff]',
+    cyan: 'text-[#02baff]',
+    amber: 'text-amber-400',
+    red: 'text-red-400',
+    purple: 'text-purple-400',
+    slate: 'text-slate-300',
+  };
 
   return (
     <div
       onClick={onClick}
-      className={`relative p-5 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg backdrop-blur-sm transition-all duration-200 ${
+      className={`relative p-5 rounded-2xl bg-[#090e1a] border border-white/5 shadow-xl transition-all duration-300 hover:border-[#02baff]/30 group ${
         onClick ? 'cursor-pointer hover:-translate-y-0.5' : ''
-      } ${style.borderGlow} ${className}`}
+      } ${className}`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="space-y-1.5 min-w-0">
-          <span className="text-xs font-medium text-slate-400 tracking-wide uppercase font-mono">
+      {/* Top-left cyan accent line */}
+      <div className="absolute top-0 left-0 w-6 h-0.5 bg-[#02baff]/50 group-hover:w-10 transition-all duration-300 rounded-full" />
+
+      <div className="flex items-start justify-between gap-3 relative z-10">
+        <div className="space-y-1 min-w-0">
+          <span className="text-[10px] font-bold text-slate-500 tracking-widest uppercase font-['Orbitron']">
             {title}
           </span>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-extrabold text-white font-display tracking-tight">
+          <div className="flex items-baseline gap-2 pt-0.5">
+            <span className="text-2xl sm:text-3xl font-black text-white font-['Orbitron'] tracking-tight">
               {value}
             </span>
             {trend && (
               <span
-                className={`text-xs font-mono font-medium ${
+                className={`text-[10px] font-mono font-bold ${
                   trend.isPositive ? 'text-emerald-400' : 'text-amber-400'
                 }`}
               >
@@ -93,14 +76,15 @@ export const StatCard: React.FC<StatCardProps> = ({
             )}
           </div>
           {subtitle && (
-            <p className="text-[11px] text-slate-400 truncate pt-0.5">
+            <p className="text-[11px] text-slate-500 truncate pt-0.5 font-mono">
               {subtitle}
             </p>
           )}
         </div>
 
-        <div className={`w-11 h-11 rounded-xl flex items-center justify-center border flex-shrink-0 ${style.iconBg}`}>
-          <Icon className="w-5 h-5" />
+        {/* Icon container: always dark neutral bg, only icon tinted */}
+        <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 flex-shrink-0 group-hover:bg-white/8 transition-colors duration-300">
+          <Icon className={`w-5 h-5 ${iconColor[variant] ?? 'text-[#02baff]'}`} />
         </div>
       </div>
     </div>
