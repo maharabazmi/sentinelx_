@@ -1052,8 +1052,8 @@ export const AdminDashboard: React.FC = () => {
       {/* MODAL: PROVISION AUTHORITY USER                                           */}
       {/* ========================================================================= */}
       {showAddUserModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in">
-          <div className="bg-slate-900 border border-purple-500/50 rounded-3xl w-full max-w-md p-6 sm:p-8 shadow-2xl relative text-slate-100 space-y-4 max-h-[90vh] overflow-y-auto">
+        <div className="provision-user-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in">
+          <div className="provision-user-modal bg-slate-900 border border-purple-500/50 rounded-3xl w-full max-w-md p-6 sm:p-8 shadow-2xl relative text-slate-100 space-y-4 max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setShowAddUserModal(false)}
               className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
