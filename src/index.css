@@ -206,6 +206,9 @@
   outline: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
+.sx-input-with-icon {
+  padding-left: 2.5rem;
+}
 .sx-input::placeholder {
   color: #475569; /* slate-600 */
 }

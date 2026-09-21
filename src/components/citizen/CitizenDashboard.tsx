@@ -949,7 +949,7 @@ export const CitizenDashboard: React.FC = () => {
                     value={locationName}
                     onChange={e => setLocationName(e.target.value)}
                     placeholder="e.g. Road 11, Block D, Near Banani Supermarket"
-                    className="sx-input"
+                    className="sx-input sx-input-with-icon"
                     required
                   />
                 </div>
@@ -965,7 +965,7 @@ export const CitizenDashboard: React.FC = () => {
                     type="datetime-local"
                     value={occurredAt}
                     onChange={e => setOccurredAt(e.target.value)}
-                    className="sx-input"
+                    className="sx-input sx-input-with-icon"
                     required
                   />
                 </div>
