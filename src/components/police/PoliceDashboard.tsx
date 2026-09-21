@@ -85,7 +85,7 @@ export const PoliceDashboard: React.FC = () => {
   const [docketReport, setDocketReport] = useState<CrimeReport | null>(null);
   const [reviewModalTab, setReviewModalTab] = useState<'details' | 'chat'>('details');
   const [officerNote, setOfficerNote] = useState('');
-  const [assignedOfficer, setAssignedOfficer] = useState('Sub-Inspector Faruq Ahmed (Badge DMP-4412)');
+  const [assignedOfficer, setAssignedOfficer] = useState('');
   const [isProcessingAction, setIsProcessingAction] = useState(false);
 
   // Queue Scope & Assignment State (Strictly Station Bound)
@@ -99,7 +99,7 @@ export const PoliceDashboard: React.FC = () => {
   const [alertMessage, setAlertMessage] = useState('');
   const [alertType, setAlertType] = useState<EmergencyType>(EmergencyType.WEATHER_HAZARD);
   const [alertSeverity, setAlertSeverity] = useState<AlertSeverity>(AlertSeverity.HIGH);
-  const [affectedArea, setAffectedArea] = useState('Gulshan, Banani, and Baridhara zones');
+  const [affectedArea, setAffectedArea] = useState('');
   const [alertDurationHours, setAlertDurationHours] = useState('4');
   const [isBroadcasting, setIsBroadcasting] = useState(false);
 

@@ -13,7 +13,9 @@ import {
   Building,
   MapPin,
   RefreshCw,
-  Lock
+  Lock,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { ApiClient } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -35,17 +37,19 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
   const [step, setStep] = useState<number>(1);
 
   // Step 1: NID & DOB
-  const [nidNumber, setNidNumber] = useState('19922692015000123');
-  const [dob, setDob] = useState('1992-05-14');
+  const [nidNumber, setNidNumber] = useState('');
+  const [dob, setDob] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationResult, setVerificationResult] = useState<NIDVerificationResult | null>(null);
   const [isAlreadyRegistered, setIsAlreadyRegistered] = useState(false);
 
   // Step 3: Contact & Security Credentials
-  const [phone, setPhone] = useState('+8801711234567');
-  const [email, setEmail] = useState('citizen.tanvir@example.com');
-  const [password, setPassword] = useState('demo1234');
-  const [confirmPassword, setConfirmPassword] = useState('demo1234');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,15 +63,17 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
 
   const resetWizard = () => {
     setStep(1);
-    setNidNumber('19922692015000123');
-    setDob('1992-05-14');
+    setNidNumber('');
+    setDob('');
     setIsVerifying(false);
     setVerificationResult(null);
     setIsAlreadyRegistered(false);
-    setPhone('+8801711234567');
-    setEmail('citizen.tanvir@example.com');
-    setPassword('demo1234');
-    setConfirmPassword('demo1234');
+    setPhone('');
+    setEmail('');
+    setPassword('');
+    setConfirmPassword('');
+    setShowPassword(false);
+    setShowConfirmPassword(false);
     setError(null);
     setIsSubmitting(false);
   };
@@ -230,28 +236,12 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
                 type="text"
                 value={nidNumber}
                 onChange={e => setNidNumber(e.target.value)}
-                placeholder="10-digit Smart Card, 13-digit, or 17-digit NID"
                 className="sx-input"
                 required
               />
-              <div className="flex flex-wrap items-center gap-2 mt-2 text-[11px] text-slate-400">
-                <span>Sample demo NIDs:</span>
-                <button
-                  type="button"
-                  onClick={() => { setNidNumber('5508192841'); setDob('1996-11-20'); }}
-                  className="text-emerald-400 hover:underline font-mono"
-                >
-                  5508192841 (Smart Card)
-                </button>
-                <span>•</span>
-                <button
-                  type="button"
-                  onClick={() => { setNidNumber('19922692015000123'); setDob('1992-05-14'); }}
-                  className="text-emerald-400 hover:underline font-mono"
-                >
-                  19922692015000123
-                </button>
-              </div>
+              <p className="text-[11px] text-slate-400 mt-1">
+                NID must contain 10, 13, or 17 digits.
+              </p>
             </div>
 
             <div>
@@ -380,7 +370,6 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
                   type="text"
                   value={phone}
                   onChange={e => setPhone(e.target.value)}
-                  placeholder="+8801711234567"
                   className="sx-input"
                   required
                 />
@@ -405,28 +394,48 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
                 <label className="block font-semibold text-slate-300 mb-1.5">
                   Set Password <span className="text-emerald-400">*</span>
                 </label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="Minimum 8 characters"
-                  className="sx-input"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    className="sx-input pr-10"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(value => !value)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    title={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
               <div>
                 <label className="block font-semibold text-slate-300 mb-1.5">
                   Confirm Password <span className="text-emerald-400">*</span>
                 </label>
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={e => setConfirmPassword(e.target.value)}
-                  placeholder="Repeat password"
-                  className="sx-input"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    className="sx-input pr-10"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(value => !value)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
+                    aria-label={showConfirmPassword ? 'Hide confirmation password' : 'Show confirmation password'}
+                    title={showConfirmPassword ? 'Hide confirmation password' : 'Show confirmation password'}
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
             </div>
 

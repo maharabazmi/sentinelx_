@@ -149,7 +149,7 @@ export const CitizenDashboard: React.FC = () => {
   // SOS EMERGENCY STATE & ACCIDENTAL CONFIRMATION
   // ----------------------------------------------------
   const [showSOSConfirmModal, setShowSOSConfirmModal] = useState(false);
-  const [sosLocationName, setSosLocationName] = useState('Dhanmondi Lake Bridge, Dhaka');
+  const [sosLocationName, setSosLocationName] = useState('');
   const [isTriggeringSOS, setIsTriggeringSOS] = useState(false);
   const [isResolvingSOS, setIsResolvingSOS] = useState(false);
 

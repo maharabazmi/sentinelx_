@@ -16,6 +16,7 @@ import {
   UserPlus,
   RefreshCw,
   Eye,
+  EyeOff,
   Layers,
   Sparkles,
   X,
@@ -85,11 +86,11 @@ export const AdminDashboard: React.FC = () => {
   const [newFullName, setNewFullName] = useState('');
   const [newNID, setNewNID] = useState('');
   const [newEmail, setNewEmail] = useState('');
-  const [newPhone, setNewPhone] = useState('+8801700000000');
+  const [newPhone, setNewPhone] = useState('');
   const [newRole, setNewRole] = useState<UserRole>(UserRole.POLICE);
-  const [newBadge, setNewBadge] = useState('DMP-');
-  const [newDesignation, setNewDesignation] = useState('Sub-Inspector (SI)');
-  const [newDepartment, setNewDepartment] = useState('General Investigation & GD Registry');
+  const [newBadge, setNewBadge] = useState('');
+  const [newDesignation, setNewDesignation] = useState('');
+  const [newDepartment, setNewDepartment] = useState('');
   const [policeDistrict, setPoliceDistrict] = useState('Dhaka');
   const [policeThana, setPoliceThana] = useState('Gulshan');
   const [newStation, setNewStation] = useState('Gulshan Police Station, Dhaka');
@@ -116,7 +117,8 @@ export const AdminDashboard: React.FC = () => {
     setNewStation(`${newThana} Police Station, ${policeDistrict}`);
   };
 
-  const [newPassword, setNewPassword] = useState('demo1234');
+  const [newPassword, setNewPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
 
@@ -235,6 +237,12 @@ export const AdminDashboard: React.FC = () => {
         setNewFullName('');
         setNewNID('');
         setNewEmail('');
+        setNewPhone('');
+        setNewBadge('');
+        setNewDesignation('');
+        setNewDepartment('');
+        setNewPassword('');
+        setShowNewPassword(false);
         fetchAdminData();
       }
     } catch (err: any) {
@@ -1077,7 +1085,6 @@ export const AdminDashboard: React.FC = () => {
                   type="text"
                   value={newNID}
                   onChange={e => setNewNID(e.target.value)}
-                  placeholder="10, 13, or 17 digit NID"
                   className="sx-input font-mono"
                   required
                 />
@@ -1243,13 +1250,24 @@ export const AdminDashboard: React.FC = () => {
 
               <div>
                 <label className="block font-semibold text-slate-300 mb-1">Temporary Password</label>
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={e => setNewPassword(e.target.value)}
-                  className="sx-input"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    className="sx-input pr-10"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(value => !value)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
+                    aria-label={showNewPassword ? 'Hide temporary password' : 'Show temporary password'}
+                    title={showNewPassword ? 'Hide temporary password' : 'Show temporary password'}
+                  >
+                    {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
               <button
