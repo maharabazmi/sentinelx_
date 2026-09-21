@@ -119,9 +119,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               className="sx-input font-mono"
               required
             />
-            <p className="text-[11px] text-slate-500 mt-1 font-mono">
-              Demo accounts default password: <code className="text-[#02baff] font-mono font-bold">demo1234</code>
-            </p>
           </div>
 
           <button

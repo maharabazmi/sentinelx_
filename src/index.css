@@ -455,15 +455,28 @@ html.light .text-slate-600,
 html.light .text-slate-700,
 .light .text-slate-50,
 .light .text-slate-600,
+html.light .text-blue-200,
+.light .text-blue-200 {
+  color: #1d4ed8 !important;
+}
+
 .light .text-slate-700 {
   color: #334155 !important;
 }
 
 /* Accent text colors adapted for high-contrast daylight rendering */
+html.light .text-emerald-200,
+.light .text-emerald-200 {
+  color: #047857 !important;
+}
 html.light .text-emerald-400,
 .light .text-emerald-400 {
   color: #047857 !important;
   /* Emerald-700 */
+}
+html.light .text-amber-200,
+.light .text-amber-200 {
+  color: #b45309 !important;
 }
 
 html.light .text-emerald-300,
