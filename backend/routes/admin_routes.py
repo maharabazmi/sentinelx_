@@ -8,6 +8,9 @@ from ..models import (
     SOSRequest,
     ConsumerComplaint,
     AuditLog,
+    normalize_email,
+    normalize_nid,
+    normalize_phone,
     utcnow_iso,
 )
 from ..middleware.auth import verify_auth, require_roles
@@ -98,19 +101,24 @@ def create_user():
     if not full_name or not email or not phone or not nid_number or not role or not password:
         return jsonify({"error": "Missing mandatory user fields."}), 400
 
+    normalized_nid = normalize_nid(nid_number)
+    normalized_email = normalize_email(email)
+    normalized_phone = normalize_phone(phone)
     with get_db() as db:
-        if db.query(User).filter(User.nidNumber == nid_number.strip()).first():
+        if any(normalize_nid(user.nidNumber) == normalized_nid for user in db.query(User.nidNumber).all()):
             return jsonify({"error": "NID number is already assigned to an existing account."}), 400
-        if db.query(User).filter(User.email == email.strip().lower()).first():
+        if db.query(User).filter(User.email == normalized_email).first():
             return jsonify({"error": "Email address already exists."}), 400
+        if any(normalize_phone(user.phone) == normalized_phone for user in db.query(User.phone).all()):
+            return jsonify({"error": "Phone number already exists."}), 400
 
         user_id = f"user-{role[:3].lower()}-{int(time.time() * 1000)}"
         new_user = User(
             id=user_id,
-            nidNumber=nid_number.strip(),
+            nidNumber=normalized_nid,
             fullName=full_name.strip(),
-            email=email.strip().lower(),
-            phone=phone.strip(),
+            email=normalized_email,
+            phone=normalized_phone,
             role=role,
             badgeNumber=badge_number.strip() if badge_number else None,
             designation=designation.strip() if designation else None,

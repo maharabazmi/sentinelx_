@@ -4,7 +4,7 @@ import bcrypt
 from flask import Blueprint, request, jsonify, g
 from ..config import Config
 from ..database import get_db
-from ..models import User, utcnow_iso
+from ..models import User, normalize_email, normalize_nid, normalize_phone, utcnow_iso
 from ..middleware.auth import generate_token, verify_auth, decode_token
 from ..services.nid_service import MockNIDVerificationService, PorichoyNIDVerificationService
 from ..services.audit_service import AuditService
@@ -38,9 +38,13 @@ def verify_nid():
     try:
         service = porichoy_nid_service if use_porichoy_live else mock_nid_service
         result = service.verify_nid(nid_number, dob)
+        verified_nid = normalize_nid(result.get("nidNumber") or nid_number)
 
         with get_db() as db:
-            existing_user = db.query(User).filter(User.nidNumber == nid_number.strip()).first() is not None
+            existing_user = any(
+                normalize_nid(user.nidNumber) == verified_nid
+                for user in db.query(User.nidNumber).all()
+            )
 
         return jsonify({
             "success": True,
@@ -67,21 +71,26 @@ def register():
     if not nid_number or not password or not full_name or not phone:
         return jsonify({"error": "Missing required registration fields."}), 400
 
+    normalized_nid = normalize_nid(nid_number)
     with get_db() as db:
-        if db.query(User).filter(User.nidNumber == nid_number.strip()).first():
+        if any(normalize_nid(user.nidNumber) == normalized_nid for user in db.query(User.nidNumber).all()):
             return jsonify({"error": "An account is already linked to this Bangladesh National ID (NID)."}), 400
 
-        user_email = email.strip().lower() if email else f"{nid_number}@citizen.sentinelx.bd"
+        user_email = normalize_email(email) if email else f"{normalized_nid}@citizen.sentinelx.bd"
         if db.query(User).filter(User.email == user_email).first():
             return jsonify({"error": "Email address is already in use."}), 400
+
+        user_phone = normalize_phone(phone)
+        if any(normalize_phone(user.phone) == user_phone for user in db.query(User.phone).all()):
+            return jsonify({"error": "Phone number is already in use."}), 400
 
         user_id = f"user-cit-{int(time.time() * 1000)}"
         new_user = User(
             id=user_id,
-            nidNumber=nid_number.strip(),
+            nidNumber=normalized_nid,
             fullName=full_name.strip(),
             email=user_email,
-            phone=phone.strip(),
+            phone=user_phone,
             role="CITIZEN",
             isNIDVerified=True,
             stationOrThana=f"{thana}, {district}",

@@ -39,6 +39,7 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
   const [dob, setDob] = useState('1992-05-14');
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationResult, setVerificationResult] = useState<NIDVerificationResult | null>(null);
+  const [isAlreadyRegistered, setIsAlreadyRegistered] = useState(false);
 
   // Step 3: Contact & Security Credentials
   const [phone, setPhone] = useState('+8801711234567');
@@ -62,6 +63,7 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
     setDob('1992-05-14');
     setIsVerifying(false);
     setVerificationResult(null);
+    setIsAlreadyRegistered(false);
     setPhone('+8801711234567');
     setEmail('citizen.tanvir@example.com');
     setPassword('demo1234');
@@ -100,8 +102,10 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
       if (res.success && res.verification) {
         setVerificationResult(res.verification);
         if (res.alreadyRegistered) {
+          setIsAlreadyRegistered(true);
           setError('An account with this NID already exists. You can sign in directly.');
         } else {
+          setIsAlreadyRegistered(false);
           const normalizedName = res.verification.fullNameEn.toLowerCase().replace(/[^a-z0-9]/g, '.');
           setEmail(`${normalizedName}@example.com`);
           setStep(2);
@@ -123,6 +127,10 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
     }
     if (!verificationResult) {
       setError('Missing verified identity.');
+      return;
+    }
+    if (isAlreadyRegistered) {
+      setError('This NID is already linked to an existing account. Please sign in instead.');
       return;
     }
 

@@ -41,6 +41,15 @@ import { StatCard } from '../ui/StatCard';
 import { EmptyState } from '../ui/EmptyState';
 import { TableRowSkeleton } from '../ui/SkeletonLoader';
 
+const normalizeAdminPhone = (value: string) => {
+  const digits = value.replace(/\D/g, '');
+  if (digits.startsWith('00880')) return `+${digits.slice(2)}`;
+  if (digits.startsWith('880')) return `+${digits}`;
+  if (digits.startsWith('01') && digits.length === 11) return `+880${digits.slice(1)}`;
+  if (digits.startsWith('1') && digits.length === 10) return `+880${digits}`;
+  return digits ? `+${digits}` : '';
+};
+
 export const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'system_overview' | 'ai_prediction' | 'audit_trail' | 'user_management'>('system_overview');
@@ -199,6 +208,13 @@ export const AdminDashboard: React.FC = () => {
   // Create Authority User
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    const requestedPhone = normalizeAdminPhone(newPhone);
+    const duplicatePhone = usersList.some(user => normalizeAdminPhone(user.phone) === requestedPhone);
+    if (duplicatePhone) {
+      alert('Phone number already exists for another account. Use a unique mobile number.');
+      return;
+    }
+
     setIsCreatingUser(true);
     try {
       const res = await ApiClient.createAdminUser({
