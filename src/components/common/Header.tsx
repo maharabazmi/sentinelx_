@@ -6,9 +6,12 @@ import {
   LogIn,
   UserPlus,
   PhoneCall,
-  ChevronDown
+  ChevronDown,
+  Moon,
+  Sun
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { UserRole } from '../../types';
 
 import { BrandLogo } from './BrandLogo';
@@ -36,6 +39,7 @@ export const Header: React.FC<HeaderProps> = ({
     markNotificationRead,
     activeAlerts
   } = useAuth();
+  const { theme, setTheme } = useTheme();
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [showHotlines, setShowHotlines] = useState(false);
@@ -123,6 +127,15 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Right Action Bar */}
         <div className="flex items-center gap-2 sm:gap-2.5">
+
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="p-2 rounded-lg bg-slate-900/90 light:bg-white hover:bg-slate-800 light:hover:bg-slate-100 text-slate-300 light:text-slate-700 hover:text-white light:hover:text-slate-900 border border-slate-800 light:border-slate-300 transition"
+            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+          >
+            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
 
           {/* Emergency Hotlines Dropdown */}
           <div className="relative" ref={hotlineRef}>

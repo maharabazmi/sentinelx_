@@ -105,7 +105,7 @@ const AppContent: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="w-full bg-[#05070e] border-t border-[#02baff]/15 py-8 px-4 text-xs text-slate-400 transition-colors duration-250">
+      <footer className="w-full bg-[var(--bg-body)] border-t border-[#02baff]/15 py-8 px-4 text-xs text-slate-400 transition-colors duration-250">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3">
             <BrandLogo variant="mark" size="sm" />

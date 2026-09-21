@@ -346,6 +346,63 @@ html.light .bg-slate-800\/40,
   background-color: #f1f5f9 !important;
 }
 
+html.light .bg-slate-700,
+html.light .bg-slate-700\/80,
+html.light .bg-slate-700\/60,
+html.light .bg-slate-700\/50,
+html.light .bg-white\/5,
+html.light .bg-white\/10,
+.light .bg-slate-700,
+.light .bg-slate-700\/80,
+.light .bg-slate-700\/60,
+.light .bg-white\/5,
+.light .bg-white\/10 {
+  background-color: #e2e8f0 !important;
+}
+
+html.light .bg-\[\#05070e\],
+html.light .bg-\[\#0d1525\],
+.light .bg-\[\#05070e\],
+.light .bg-\[\#0d1525\] {
+  background-color: #ffffff !important;
+}
+
+html.light [class*="bg-[#090e1a]"],
+html.light [class*="bg-[#05070e]"],
+html.light [class*="bg-[#070b14]"],
+.light [class*="bg-[#090e1a]"],
+.light [class*="bg-[#05070e]"],
+.light [class*="bg-[#070b14]"] {
+  background-color: #ffffff !important;
+}
+
+html.light [class*="from-[#090e1a]"],
+html.light [class*="from-[#05070e]"],
+.light [class*="from-[#090e1a]"] {
+  --tw-gradient-from: #ffffff var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(255 255 255 / 0) var(--tw-gradient-to-position) !important;
+}
+
+.light [class*="from-[#05070e]"] {
+  --tw-gradient-from: #ffffff var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(255 255 255 / 0) var(--tw-gradient-to-position) !important;
+}
+
+html.light [class*="via-[#070b14]"],
+html.light [class*="via-[#080d1a]"],
+.light [class*="via-[#070b14]"] {
+  --tw-gradient-via: #f8fafc var(--tw-gradient-via-position) !important;
+}
+
+.light [class*="via-[#080d1a]"] {
+  --tw-gradient-via: #f8fafc var(--tw-gradient-via-position) !important;
+}
+
+html.light [class*="to-[#05070e]"],
+.light [class*="to-[#05070e]"] {
+  --tw-gradient-to: #f1f5f9 var(--tw-gradient-to-position) !important;
+}
+
 /* Gradients in Light Mode */
 html.light .from-slate-950,
 .light .from-slate-950,
@@ -391,6 +448,15 @@ html.light .text-slate-500,
 .light .text-slate-500 {
   color: #475569 !important;
   /* Slate-600 */
+}
+
+html.light .text-slate-50,
+html.light .text-slate-600,
+html.light .text-slate-700,
+.light .text-slate-50,
+.light .text-slate-600,
+.light .text-slate-700 {
+  color: #334155 !important;
 }
 
 /* Accent text colors adapted for high-contrast daylight rendering */
@@ -470,6 +536,25 @@ html.light .border-slate-900,
 .light .border-slate-700 {
   border-color: #cbd5e1 !important;
   /* Sharp Slate-300 border */
+}
+
+html.light .border-slate-600,
+.light .border-slate-600 {
+  border-color: #cbd5e1 !important;
+}
+
+html.light .cyber-card,
+.light .cyber-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%) !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 10px 24px -12px rgba(15, 23, 42, 0.25) !important;
+}
+
+html.light .sx-input,
+.light .sx-input {
+  background: #ffffff !important;
+  border-color: #94a3b8 !important;
+  color: #020617 !important;
 }
 
 /* 4. High-Contrast Container Badges */
@@ -600,4 +685,4 @@ html.light td,
     break-inside: avoid;
   }
 }
-
+
