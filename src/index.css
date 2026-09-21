@@ -209,6 +209,21 @@
 .sx-input-with-icon {
   padding-left: 2.5rem;
 }
+
+.police-reassign-button:disabled {
+  background-color: #334155 !important;
+  border: 1px solid #64748b !important;
+  color: #e2e8f0 !important;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+html.light .police-reassign-button:disabled,
+.light .police-reassign-button:disabled {
+  background-color: #e2e8f0 !important;
+  border-color: #94a3b8 !important;
+  color: #334155 !important;
+}
 .sx-input::placeholder {
   color: #475569; /* slate-600 */
 }

@@ -1377,7 +1377,7 @@ export const PoliceDashboard: React.FC = () => {
                         type="button"
                         disabled={!selectedAssigneeId || isProcessingAction}
                         onClick={() => handleAssignCase(selectedReport.id, selectedAssigneeId)}
-                        className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-600 text-white font-semibold text-xs transition"
+                        className="police-reassign-button px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs transition"
                       >
                         Reassign
                       </button>
