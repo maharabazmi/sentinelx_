@@ -255,6 +255,21 @@ body.light .provision-user-backdrop .provision-user-modal {
   -webkit-backdrop-filter: blur(26px) saturate(1.2) !important;
 }
 
+html.light .short-tabs,
+body.light .short-tabs,
+.light .short-tabs {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.65), rgba(241, 245, 249, 0.45)) !important;
+  background-color: rgba(255, 255, 255, 0.55) !important;
+  border: 1px solid rgba(148, 163, 184, 0.38) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.85) !important;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.48) !important;
+  border-radius: 0.75rem !important;
+  padding: 0.35rem !important;
+  backdrop-filter: blur(16px) saturate(1.2) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(1.2) !important;
+  box-shadow: 0 8px 24px -12px rgba(15, 23, 42, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+}
+
 html.light .provision-user-modal .text-white,
 html.light .provision-user-modal .text-slate-100,
 html.light .provision-user-modal .text-slate-200,

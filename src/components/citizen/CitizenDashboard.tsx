@@ -505,7 +505,7 @@ export const CitizenDashboard: React.FC = () => {
         )}
 
         {/* SUB-NAVIGATION BAR */}
-        <div className="flex items-center gap-1 overflow-x-auto pt-5 mt-5 border-t border-white/5 text-xs no-scrollbar">
+        <div className="short-tabs flex items-center gap-1 overflow-x-auto pt-5 mt-5 border-t border-white/5 text-xs no-scrollbar">
           {[
             { id: 'overview', label: 'Overview', icon: null },
             { id: 'report_crime', label: 'Report Crime', icon: null },
