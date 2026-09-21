@@ -655,17 +655,17 @@ export const PoliceDashboard: React.FC = () => {
 
           {/* INCIDENT DATA TABLE */}
           <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
+            <div className="overflow-hidden">
+              <table className="w-full table-fixed text-left text-xs">
                 <thead className="bg-slate-950/80 text-slate-400 font-mono uppercase tracking-wider border-b border-slate-800">
                   <tr>
-                    <th className="py-3.5 px-4 font-semibold">Case ID</th>
-                    <th className="py-3.5 px-4 font-semibold">Incident Details</th>
-                    <th className="py-3.5 px-4 font-semibold">Jurisdiction</th>
-                    <th className="py-3.5 px-4 font-semibold">Investigator</th>
-                    <th className="py-3.5 px-4 font-semibold">Severity</th>
-                    <th className="py-3.5 px-4 font-semibold">Status</th>
-                    <th className="py-3.5 px-4 font-semibold text-right">Officer Action</th>
+                    <th className="w-[9%] py-3.5 px-2 sm:px-4 font-semibold">Case ID</th>
+                    <th className="w-[18%] py-3.5 px-2 sm:px-4 font-semibold">Incident Details</th>
+                    <th className="w-[16%] py-3.5 px-2 sm:px-4 font-semibold">Jurisdiction</th>
+                    <th className="w-[17%] py-3.5 px-2 sm:px-4 font-semibold">Investigator</th>
+                    <th className="w-[11%] py-3.5 px-2 sm:px-4 font-semibold">Severity</th>
+                    <th className="w-[12%] py-3.5 px-2 sm:px-4 font-semibold">Status</th>
+                    <th className="w-[17%] py-3.5 px-2 sm:px-4 font-semibold text-right">Officer Action</th>
                   </tr>
                 </thead>
 
@@ -714,10 +714,10 @@ export const PoliceDashboard: React.FC = () => {
                         className="hover:bg-slate-800/40 transition group cursor-pointer"
                         onClick={() => setSelectedReport(report)}
                       >
-                        <td className="py-3.5 px-4 font-mono font-bold text-blue-400">
+                        <td className="py-3.5 px-2 sm:px-4 font-mono font-bold text-blue-400 break-words">
                           {report.caseId}
                         </td>
-                        <td className="py-3.5 px-4 max-w-xs">
+                        <td className="py-3.5 px-2 sm:px-4 max-w-xs min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-white truncate">{report.title}</span>
                             {report.requestConfidentiality && (
@@ -728,11 +728,11 @@ export const PoliceDashboard: React.FC = () => {
                             {report.crimeType} • {new Date(report.submittedAt).toLocaleDateString()}
                           </span>
                         </td>
-                        <td className="py-3.5 px-4 text-slate-300">
+                        <td className="py-3.5 px-2 sm:px-4 text-slate-300 min-w-0">
                           <span>{report.thana}, {report.district}</span>
                           <span className="text-[11px] text-slate-500 block truncate">{report.locationName}</span>
                         </td>
-                        <td className="py-3.5 px-4 text-slate-300">
+                        <td className="py-3.5 px-2 sm:px-4 text-slate-300 min-w-0">
                           {report.assignedOfficerName ? (
                             <div className="flex items-center gap-1.5">
                               <UserCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
@@ -747,14 +747,14 @@ export const PoliceDashboard: React.FC = () => {
                             </span>
                           )}
                         </td>
-                        <td className="py-3.5 px-4">
+                        <td className="py-3.5 px-2 sm:px-4">
                           <StatusBadge status={report.severity} size="sm" />
                         </td>
-                        <td className="py-3.5 px-4">
+                        <td className="py-3.5 px-2 sm:px-4">
                           <StatusBadge status={report.status} size="sm" />
                         </td>
-                        <td className="py-3.5 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
+                        <td className="py-3.5 px-2 sm:px-4 text-right">
+                          <div className="flex flex-wrap items-center justify-end gap-1.5">
                             {!report.assignedOfficerId && report.status !== ReportStatus.CASE_CLOSED && report.status !== ReportStatus.REJECTED && (
                               <button
                                 onClick={e => {
@@ -762,7 +762,7 @@ export const PoliceDashboard: React.FC = () => {
                                   handleClaimCase(report.id);
                                 }}
                                 disabled={claimActionLoadingId === report.id}
-                                className="px-2.5 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-semibold transition flex items-center gap-1"
+                                className="px-2 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-[11px] font-semibold transition flex items-center gap-1"
                                 title="Accept this case into your investigation queue"
                               >
                                 <UserCheck className="w-3.5 h-3.5" />
@@ -785,7 +785,7 @@ export const PoliceDashboard: React.FC = () => {
                                 e.stopPropagation();
                                 setSelectedReport(report);
                               }}
-                              className="px-3 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 text-xs font-semibold transition"
+                              className="px-2 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 text-[11px] font-semibold transition"
                             >
                               Review Case
                             </button>
