@@ -378,6 +378,26 @@ html.light .bg-white\/10,
   background-color: #e2e8f0 !important;
 }
 
+html.light .hover\:bg-slate-950:hover,
+html.light .hover\:bg-slate-900:hover,
+html.light .hover\:bg-slate-800:hover,
+html.light .hover\:bg-slate-700:hover,
+.light .hover\:bg-slate-950:hover,
+.light .hover\:bg-slate-900:hover,
+.light .hover\:bg-slate-800:hover,
+.light .hover\:bg-slate-700:hover {
+  background-color: #e2e8f0 !important;
+}
+
+html.light .hover\:text-white:hover,
+html.light .hover\:text-slate-200:hover,
+html.light .hover\:text-slate-300:hover,
+.light .hover\:text-white:hover,
+.light .hover\:text-slate-200:hover,
+.light .hover\:text-slate-300:hover {
+  color: #0f172a !important;
+}
+
 html.light .bg-\[\#05070e\],
 html.light .bg-\[\#0d1525\],
 .light .bg-\[\#05070e\],
