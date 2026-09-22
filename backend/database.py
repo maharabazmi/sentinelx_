@@ -86,6 +86,20 @@ def init_db():
         except Exception:
             pass
 
+    # Resilient schema migration: ensure case_messages attachment columns exist
+    for col_name, col_sql in [
+        ("attachmentUrl", "TEXT"),
+        ("attachmentName", "VARCHAR(256)"),
+        ("attachmentType", "VARCHAR(64)")
+    ]:
+        try:
+            with engine.connect() as conn:
+                conn.execute(text(f"ALTER TABLE case_messages ADD COLUMN {col_name} {col_sql}"))
+                conn.commit()
+                logger.info(f"[DB] Added {col_name} column to case_messages table.")
+        except Exception:
+            pass
+
     with get_db() as db:
         user_count = db.query(User).count()
         if user_count == 0:

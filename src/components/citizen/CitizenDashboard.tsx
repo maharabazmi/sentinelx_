@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ShieldAlert,
   FilePlus,
@@ -33,7 +33,9 @@ import {
   MessageSquare,
   Award,
   ShieldCheck,
-  Printer
+  Printer,
+  Car,
+  Navigation
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { ApiClient } from '../../services/api';
@@ -189,9 +191,11 @@ export const CitizenDashboard: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 10000);
+    // Rapid 4s polling during emergency distress, 10s otherwise
+    const pollInterval = activeSOS ? 4000 : 10000;
+    const interval = setInterval(fetchData, pollInterval);
     return () => clearInterval(interval);
-  }, []);
+  }, [activeSOS?.status, activeSOS?.assignedUnit]);
 
   // ----------------------------------------------------
   const handleNextCrimeStep = () => {
@@ -464,25 +468,35 @@ export const CitizenDashboard: React.FC = () => {
 
         {/* ACTIVE SOS PERSISTENT BANNER */}
         {activeSOS && activeTab !== 'sos' && (
-          <div className="mt-6 p-4 rounded-2xl bg-red-950/60 border border-red-500/50 flex flex-col sm:flex-row items-center justify-between gap-4 animate-in fade-in">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-red-500/20 border border-red-500/40 flex items-center justify-center text-red-400 flex-shrink-0 animate-pulse">
-                <Radio className="w-5 h-5" />
+          <div className="mt-6 p-4 rounded-2xl bg-gradient-to-r from-red-950/80 via-red-900/60 to-slate-900/90 border border-red-500/50 flex flex-col sm:flex-row items-center justify-between gap-4 animate-in fade-in shadow-xl shadow-red-950/40">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <div className="w-11 h-11 rounded-xl bg-red-500/20 border border-red-500/40 flex items-center justify-center text-red-400 flex-shrink-0 animate-pulse">
+                <Radio className="w-5 h-5 text-red-400" />
               </div>
               <div>
-                <div className="flex items-center gap-2">
-                  <h4 className="font-bold text-white text-sm font-display">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h4 className="font-bold text-white text-sm font-display tracking-wide">
                     EMERGENCY DISTRESS BEACON ACTIVE
                   </h4>
                   <StatusBadge status={activeSOS.status} size="sm" />
+                  {activeSOS.status === SOSStatus.RESPONDING && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/40 animate-pulse">
+                      🚓 PATROL EN ROUTE
+                    </span>
+                  )}
                 </div>
-                <p className="text-xs text-slate-300 mt-0.5">
-                  Distress signal broadcasting at: <strong className="text-white">{activeSOS.locationName}</strong>
-                </p>
+                <div className="text-xs text-slate-300 mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span>Broadcasting at: <strong className="text-white">{activeSOS.locationName}</strong></span>
+                  {activeSOS.assignedUnit && (
+                    <span className="text-blue-300 font-semibold bg-blue-950/80 px-2 py-0.5 rounded-md border border-blue-500/30">
+                      Dispatched: {activeSOS.assignedUnit}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap w-full sm:w-auto justify-end">
               <button
                 type="button"
                 onClick={handleResolveSOS}
@@ -497,7 +511,7 @@ export const CitizenDashboard: React.FC = () => {
                 onClick={() => setActiveTab('sos')}
                 className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-red-600/30 font-display whitespace-nowrap"
               >
-                <span>View Response Details</span>
+                <span>View Live Dispatch</span>
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
@@ -1740,6 +1754,58 @@ export const CitizenDashboard: React.FC = () => {
 
             {activeSOS ? (
               <div className="space-y-5">
+                {/* Live Response & ETA Tracker Card */}
+                {activeSOS.status === SOSStatus.RESPONDING ? (
+                  <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-950/70 via-indigo-950/50 to-slate-900 border border-blue-500/40 space-y-3 animate-in fade-in">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-400 shadow-lg shadow-blue-500/10">
+                          <Car className="w-6 h-6 animate-pulse" />
+                        </div>
+                        <div>
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-blue-400 animate-ping"></span>
+                            Police Patrol Dispatched &amp; En Route
+                          </span>
+                          <h4 className="text-base font-bold text-white mt-0.5">
+                            {activeSOS.assignedUnit || 'First Responder Unit'}
+                          </h4>
+                        </div>
+                      </div>
+                      <div className="px-4 py-2 rounded-xl bg-emerald-950/70 border border-emerald-500/30 text-left sm:text-right">
+                        <span className="text-[10px] text-emerald-400/80 uppercase font-mono tracking-wider block">Estimated Arrival</span>
+                        <span className="text-lg font-black text-emerald-300 font-mono">
+                          {activeSOS.assignedUnit?.match(/ETA:\s*~?([^)]+)/)?.[1] ||
+                           activeSOS.notes?.match(/arrival in\s*([^.]+)/i)?.[1] ||
+                           '~4-7 mins'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-white/5 flex items-center justify-between text-xs text-slate-300">
+                      <span className="flex items-center gap-1.5 text-blue-300 text-[11px]">
+                        <Navigation className="w-3.5 h-3.5" /> High-priority tactical sirens active. Unit moving to your GPS coordinates.
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-2xl bg-gradient-to-r from-red-950/60 via-amber-950/30 to-slate-900 border border-amber-500/40 flex items-center justify-between gap-3 animate-in fade-in">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+                        <Radio className="w-5 h-5 animate-pulse" />
+                      </div>
+                      <div>
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400">
+                          Distress Signal Transmitted
+                        </span>
+                        <p className="text-xs text-slate-300 mt-0.5">
+                          Alerting {activeSOS.assignedStation || 'local Thana'} command center. Stand by for patrol dispatch.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Active SOS Status Board */}
                 <div className="p-5 rounded-2xl bg-red-950/40 border border-red-500/50 space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-red-500/20">

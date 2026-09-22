@@ -17,6 +17,7 @@ from ..services.notification_service import NotificationService
 from ..services.audit_service import AuditService
 from ..services.jurisdiction_service import JurisdictionService, is_same_thana
 from ..services.geocoding_service import GeocodingService
+from ..services.email_service import EmailService
 
 police_bp = Blueprint("police", __name__, url_prefix="/api/police")
 
@@ -331,6 +332,24 @@ def update_investigation_status(report_id):
         related_id=report.id,
     )
 
+    # Dispatch official case status update email to citizen
+    try:
+        with get_db() as db_citizen:
+            reporter = db_citizen.query(User).filter(User.id == report.reporterId).first()
+            if reporter and reporter.email and "@" in reporter.email:
+                EmailService.send_case_status_update(
+                    to_email=reporter.email,
+                    recipient_name=reporter.fullName,
+                    case_id=report.caseId,
+                    case_title=report.title,
+                    new_status=report.status,
+                    officer_name=user.fullName,
+                    officer_station=user.stationOrThana or report.thana,
+                    note=note or f"Case status updated to {report.status}."
+                )
+    except Exception as email_err:
+        pass
+
     AuditService.log(
         user_id=user.id,
         user_name=user.fullName,
@@ -421,6 +440,24 @@ def assign_or_claim_report(report_id):
         ),
         related_id=report.id,
     )
+
+    # Dispatch assignment email to citizen
+    try:
+        with get_db() as db_citizen:
+            reporter = db_citizen.query(User).filter(User.id == report.reporterId).first()
+            if reporter and reporter.email and "@" in reporter.email:
+                EmailService.send_case_status_update(
+                    to_email=reporter.email,
+                    recipient_name=reporter.fullName,
+                    case_id=report.caseId,
+                    case_title=report.title,
+                    new_status="INVESTIGATION",
+                    officer_name=f"{target_officer.fullName} ({target_officer.designation or 'Investigating Officer'}, Badge #{target_officer.badgeNumber or 'N/A'})",
+                    officer_station=target_officer.stationOrThana or report.thana,
+                    note=note or f"Assigned to {target_officer.fullName} for field investigation."
+                )
+    except Exception as email_err:
+        pass
 
     AuditService.log(
         user_id=user.id,

@@ -15,8 +15,8 @@ export const ForcePasswordChangeModal: React.FC = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const passwordsDoNotMatch = confirmPassword.length > 0 && newPassword !== confirmPassword;
 
-  // Only render if user is logged in AND mustChangePassword is true
-  if (!user || !user.mustChangePassword) {
+  // Only render if user is logged in AND mustChangePassword is true, or during success feedback
+  if (!user || (!user.mustChangePassword && !isSuccess)) {
     return null;
   }
 
@@ -48,6 +48,9 @@ export const ForcePasswordChangeModal: React.FC = () => {
     try {
       await changePassword(currentPassword, newPassword);
       setIsSuccess(true);
+      setTimeout(() => {
+        setIsSuccess(false);
+      }, 1600);
     } catch (err: any) {
       setError(err.message || 'Failed to update password. Please check your temporary password.');
     } finally {

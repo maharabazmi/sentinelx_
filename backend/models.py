@@ -479,6 +479,9 @@ class CaseMessage(Base):
     senderRole = Column(String(32), nullable=False)
     senderBadge = Column(String(64), nullable=True)
     message = Column(Text, nullable=False)
+    attachmentUrl = Column(Text, nullable=True)
+    attachmentName = Column(String(256), nullable=True)
+    attachmentType = Column(String(64), nullable=True)
     isOfficialNotice = Column(Boolean, default=False)
     timestamp = Column(String(64), default=utcnow_iso)
 
@@ -492,6 +495,9 @@ class CaseMessage(Base):
             "senderRole": self.senderRole,
             "senderBadge": self.senderBadge,
             "message": self.message,
+            "attachmentUrl": self.attachmentUrl,
+            "attachmentName": self.attachmentName,
+            "attachmentType": self.attachmentType,
             "isOfficialNotice": self.isOfficialNotice,
             "timestamp": self.timestamp,
         }

@@ -25,7 +25,9 @@ import {
   KeyRound,
   Copy,
   Check,
-  MailCheck
+  MailCheck,
+  Download,
+  FileSpreadsheet
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { ApiClient } from '../../services/api';
@@ -34,6 +36,7 @@ import {
   UserRole,
   AIPredictionData,
   AuditLog,
+  CrimeReport,
   CrimeType,
   ComparativeRiskRank,
   ResourceAllocationAdvice,
@@ -326,6 +329,143 @@ Portal URL: ${window.location.origin}`;
     u.nidNumber.includes(userSearchQuery)
   );
 
+  const [isExportingAuditCSV, setIsExportingAuditCSV] = useState(false);
+  const [isExportingCrimeCSV, setIsExportingCrimeCSV] = useState(false);
+
+  // Export Audit Trail to CSV
+  const handleExportAuditTrailCSV = async () => {
+    if (filteredLogs.length === 0) {
+      alert('No audit logs available to export for the selected filter.');
+      return;
+    }
+
+    setIsExportingAuditCSV(true);
+    try {
+      const headers = [
+        'Log ID',
+        'Timestamp (UTC)',
+        'User ID',
+        'User Name',
+        'User Role',
+        'Action Triggered',
+        'Target Resource',
+        'Status',
+        'IP Address',
+        'Details'
+      ];
+
+      const escapeCSV = (val: any) => {
+        if (val === null || val === undefined) return '""';
+        const str = String(val).replace(/"/g, '""');
+        return `"${str}"`;
+      };
+
+      const rows = filteredLogs.map(log => [
+        escapeCSV(log.id),
+        escapeCSV(log.timestamp),
+        escapeCSV(log.userId),
+        escapeCSV(log.userName),
+        escapeCSV(log.userRole),
+        escapeCSV(log.action),
+        escapeCSV(log.resource),
+        escapeCSV(log.status),
+        escapeCSV(log.ipAddress || '127.0.0.1'),
+        escapeCSV(log.details)
+      ]);
+
+      const csvContent = [headers.map(h => `"${h}"`).join(','), ...rows.map(r => r.join(','))].join('\r\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const dateStr = new Date().toISOString().slice(0, 10);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `sentinelx_audit_trail_${dateStr}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      // Log the export event in audit service
+      await ApiClient.logAdminAuditExport(filteredLogs.length);
+    } catch (err: any) {
+      alert(err.message || 'Failed to export audit trail.');
+    } finally {
+      setIsExportingAuditCSV(false);
+    }
+  };
+
+  // Export Crime Statistics to CSV
+  const handleExportCrimeStatisticsCSV = async () => {
+    setIsExportingCrimeCSV(true);
+    try {
+      const res = await ApiClient.getAdminCrimeReports();
+      if (!res.success || !res.reports || res.reports.length === 0) {
+        alert('No crime incident data available to export.');
+        return;
+      }
+
+      const headers = [
+        'Case ID',
+        'Tracking Number',
+        'Incident Title',
+        'Crime Category',
+        'Severity Level',
+        'Current Status',
+        'District',
+        'Thana Jurisdiction',
+        'Incident Location',
+        'Occurred At',
+        'Lodged At',
+        'Assigned Officer',
+        'Assigned Station',
+        'Confidentiality Requested',
+        'Evidence Files Count',
+        'FIR Charges'
+      ];
+
+      const escapeCSV = (val: any) => {
+        if (val === null || val === undefined) return '""';
+        const str = String(val).replace(/"/g, '""');
+        return `"${str}"`;
+      };
+
+      const rows = res.reports.map((r: CrimeReport) => [
+        escapeCSV(r.id),
+        escapeCSV(r.caseId || (r as any).trackingNumber || r.id),
+        escapeCSV(r.title),
+        escapeCSV(r.crimeType),
+        escapeCSV(r.severity),
+        escapeCSV(r.status),
+        escapeCSV(r.district),
+        escapeCSV(r.thana),
+        escapeCSV(r.locationName),
+        escapeCSV(r.occurredAt),
+        escapeCSV(r.submittedAt || (r as any).createdAt),
+        escapeCSV(r.assignedOfficerName || 'Unassigned'),
+        escapeCSV(r.assignedOfficerStation || (r as any).assignedStation || `${r.thana} Police Station`),
+        escapeCSV(r.requestConfidentiality ? 'YES' : 'NO'),
+        escapeCSV(r.evidence ? r.evidence.length : 0),
+        escapeCSV((r as any).charges || (r as any).courtFIRNumber || 'Pending FIR')
+      ]);
+
+      const csvContent = [headers.map(h => `"${h}"`).join(','), ...rows.map(r => r.join(','))].join('\r\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const dateStr = new Date().toISOString().slice(0, 10);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `sentinelx_crime_statistics_${dateStr}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(err.message || 'Failed to export crime statistics.');
+    } finally {
+      setIsExportingCrimeCSV(false);
+    }
+  };
+
   return (
     <div className="w-full max-w-7xl mx-auto px-4 py-8 space-y-8 text-slate-100">
       {/* ADMIN IDENTITY HEADER */}
@@ -352,7 +492,17 @@ Portal URL: ${window.location.origin}`;
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <button
+              onClick={handleExportCrimeStatisticsCSV}
+              disabled={isExportingCrimeCSV}
+              className="px-3.5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-emerald-500/40 text-emerald-400 hover:text-emerald-300 font-bold text-xs transition shadow-lg shadow-emerald-950/30 flex items-center gap-2 active:scale-95 disabled:opacity-50"
+              title="Download nationwide crime incidents dataset in CSV format"
+            >
+              <FileSpreadsheet className={`w-4 h-4 ${isExportingCrimeCSV ? 'animate-bounce' : ''}`} />
+              <span>{isExportingCrimeCSV ? 'Exporting...' : 'Export Crime Stats (CSV)'}</span>
+            </button>
+
             <button
               onClick={() => setShowAddUserModal(true)}
               className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#0147bf] to-[#02baff] hover:from-[#013ab0] hover:to-[#00a8e8] text-white font-bold text-xs font-['Orbitron'] tracking-wider transition shadow-lg shadow-[#0147bf]/30 flex items-center gap-2 active:scale-95"
@@ -437,6 +587,28 @@ Portal URL: ${window.location.origin}`;
       {/* ========================================================================= */}
       {activeTab === 'system_overview' && systemStats && (
         <div className="space-y-6 animate-in fade-in duration-200">
+          {/* National Data Intelligence & Export Banner */}
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900/90 to-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 flex-shrink-0">
+                <FileSpreadsheet className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-white font-display">National Crime Intelligence &amp; Statistics Dataset</h4>
+                <p className="text-xs text-slate-400">Export verified incidents, classifications, jurisdiction routing, and legal FIR statuses as CSV.</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleExportCrimeStatisticsCSV}
+              disabled={isExportingCrimeCSV}
+              className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-xs transition shadow-lg shadow-emerald-600/30 flex items-center gap-2 whitespace-nowrap active:scale-95"
+            >
+              <Download className={`w-4 h-4 ${isExportingCrimeCSV ? 'animate-bounce' : ''}`} />
+              <span>{isExportingCrimeCSV ? 'Generating CSV...' : 'Export Crime Statistics (CSV)'}</span>
+            </button>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* National Security Status */}
             <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
@@ -984,7 +1156,7 @@ Portal URL: ${window.location.origin}`;
               />
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
               <select
                 value={auditRoleFilter}
                 onChange={e => setAuditRoleFilter(e.target.value)}
@@ -996,6 +1168,17 @@ Portal URL: ${window.location.origin}`;
                 <option value="CONSUMER_RIGHTS">Consumer Rights</option>
                 <option value="ADMIN">Admin</option>
               </select>
+
+              <button
+                type="button"
+                onClick={handleExportAuditTrailCSV}
+                disabled={isExportingAuditCSV}
+                className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold text-xs transition shadow-lg shadow-purple-600/30 flex items-center gap-1.5 whitespace-nowrap active:scale-95"
+                title="Export filtered audit logs as official CSV compliance document"
+              >
+                <Download className={`w-4 h-4 ${isExportingAuditCSV ? 'animate-bounce' : ''}`} />
+                <span>{isExportingAuditCSV ? 'Exporting...' : 'Export Audit Trail (CSV)'}</span>
+              </button>
             </div>
           </div>
 

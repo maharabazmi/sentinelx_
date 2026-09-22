@@ -275,7 +275,44 @@ def list_directives():
         "directives": directives
     })
 
-# 4. Audit Logs
+# 4. Crime Reports & Statistics (National Admin Access)
+@admin_bp.route("/reports", methods=["GET"])
+def get_admin_crime_reports():
+    with get_db() as db:
+        reports = db.query(CrimeReport).order_by(CrimeReport.submittedAt.desc()).all()
+        AuditService.log(
+            user_id=g.user.id,
+            user_name=g.user.fullName,
+            user_role=g.user.role,
+            action="ACCESS_CRIME_STATISTICS",
+            resource="CRIME_REPORTS_DATABASE",
+            ip_address=request.remote_addr,
+            status="SUCCESS",
+            details=f"Admin accessed complete national incident records ({len(reports)} cases) for analytics & export.",
+        )
+        return jsonify({
+            "success": True,
+            "total": len(reports),
+            "reports": [r.to_dict() for r in reports]
+        })
+
+@admin_bp.route("/audit-logs/log-export", methods=["POST"])
+def log_audit_export():
+    data = request.get_json() or {}
+    record_count = data.get("recordCount", 0)
+    AuditService.log(
+        user_id=g.user.id,
+        user_name=g.user.fullName,
+        user_role=g.user.role,
+        action="EXPORT_AUDIT_TRAIL_CSV",
+        resource="AUDIT_SYSTEM",
+        ip_address=request.remote_addr,
+        status="SUCCESS",
+        details=f"Admin exported {record_count} system audit log records to CSV.",
+    )
+    return jsonify({"success": True})
+
+# 5. Audit Logs
 @admin_bp.route("/audit-logs", methods=["GET"])
 def get_audit_logs():
     role = request.args.get("role")

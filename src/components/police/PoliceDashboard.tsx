@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Shield,
   ShieldAlert,
@@ -31,10 +31,13 @@ import {
   Layers,
   MessageSquare,
   RotateCcw,
-  Printer
+  Printer,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { GDDocketModal } from '../common/GDDocketModal';
+import { FIRDocketModal } from './FIRDocketModal';
 import { ApiClient } from '../../services/api';
 import {
   CrimeReport,
@@ -83,10 +86,16 @@ export const PoliceDashboard: React.FC = () => {
   // Selected Report Review & Action Drawer / Modal
   const [selectedReport, setSelectedReport] = useState<CrimeReport | null>(null);
   const [docketReport, setDocketReport] = useState<CrimeReport | null>(null);
+  const [firDocketReport, setFirDocketReport] = useState<CrimeReport | null>(null);
   const [reviewModalTab, setReviewModalTab] = useState<'details' | 'chat'>('details');
   const [officerNote, setOfficerNote] = useState('');
   const [assignedOfficer, setAssignedOfficer] = useState('');
   const [isProcessingAction, setIsProcessingAction] = useState(false);
+
+  // SOS Emergency Siren & Dispatch ETA State
+  const [isSirenMuted, setIsSirenMuted] = useState(false);
+  const [sosEtaSelection, setSosEtaSelection] = useState<Record<string, string>>({});
+  const audioCtxRef = useRef<AudioContext | null>(null);
 
   // Queue Scope & Assignment State (Strictly Station Bound)
   const [reportQueueScope, setReportQueueScope] = useState<'station_unassigned' | 'my_cases' | 'all_station'>('all_station');
@@ -291,39 +300,6 @@ export const PoliceDashboard: React.FC = () => {
     }
   };
 
-  // Handle Respond to SOS
-  const handleRespondToSOS = async (sosId: string, status: SOSStatus, unitName: string) => {
-    const targetSOS = sosRequests.find(s => s.id === sosId);
-    if (targetSOS && !isSOSInOfficerStation(targetSOS)) {
-      alert(`Jurisdiction Restriction: Only officers stationed at ${getSOSStation(targetSOS)} or Central Command can dispatch units or resolve this distress beacon.`);
-      return;
-    }
-
-    try {
-      await ApiClient.respondToSOS(sosId, {
-        status,
-        assignedUnit: unitName,
-        notes: `Police command dispatched ${unitName} at ${new Date().toLocaleTimeString()}.`
-      });
-      fetchPoliceData();
-    } catch (err: any) {
-      alert(err.message || 'Failed to dispatch SOS response.');
-    }
-  };
-
-  const filteredReports = reports.filter(r => {
-    const matchesSearch =
-      r.caseId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.thana.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus =
-      statusFilter === 'ALL' ||
-      r.status === statusFilter ||
-      (statusFilter === ReportStatus.SUBMITTED && (r.status === ReportStatus.SUBMITTED || r.status === ReportStatus.OFFICER_ASSIGNED));
-    const matchesCrime = selectedCrimeType === 'ALL' || r.crimeType === selectedCrimeType;
-    return matchesSearch && matchesStatus && matchesCrime;
-  });
-
   // Resolve Coverage Police Station dynamically
   const getSOSStation = (sos: SOSRequest): string => {
     if (sos.assignedStation && sos.assignedStation.trim()) {
@@ -363,6 +339,84 @@ export const PoliceDashboard: React.FC = () => {
     }
     return false;
   };
+
+  // Handle Respond to SOS with Live ETA
+  const handleRespondToSOS = async (sosId: string, status: SOSStatus, unitName: string, customEta?: string) => {
+    const targetSOS = sosRequests.find(s => s.id === sosId);
+    if (targetSOS && !isSOSInOfficerStation(targetSOS)) {
+      alert(`Jurisdiction Restriction: Only officers stationed at ${getSOSStation(targetSOS)} or Central Command can dispatch units or resolve this distress beacon.`);
+      return;
+    }
+
+    const eta = customEta || sosEtaSelection[sosId] || '6 mins';
+    const assignedUnitWithEta = status === SOSStatus.RESOLVED ? unitName : `${unitName} (ETA: ~${eta})`;
+    const responseNote = status === SOSStatus.RESOLVED
+      ? `Distress neutralized & scene secured by ${user?.fullName || 'Police Officer'} at ${new Date().toLocaleTimeString()}.`
+      : `High-priority dispatch initiated. Unit: ${unitName} deployed. Estimated Arrival: ~${eta}. Officer: ${user?.fullName || 'Duty Officer'}.`;
+
+    try {
+      await ApiClient.respondToSOS(sosId, {
+        status,
+        assignedUnit: assignedUnitWithEta,
+        notes: responseNote
+      });
+      fetchPoliceData();
+    } catch (err: any) {
+      alert(err.message || 'Failed to dispatch SOS response.');
+    }
+  };
+
+  // Emergency SOS Siren Alarm Effect for Station Officer
+  const unrespondedStationSOSCount = sosRequests.filter(
+    s => s.status === SOSStatus.SOS_SENT && isSOSInOfficerStation(s)
+  ).length;
+
+  useEffect(() => {
+    if (unrespondedStationSOSCount > 0 && !isSirenMuted) {
+      try {
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+        if (!AudioCtx) return;
+        if (!audioCtxRef.current) {
+          audioCtxRef.current = new AudioCtx();
+        }
+        const ctx = audioCtxRef.current;
+        if (ctx.state === 'suspended') {
+          ctx.resume();
+        }
+
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        const now = ctx.currentTime;
+        osc.frequency.setValueAtTime(880, now);
+        osc.frequency.linearRampToValueAtTime(660, now + 0.35);
+        osc.frequency.linearRampToValueAtTime(880, now + 0.7);
+
+        gain.gain.setValueAtTime(0.06, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.75);
+      } catch (err) {
+        // Silently handled if browser autoplay policy requires user interaction
+      }
+    }
+  }, [unrespondedStationSOSCount, isSirenMuted, sosRequests]);
+
+  const filteredReports = reports.filter(r => {
+    const matchesSearch =
+      r.caseId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      r.thana.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus =
+      statusFilter === 'ALL' ||
+      r.status === statusFilter ||
+      (statusFilter === ReportStatus.SUBMITTED && (r.status === ReportStatus.SUBMITTED || r.status === ReportStatus.OFFICER_ASSIGNED));
+    const matchesCrime = selectedCrimeType === 'ALL' || r.crimeType === selectedCrimeType;
+    return matchesSearch && matchesStatus && matchesCrime;
+  });
 
   const stationActiveSOS = sosRequests.filter(s => isSOSInOfficerStation(s) && s.status !== SOSStatus.RESOLVED);
   const allActiveSOS = sosRequests.filter(s => s.status !== SOSStatus.RESOLVED);
@@ -887,13 +941,41 @@ export const PoliceDashboard: React.FC = () => {
                 </button>
               </div>
 
-              <button
-                onClick={fetchPoliceData}
-                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition flex items-center gap-1.5 border border-slate-700"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>Scan Radar</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsSirenMuted(!isSirenMuted)}
+                  className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition ${
+                    isSirenMuted
+                      ? 'bg-slate-800 border-slate-700 text-slate-400'
+                      : unrespondedStationSOSCount > 0
+                      ? 'bg-red-950/70 border-red-500/50 text-red-300 animate-pulse'
+                      : 'bg-slate-900 border-slate-800 text-slate-300'
+                  }`}
+                  title={isSirenMuted ? 'Unmute SOS Siren' : 'Mute SOS Siren'}
+                >
+                  {isSirenMuted ? (
+                    <VolumeX className="w-3.5 h-3.5 text-slate-400" />
+                  ) : (
+                    <Volume2 className={`w-3.5 h-3.5 ${unrespondedStationSOSCount > 0 ? 'text-red-400' : 'text-slate-400'}`} />
+                  )}
+                  <span>
+                    {isSirenMuted
+                      ? 'Siren Muted'
+                      : unrespondedStationSOSCount > 0
+                      ? `Siren Active (${unrespondedStationSOSCount})`
+                      : 'Siren Armed'}
+                  </span>
+                </button>
+
+                <button
+                  onClick={fetchPoliceData}
+                  className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition flex items-center gap-1.5 border border-slate-700"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Scan Radar</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -988,23 +1070,45 @@ export const PoliceDashboard: React.FC = () => {
                       </div>
 
                       {sos.status !== SOSStatus.RESOLVED && (
-                        <div className="pt-2 border-t border-slate-800">
+                        <div className="pt-2 border-t border-slate-800 space-y-2.5">
                           {isStationJurisdiction ? (
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => handleRespondToSOS(sos.id, SOSStatus.RESPONDING, 'Mobile Patrol Unit 04')}
-                                className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition"
-                              >
-                                Dispatch Patrol Unit 04
-                              </button>
+                            <>
+                              <div className="flex items-center justify-between text-[11px] font-mono">
+                                <span className="text-slate-400">Response ETA:</span>
+                                <div className="flex items-center gap-1">
+                                  {['3 mins', '6 mins', '10 mins', '15 mins'].map(etaOpt => (
+                                    <button
+                                      key={etaOpt}
+                                      type="button"
+                                      onClick={() => setSosEtaSelection(prev => ({ ...prev, [sos.id]: etaOpt }))}
+                                      className={`px-2 py-0.5 rounded text-[10px] font-bold border transition ${
+                                        (sosEtaSelection[sos.id] || '6 mins') === etaOpt
+                                          ? 'bg-blue-600 text-white border-blue-400 shadow-sm'
+                                          : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                                      }`}
+                                    >
+                                      {etaOpt}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
 
-                              <button
-                                onClick={() => handleRespondToSOS(sos.id, SOSStatus.RESOLVED, 'Officer On Scene')}
-                                className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition"
-                              >
-                                Mark Resolved
-                              </button>
-                            </div>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => handleRespondToSOS(sos.id, SOSStatus.RESPONDING, 'Mobile Patrol Unit 04')}
+                                  className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-md shadow-blue-600/25"
+                                >
+                                  <span>Dispatch Unit 04 (~{sosEtaSelection[sos.id] || '6 mins'})</span>
+                                </button>
+
+                                <button
+                                  onClick={() => handleRespondToSOS(sos.id, SOSStatus.RESOLVED, 'Officer On Scene')}
+                                  className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition"
+                                >
+                                  Mark Resolved
+                                </button>
+                              </div>
+                            </>
                           ) : (
                             <div className="w-full py-2.5 px-3.5 rounded-xl bg-slate-950/70 border border-slate-800 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                               <div className="flex items-center gap-2 text-slate-400">
@@ -1398,6 +1502,15 @@ export const PoliceDashboard: React.FC = () => {
 
                   {/* Action Buttons */}
                   <div className="flex flex-wrap items-center justify-end gap-2.5 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setFirDocketReport(selectedReport)}
+                      className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-blue-300 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition"
+                    >
+                      <Printer className="w-3.5 h-3.5 text-blue-400" />
+                      <span>Generate Court FIR Docket</span>
+                    </button>
+
                     {selectedReport.status === ReportStatus.SUBMITTED ? (
                       <>
                         <button
@@ -1453,6 +1566,18 @@ export const PoliceDashboard: React.FC = () => {
           report={docketReport}
           onClose={() => setDocketReport(null)}
           viewerRole="POLICE"
+        />
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: OFFICIAL COURT FIR DOCKET & CHARGE SHEET                           */}
+      {/* ========================================================================= */}
+      {firDocketReport && (
+        <FIRDocketModal
+          report={firDocketReport}
+          onClose={() => setFirDocketReport(null)}
+          investigatingOfficerName={user?.fullName}
+          investigatingOfficerBadge={user?.badgeNumber}
         />
       )}
     </div>
