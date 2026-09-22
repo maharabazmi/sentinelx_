@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { X, Lock, AlertCircle, RefreshCw } from 'lucide-react';
+import { X, Lock, AlertCircle, RefreshCw, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 interface LoginModalProps {
@@ -16,6 +16,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const { login } = useAuth();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -23,6 +24,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     if (isOpen) {
       setIdentifier('');
       setPassword('');
+      setShowPassword(false);
       setError(null);
       setIsLoading(false);
     }
@@ -101,7 +103,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               type="text"
               value={identifier}
               onChange={e => setIdentifier(e.target.value)}
-              placeholder="e.g. citizen.tanvir@example.com or DMP-84920"
               className="sx-input font-mono"
               required
             />
@@ -111,17 +112,24 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             <label className="block text-slate-300 font-semibold mb-1.5">
               Secret Password
             </label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="sx-input font-mono"
-              required
-            />
-            <p className="text-[11px] text-slate-500 mt-1 font-mono">
-              Demo accounts default password: <code className="text-[#02baff] font-mono font-bold">demo1234</code>
-            </p>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="sx-input pr-10 font-mono"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(value => !value)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                title={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
           <button

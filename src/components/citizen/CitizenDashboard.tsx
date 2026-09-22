@@ -149,7 +149,7 @@ export const CitizenDashboard: React.FC = () => {
   // SOS EMERGENCY STATE & ACCIDENTAL CONFIRMATION
   // ----------------------------------------------------
   const [showSOSConfirmModal, setShowSOSConfirmModal] = useState(false);
-  const [sosLocationName, setSosLocationName] = useState('Dhanmondi Lake Bridge, Dhaka');
+  const [sosLocationName, setSosLocationName] = useState('');
   const [isTriggeringSOS, setIsTriggeringSOS] = useState(false);
   const [isResolvingSOS, setIsResolvingSOS] = useState(false);
 
@@ -505,7 +505,7 @@ export const CitizenDashboard: React.FC = () => {
         )}
 
         {/* SUB-NAVIGATION BAR */}
-        <div className="flex items-center gap-1 overflow-x-auto pt-5 mt-5 border-t border-white/5 text-xs no-scrollbar">
+        <div className="short-tabs flex items-center gap-1 overflow-x-auto pt-5 mt-5 border-t border-white/5 text-xs no-scrollbar">
           {[
             { id: 'overview', label: 'Overview', icon: null },
             { id: 'report_crime', label: 'Report Crime', icon: null },
@@ -949,7 +949,7 @@ export const CitizenDashboard: React.FC = () => {
                     value={locationName}
                     onChange={e => setLocationName(e.target.value)}
                     placeholder="e.g. Road 11, Block D, Near Banani Supermarket"
-                    className="sx-input"
+                    className="sx-input sx-input-with-icon"
                     required
                   />
                 </div>
@@ -965,7 +965,7 @@ export const CitizenDashboard: React.FC = () => {
                     type="datetime-local"
                     value={occurredAt}
                     onChange={e => setOccurredAt(e.target.value)}
-                    className="sx-input"
+                    className="sx-input sx-input-with-icon"
                     required
                   />
                 </div>

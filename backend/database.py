@@ -52,6 +52,16 @@ def get_db():
 
 def init_db():
     Base.metadata.create_all(bind=engine)
+    # Add user identity uniqueness constraints to databases created before they were declared on User.
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_nid_unique ON users (nidNumber)"))
+            conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_email_unique ON users (email)"))
+            conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_phone_unique ON users (phone)"))
+            conn.commit()
+    except Exception as e:
+        logger.warning(f"[DB] User identity uniqueness index migration skipped: {e}")
+
     # Resilient schema migration: ensure assignedOfficerId and assignedStation columns exist
     try:
         with engine.connect() as conn:

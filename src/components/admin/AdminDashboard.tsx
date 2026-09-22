@@ -16,6 +16,7 @@ import {
   UserPlus,
   RefreshCw,
   Eye,
+  EyeOff,
   Layers,
   Sparkles,
   X,
@@ -40,6 +41,15 @@ import { StatusBadge } from '../ui/StatusBadge';
 import { StatCard } from '../ui/StatCard';
 import { EmptyState } from '../ui/EmptyState';
 import { TableRowSkeleton } from '../ui/SkeletonLoader';
+
+const normalizeAdminPhone = (value: string) => {
+  const digits = value.replace(/\D/g, '');
+  if (digits.startsWith('00880')) return `+${digits.slice(2)}`;
+  if (digits.startsWith('880')) return `+${digits}`;
+  if (digits.startsWith('01') && digits.length === 11) return `+880${digits.slice(1)}`;
+  if (digits.startsWith('1') && digits.length === 10) return `+880${digits}`;
+  return digits ? `+${digits}` : '';
+};
 
 export const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -76,11 +86,11 @@ export const AdminDashboard: React.FC = () => {
   const [newFullName, setNewFullName] = useState('');
   const [newNID, setNewNID] = useState('');
   const [newEmail, setNewEmail] = useState('');
-  const [newPhone, setNewPhone] = useState('+8801700000000');
+  const [newPhone, setNewPhone] = useState('');
   const [newRole, setNewRole] = useState<UserRole>(UserRole.POLICE);
-  const [newBadge, setNewBadge] = useState('DMP-');
-  const [newDesignation, setNewDesignation] = useState('Sub-Inspector (SI)');
-  const [newDepartment, setNewDepartment] = useState('General Investigation & GD Registry');
+  const [newBadge, setNewBadge] = useState('');
+  const [newDesignation, setNewDesignation] = useState('');
+  const [newDepartment, setNewDepartment] = useState('');
   const [policeDistrict, setPoliceDistrict] = useState('Dhaka');
   const [policeThana, setPoliceThana] = useState('Gulshan');
   const [newStation, setNewStation] = useState('Gulshan Police Station, Dhaka');
@@ -107,7 +117,8 @@ export const AdminDashboard: React.FC = () => {
     setNewStation(`${newThana} Police Station, ${policeDistrict}`);
   };
 
-  const [newPassword, setNewPassword] = useState('demo1234');
+  const [newPassword, setNewPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
 
@@ -199,6 +210,13 @@ export const AdminDashboard: React.FC = () => {
   // Create Authority User
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    const requestedPhone = normalizeAdminPhone(newPhone);
+    const duplicatePhone = usersList.some(user => normalizeAdminPhone(user.phone) === requestedPhone);
+    if (duplicatePhone) {
+      alert('Phone number already exists for another account. Use a unique mobile number.');
+      return;
+    }
+
     setIsCreatingUser(true);
     try {
       const res = await ApiClient.createAdminUser({
@@ -219,6 +237,12 @@ export const AdminDashboard: React.FC = () => {
         setNewFullName('');
         setNewNID('');
         setNewEmail('');
+        setNewPhone('');
+        setNewBadge('');
+        setNewDesignation('');
+        setNewDepartment('');
+        setNewPassword('');
+        setShowNewPassword(false);
         fetchAdminData();
       }
     } catch (err: any) {
@@ -290,7 +314,7 @@ export const AdminDashboard: React.FC = () => {
         </div>
 
         {/* NAVIGATION TABS */}
-        <div className="flex items-center gap-1 overflow-x-auto pt-5 mt-5 border-t border-white/5 text-xs no-scrollbar">
+        <div className="short-tabs flex items-center gap-1 overflow-x-auto pt-5 mt-5 border-t border-white/5 text-xs no-scrollbar">
           {[
             { id: 'system_overview', label: 'System Telemetry' },
             { id: 'ai_prediction', label: 'AI Crime Model' },
@@ -1028,8 +1052,8 @@ export const AdminDashboard: React.FC = () => {
       {/* MODAL: PROVISION AUTHORITY USER                                           */}
       {/* ========================================================================= */}
       {showAddUserModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in">
-          <div className="bg-slate-900 border border-purple-500/50 rounded-3xl w-full max-w-md p-6 sm:p-8 shadow-2xl relative text-slate-100 space-y-4 max-h-[90vh] overflow-y-auto">
+        <div className="provision-user-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in">
+          <div className="provision-user-modal bg-slate-900 border border-purple-500/50 rounded-3xl w-full max-w-md p-6 sm:p-8 shadow-2xl relative text-slate-100 space-y-4 max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setShowAddUserModal(false)}
               className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
@@ -1061,7 +1085,6 @@ export const AdminDashboard: React.FC = () => {
                   type="text"
                   value={newNID}
                   onChange={e => setNewNID(e.target.value)}
-                  placeholder="10, 13, or 17 digit NID"
                   className="sx-input font-mono"
                   required
                 />
@@ -1227,13 +1250,24 @@ export const AdminDashboard: React.FC = () => {
 
               <div>
                 <label className="block font-semibold text-slate-300 mb-1">Temporary Password</label>
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={e => setNewPassword(e.target.value)}
-                  className="sx-input"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    className="sx-input pr-10"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(value => !value)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
+                    aria-label={showNewPassword ? 'Hide temporary password' : 'Show temporary password'}
+                    title={showNewPassword ? 'Hide temporary password' : 'Show temporary password'}
+                  >
+                    {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
               <button

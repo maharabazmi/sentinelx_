@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import datetime, timezone
 from sqlalchemy import (
     Column,
@@ -17,6 +18,27 @@ def utcnow_iso():
     return datetime.now(timezone.utc).isoformat()
 
 
+def normalize_nid(value):
+    return re.sub(r"\D", "", str(value or ""))
+
+
+def normalize_email(value):
+    return str(value or "").strip().lower()
+
+
+def normalize_phone(value):
+    phone = re.sub(r"\D", "", str(value or ""))
+    if phone.startswith("00880"):
+        phone = phone[2:]
+    if phone.startswith("880"):
+        return f"+{phone}"
+    if phone.startswith("01") and len(phone) == 11:
+        return f"+880{phone[1:]}"
+    if phone.startswith("1") and len(phone) == 10:
+        return f"+880{phone}"
+    return f"+{phone}" if phone else ""
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -24,7 +46,7 @@ class User(Base):
     nidNumber = Column(String(32), unique=True, nullable=False, index=True)
     fullName = Column(String(128), nullable=False)
     email = Column(String(128), unique=True, nullable=False, index=True)
-    phone = Column(String(32), nullable=False)
+    phone = Column(String(32), unique=True, nullable=False, index=True)
     role = Column(String(32), nullable=False, default="CITIZEN")
     badgeNumber = Column(String(64), nullable=True)
     designation = Column(String(128), nullable=True)
