@@ -30,6 +30,16 @@ interface RegisterWizardProps {
   onSwitchToLogin: () => void;
 }
 
+const birthMonths = [
+  '01 - January', '02 - February', '03 - March', '04 - April',
+  '05 - May', '06 - June', '07 - July', '08 - August',
+  '09 - September', '10 - October', '11 - November', '12 - December'
+];
+const birthYears = Array.from(
+  { length: new Date().getFullYear() - 1899 },
+  (_, index) => String(new Date().getFullYear() - index)
+);
+
 export const RegisterWizard: React.FC<RegisterWizardProps> = ({
   isOpen,
   onClose,
@@ -41,6 +51,9 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
   // Step 1: NID & DOB
   const [nidNumber, setNidNumber] = useState('');
   const [dob, setDob] = useState('');
+  const [dobDay, setDobDay] = useState('');
+  const [dobMonth, setDobMonth] = useState('');
+  const [dobYear, setDobYear] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationResult, setVerificationResult] = useState<NIDVerificationResult | null>(null);
   const [isAlreadyRegistered, setIsAlreadyRegistered] = useState(false);
@@ -85,6 +98,9 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
     setStep(1);
     setNidNumber('');
     setDob('');
+    setDobDay('');
+    setDobMonth('');
+    setDobYear('');
     setIsVerifying(false);
     setVerificationResult(null);
     setIsAlreadyRegistered(false);
@@ -125,10 +141,26 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
 
   if (!isOpen) return null;
 
+  const passwordsDoNotMatch = confirmPassword.length > 0 && password !== confirmPassword;
+
   // Step 1: Verify NID against National Registry
   const handleVerifyNID = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    const [dobYearValue, dobMonthValue, dobDayValue] = dob.split('-').map(Number);
+    const parsedDob = new Date(Date.UTC(dobYearValue, dobMonthValue - 1, dobDayValue));
+    const isValidDob = Boolean(dob) &&
+      !Number.isNaN(parsedDob.getTime()) &&
+      parsedDob.getUTCFullYear() === dobYearValue &&
+      parsedDob.getUTCMonth() === dobMonthValue - 1 &&
+      parsedDob.getUTCDate() === dobDayValue;
+
+    if (!isValidDob) {
+      setError('Please select a valid date of birth.');
+      return;
+    }
+
     setIsVerifying(true);
 
     try {
@@ -150,6 +182,17 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
     } finally {
       setIsVerifying(false);
     }
+  };
+
+  const handleDobPartChange = (part: 'day' | 'month' | 'year', value: string) => {
+    const nextDay = part === 'day' ? value : dobDay;
+    const nextMonth = part === 'month' ? value : dobMonth;
+    const nextYear = part === 'year' ? value : dobYear;
+
+    setDobDay(nextDay);
+    setDobMonth(nextMonth);
+    setDobYear(nextYear);
+    setDob(nextDay && nextMonth && nextYear ? `${nextYear}-${nextMonth}-${nextDay}` : '');
   };
 
   // Step 3: Email OTP Handlers
@@ -328,13 +371,54 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
               <label className="block font-semibold text-slate-300 mb-1.5">
                 Date of Birth (as per NID Card) <span className="text-emerald-400">*</span>
               </label>
-              <input
-                type="date"
-                value={dob}
-                onChange={e => setDob(e.target.value)}
-                className="sx-input"
-                required
-              />
+              <div className="grid grid-cols-[0.8fr_1.5fr_1fr] gap-2">
+                <select
+                  value={dobDay}
+                  onChange={e => handleDobPartChange('day', e.target.value)}
+                  className="sx-input"
+                  aria-label="Birth day"
+                  required
+                >
+                  <option value="">Day</option>
+                  {Array.from({ length: 31 }, (_, index) => {
+                    const day = String(index + 1).padStart(2, '0');
+                    return <option key={day} value={day}>{day}</option>;
+                  })}
+                </select>
+
+                <select
+                  value={dobMonth}
+                  onChange={e => handleDobPartChange('month', e.target.value)}
+                  className="sx-input"
+                  aria-label="Birth month"
+                  required
+                >
+                  <option value="">Month</option>
+                  {birthMonths.map((month, index) => {
+                    const monthValue = String(index + 1).padStart(2, '0');
+                    return <option key={monthValue} value={monthValue}>{month}</option>;
+                  })}
+                </select>
+
+                <input
+                  type="search"
+                  list="birth-year-options"
+                  value={dobYear}
+                  onChange={e => handleDobPartChange('year', e.target.value.replace(/\D/g, '').slice(0, 4))}
+                  placeholder="Year"
+                  inputMode="numeric"
+                  pattern="[0-9]{4}"
+                  className="sx-input"
+                  aria-label="Birth year"
+                  required
+                />
+                <datalist id="birth-year-options">
+                  {birthYears.map(year => <option key={year} value={year} />)}
+                </datalist>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1">
+                Select day and month, then type or search for the birth year.
+              </p>
             </div>
 
             <button
@@ -441,7 +525,7 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
         {/* STEP 3: CONTACT & PASSWORD CREATION */}
         {step === 3 && (
           <form onSubmit={handleCompleteRegistration} className="space-y-4 text-xs animate-in fade-in">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div>
                 <label className="block font-semibold text-slate-300 mb-1.5">
                   Contact Mobile Number <span className="text-emerald-400">*</span>
@@ -571,7 +655,7 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
               </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div>
                 <label className="block font-semibold text-slate-300 mb-1.5">
                   Set Password <span className="text-emerald-400">*</span>
@@ -605,7 +689,8 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={e => setConfirmPassword(e.target.value)}
-                    className="sx-input pr-10"
+                    className={`sx-input pr-10 ${passwordsDoNotMatch ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
+                    aria-invalid={passwordsDoNotMatch}
                     required
                   />
                   <button
@@ -618,6 +703,11 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
                     {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                {passwordsDoNotMatch && (
+                  <p className="text-[11px] text-red-400 mt-1.5" role="alert">
+                    Passwords do not match.
+                  </p>
+                )}
               </div>
             </div>
 
