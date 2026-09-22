@@ -220,7 +220,7 @@ export const DisputeDocketModal: React.FC<DisputeDocketModalProps> = ({
             </div>
             <div className="text-right">
               <div className="w-36 h-10 border-b-2 border-slate-400 mb-1"></div>
-              <p className="font-bold text-slate-900">DNCRP Authorized Inspector</p>
+              <p className="font-bold text-slate-900">DNCRP Authorized Authority</p>
               <p className="text-[10px] text-slate-600">{complaint.shopThana}, {complaint.shopDistrict}</p>
             </div>
           </div>

@@ -42,14 +42,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   return (
     <div className="w-full min-h-screen text-slate-100 selection:bg-[#02baff] selection:text-slate-950 font-sans">
       {/* FUTURISTIC HERO SECTION (Inspired by Fixile AI Interface) */}
-      <section className="relative overflow-hidden pt-12 pb-24 border-b border-[#02baff]/15 bg-gradient-to-b from-[#05070e] via-[#080d1a] to-[#05070e]">
+      <section className="relative overflow-hidden pt-10 pb-16 sm:pb-20 border-b border-[#02baff]/15 bg-gradient-to-b from-[#05070e] via-[#080d1a] to-[#05070e]">
         {/* Hologram radial background glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-gradient-to-b from-[#0147bf]/20 via-[#02baff]/10 to-transparent blur-3xl pointer-events-none -z-0" />
 
-        <div className="max-w-7xl mx-auto px-4 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <div className="max-w-6xl mx-auto px-4 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
             {/* Left Column: Mission & Controls */}
-            <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
+            <div className="lg:col-span-7 space-y-5 text-center lg:text-left">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0147bf]/15 border border-[#02baff]/30 text-[#02baff] text-xs font-mono font-bold tracking-wider uppercase">
                 <span className="w-2 h-2 rounded-full bg-[#02baff] animate-pulse" />
                 PEOPLE'S REPUBLIC OF BANGLADESH • CITIZEN DEFENSE AI
@@ -177,7 +177,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       </section>
 
       {/* CORE CAPABILITIES (Minimal, Futuristic, Less Text) */}
-      <section className="py-20 max-w-7xl mx-auto px-4">
+      <section className="py-16 sm:py-20 max-w-6xl mx-auto px-4">
         <div className="text-center max-w-2xl mx-auto mb-14 space-y-2">
           <span className="text-xs font-['Orbitron'] uppercase tracking-widest text-[#02baff] font-bold">
             PLATFORM CAPABILITIES
@@ -245,8 +245,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       </section>
 
       {/* EMERGENCY HOTLINES DIRECTORY (Modern Card Grid) */}
-      <section className="py-14 bg-[#05070e] border-t border-[#02baff]/15">
-        <div className="max-w-7xl mx-auto px-4">
+      <section className="py-12 sm:py-14 bg-[#05070e] border-t border-[#02baff]/15">
+        <div className="max-w-6xl mx-auto px-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
             <div>
               <span className="text-[10px] font-['Orbitron'] text-[#02baff] uppercase tracking-widest font-bold block">

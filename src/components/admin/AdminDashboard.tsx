@@ -98,8 +98,8 @@ export const AdminDashboard: React.FC = () => {
   const [newDesignation, setNewDesignation] = useState('');
   const [newDepartment, setNewDepartment] = useState('');
   const [policeDistrict, setPoliceDistrict] = useState('Dhaka');
-  const [policeThana, setPoliceThana] = useState('Gulshan');
-  const [newStation, setNewStation] = useState('Gulshan Police Station, Dhaka');
+  const [policeThana, setPoliceThana] = useState('');
+  const [newStation, setNewStation] = useState('');
 
   const handlePoliceDistrictChange = (newDistrict: string) => {
     setPoliceDistrict(newDistrict);
@@ -124,7 +124,9 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [provisionedSuccessData, setProvisionedSuccessData] = useState<{
@@ -230,7 +232,9 @@ export const AdminDashboard: React.FC = () => {
     }
     const generated = `SentX#${rand}!`;
     setNewPassword(generated);
+    setConfirmNewPassword(generated);
     setShowNewPassword(true);
+    setShowConfirmNewPassword(true);
   };
 
   const handleCopyCredentials = () => {
@@ -253,6 +257,9 @@ Portal URL: ${window.location.origin}`;
   // Create Authority User
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (newPassword !== confirmNewPassword) {
+      return;
+    }
     const requestedPhone = normalizeAdminPhone(newPhone);
     const duplicatePhone = usersList.some(user => normalizeAdminPhone(user.phone) === requestedPhone);
     if (duplicatePhone) {
@@ -291,8 +298,12 @@ Portal URL: ${window.location.origin}`;
         setNewBadge('');
         setNewDesignation('');
         setNewDepartment('');
+        setPoliceThana('');
+        setNewStation('');
         setNewPassword('');
+        setConfirmNewPassword('');
         setShowNewPassword(false);
+        setShowConfirmNewPassword(false);
         fetchAdminData();
       }
     } catch (err: any) {
@@ -654,7 +665,7 @@ Portal URL: ${window.location.origin}`;
                 </div>
 
                 <div className="p-4 rounded-2xl bg-amber-950/20 border border-amber-500/30">
-                  <span className="text-slate-400 block">DNCRP Inspectors</span>
+                  <span className="text-slate-400 block">DNCRP Authorities</span>
                   <strong className="text-2xl font-bold text-amber-400 font-display mt-1 block">
                     {systemStats.usersByRole?.CONSUMER_RIGHTS || 0}
                   </strong>
@@ -1225,7 +1236,7 @@ Portal URL: ${window.location.origin}`;
                 Authorized Personnel Directory ({usersList.length})
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
-                Centralized management of verified citizens, police officers, and DNCRP inspectors.
+                Centralized management of verified citizens, police officers, and DNCRP authorities.
               </p>
             </div>
 
@@ -1283,7 +1294,7 @@ Portal URL: ${window.location.origin}`;
       {/* ========================================================================= */}
       {showAddUserModal && (
         <div className="provision-user-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in">
-          <div className="provision-user-modal bg-slate-900 border border-purple-500/50 rounded-3xl w-full max-w-md p-6 sm:p-8 shadow-2xl relative text-slate-100 space-y-4 max-h-[90vh] overflow-y-auto">
+          <div className={`provision-user-modal bg-slate-900 border border-purple-500/50 rounded-3xl w-full ${newRole === UserRole.POLICE ? 'max-w-3xl' : 'max-w-md'} p-6 sm:p-8 shadow-2xl relative text-slate-100 space-y-4 max-h-[90vh] overflow-y-auto`}>
             <button
               onClick={() => setShowAddUserModal(false)}
               className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
@@ -1328,7 +1339,7 @@ Portal URL: ${window.location.origin}`;
                   className="sx-input"
                 >
                   <option value={UserRole.POLICE}>Police Authority (DMP/CID)</option>
-                  <option value={UserRole.CONSUMER_RIGHTS}>Consumer Rights (DNCRP Inspector)</option>
+                  <option value={UserRole.CONSUMER_RIGHTS}>Consumer Rights (DNCRP Authority)</option>
                   <option value={UserRole.ADMIN}>System Administrator</option>
                   <option value={UserRole.CITIZEN}>Verified Citizen</option>
                 </select>
@@ -1443,7 +1454,9 @@ Portal URL: ${window.location.origin}`;
                         value={policeThana}
                         onChange={e => handlePoliceThanaChange(e.target.value)}
                         className="sx-input"
+                        required
                       >
+                        <option value="">Select Thana / Police Station</option>
                         {getThanasByDistrict(policeDistrict).map(t => (
                           <option key={t} value={t}>
                             {t} Police Station
@@ -1495,7 +1508,6 @@ Portal URL: ${window.location.origin}`;
                     type={showNewPassword ? 'text' : 'password'}
                     value={newPassword}
                     onChange={e => setNewPassword(e.target.value)}
-                    placeholder="Click Auto-Generate or enter custom"
                     className="sx-input pr-10 font-mono"
                     required
                   />
@@ -1509,6 +1521,31 @@ Portal URL: ${window.location.origin}`;
                     {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                <label className="block font-semibold text-slate-300 mt-3 mb-1">Retype Password</label>
+                <div className="relative">
+                  <input
+                    type={showConfirmNewPassword ? 'text' : 'password'}
+                    value={confirmNewPassword}
+                    onChange={e => setConfirmNewPassword(e.target.value)}
+                    className={`sx-input pr-10 font-mono ${confirmNewPassword && newPassword !== confirmNewPassword ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
+                    aria-invalid={Boolean(confirmNewPassword && newPassword !== confirmNewPassword)}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmNewPassword(value => !value)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
+                    aria-label={showConfirmNewPassword ? 'Hide retyped password' : 'Show retyped password'}
+                    title={showConfirmNewPassword ? 'Hide retyped password' : 'Show retyped password'}
+                  >
+                    {showConfirmNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {confirmNewPassword && newPassword !== confirmNewPassword && (
+                  <p className="text-[11px] text-red-400 mt-1.5" role="alert">
+                    Passwords do not match.
+                  </p>
+                )}
                 <p className="text-[10px] text-slate-400 mt-1">
                   Officer will receive credentials by email and must set a personal password upon first login.
                 </p>
@@ -1516,8 +1553,8 @@ Portal URL: ${window.location.origin}`;
 
               <button
                 type="submit"
-                disabled={isCreatingUser}
-                className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold tracking-wide transition shadow-lg shadow-purple-600/30 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                disabled={isCreatingUser || !newPassword || newPassword !== confirmNewPassword}
+                className="provision-account-button w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold tracking-wide transition shadow-lg shadow-purple-600/30 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isCreatingUser ? (
                   <>

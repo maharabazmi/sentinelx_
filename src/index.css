@@ -672,6 +672,43 @@ html.light .sx-input,
   color: #020617 !important;
 }
 
+html.light .dismiss-grievance-button,
+.light .dismiss-grievance-button {
+  background-color: #fff1f2 !important;
+  border-color: #fda4af !important;
+  color: #9f1239 !important;
+}
+
+html.light .dismiss-grievance-button:hover,
+.light .dismiss-grievance-button:hover {
+  background-color: #ffe4e6 !important;
+  border-color: #fb7185 !important;
+  color: #881337 !important;
+}
+
+html.light .provision-account-button,
+.light .provision-account-button {
+  background-color: #4c1d95 !important;
+  border: 1px solid #3b0764 !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 20px -10px rgba(76, 29, 149, 0.65) !important;
+}
+
+html.light .provision-account-button:hover,
+.light .provision-account-button:hover {
+  background-color: #3b0764 !important;
+  border-color: #2e1065 !important;
+}
+
+html.light .provision-account-button:disabled,
+.light .provision-account-button:disabled {
+  background-color: #4c1d95 !important;
+  border-color: #3b0764 !important;
+  color: #ffffff !important;
+  opacity: 0.65 !important;
+  box-shadow: none !important;
+}
+
 /* 4. High-Contrast Container Badges */
 html.light .bg-red-950\/40,
 html.light .bg-red-950\/60,

@@ -92,7 +92,7 @@ def update_complaint_status(complaint_id):
         timeline.append({
             "timestamp": utcnow_iso(),
             "status": complaint.status,
-            "note": note or inspector_notes or f"Status updated to {complaint.status} by DNCRP Inspector.",
+            "note": note or inspector_notes or f"Status updated to {complaint.status} by DNCRP Authority.",
             "officerName": user.fullName,
         })
         complaint.timeline = timeline

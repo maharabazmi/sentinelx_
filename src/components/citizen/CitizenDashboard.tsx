@@ -1454,7 +1454,9 @@ export const CitizenDashboard: React.FC = () => {
                     value={barcodeInput}
                     onChange={e => setBarcodeInput(e.target.value)}
                     placeholder="e.g. 8941100234012"
-                    className="sx-input"
+                    className="sx-input sx-input-with-icon"
+                    inputMode="numeric"
+                    maxLength={13}
                   />
                 </div>
               </div>
@@ -2327,7 +2329,9 @@ export const CitizenDashboard: React.FC = () => {
                     value={lookupBarcode}
                     onChange={e => setLookupBarcode(e.target.value)}
                     placeholder="e.g. 8941100234012"
-                    className="sx-input"
+                    className="sx-input sx-input-with-icon"
+                    inputMode="numeric"
+                    maxLength={13}
                     required
                   />
                 </div>

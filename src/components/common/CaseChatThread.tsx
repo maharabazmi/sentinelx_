@@ -52,7 +52,9 @@ export const CaseChatThread: React.FC<CaseChatThreadProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date());
 
+  const chatScrollRef = useRef<HTMLDivElement>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
+  const shouldAutoScrollRef = useRef(true);
   const isAuthority = user?.role === UserRole.POLICE || user?.role === UserRole.CONSUMER_RIGHTS || user?.role === UserRole.ADMIN;
 
   const fetchMessages = async (silent = false) => {
@@ -60,7 +62,17 @@ export const CaseChatThread: React.FC<CaseChatThreadProps> = ({
     try {
       const res = await ApiClient.getCaseMessages(caseId);
       if (res.success) {
-        setMessages(res.messages || []);
+        const incomingMessages = res.messages || [];
+        setMessages(previousMessages => {
+          const hasChanged =
+            previousMessages.length !== incomingMessages.length ||
+            previousMessages.some((message, index) => {
+              const incomingMessage = incomingMessages[index];
+              return !incomingMessage || message.id !== incomingMessage.id || message.message !== incomingMessage.message;
+            });
+
+          return hasChanged ? incomingMessages : previousMessages;
+        });
         setError(null);
         setLastSyncTime(new Date());
       }
@@ -94,8 +106,22 @@ export const CaseChatThread: React.FC<CaseChatThreadProps> = ({
   }, [caseId]);
 
   useEffect(() => {
-    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const chatScrollElement = chatScrollRef.current;
+    if (!chatScrollElement || !shouldAutoScrollRef.current) return;
+
+    chatScrollElement.scrollTo({
+      top: chatScrollElement.scrollHeight,
+      behavior: 'smooth'
+    });
   }, [messages]);
+
+  const handleChatScroll = () => {
+    const chatScrollElement = chatScrollRef.current;
+    if (!chatScrollElement) return;
+
+    shouldAutoScrollRef.current =
+      chatScrollElement.scrollHeight - chatScrollElement.scrollTop - chatScrollElement.clientHeight < 80;
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -291,7 +317,11 @@ export const CaseChatThread: React.FC<CaseChatThreadProps> = ({
       </div>
 
       {/* Message List */}
-      <div className="flex-1 p-4 overflow-y-auto space-y-3.5 text-xs bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900/30">
+      <div
+        ref={chatScrollRef}
+        onScroll={handleChatScroll}
+        className="flex-1 p-4 overflow-y-auto space-y-3.5 text-xs bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900/30"
+      >
         {isLoading && messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-slate-500 space-y-2">
             <RefreshCw className="w-5 h-5 animate-spin text-emerald-400" />

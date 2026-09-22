@@ -629,7 +629,7 @@ def get_seed_records():
                 "fileSize": "890 KB",
                 "uploadedAt": (now - timedelta(days=3)).isoformat()
             }],
-            inspectorNotes="DNCRP inspection team conducted physical audit. Found 42 units of tampering with MRP. Notice served under Consumer Rights Protection Act 2009 Section 40.",
+            inspectorNotes="DNCRP authority team conducted physical audit. Found 42 units of tampering with MRP. Notice served under Consumer Rights Protection Act 2009 Section 40.",
             penaltyImposed="Show-cause notice issued with penalty assessment of BDT 50,000.",
             assignedOfficerName="Shamim Reza",
             timeline=[

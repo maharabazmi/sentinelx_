@@ -13,6 +13,7 @@ export const ForcePasswordChangeModal: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const passwordsDoNotMatch = confirmPassword.length > 0 && newPassword !== confirmPassword;
 
   // Only render if user is logged in AND mustChangePassword is true, or during success feedback
   if (!user || (!user.mustChangePassword && !isSuccess)) {
@@ -31,7 +32,7 @@ export const ForcePasswordChangeModal: React.FC = () => {
       return;
     }
 
-    if (newPassword !== confirmPassword) {
+    if (passwordsDoNotMatch) {
       setError('New password and confirmation do not match.');
       return;
     }
@@ -129,7 +130,6 @@ export const ForcePasswordChangeModal: React.FC = () => {
                   type={showNewPassword ? 'text' : 'password'}
                   value={newPassword}
                   onChange={e => setNewPassword(e.target.value)}
-                  placeholder="At least 6 characters"
                   className="sx-input pr-10"
                   required
                 />
@@ -152,8 +152,8 @@ export const ForcePasswordChangeModal: React.FC = () => {
                   type={showConfirmPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={e => setConfirmPassword(e.target.value)}
-                  placeholder="Re-enter new password"
-                  className="sx-input pr-10"
+                  className={`sx-input pr-10 ${passwordsDoNotMatch ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
+                  aria-invalid={passwordsDoNotMatch}
                   required
                 />
                 <button
@@ -164,6 +164,11 @@ export const ForcePasswordChangeModal: React.FC = () => {
                   {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              {passwordsDoNotMatch && (
+                <p className="text-[11px] text-red-400 mt-1.5" role="alert">
+                  Passwords do not match.
+                </p>
+              )}
             </div>
 
             <div className="pt-2 flex items-center justify-between gap-3">
@@ -177,7 +182,7 @@ export const ForcePasswordChangeModal: React.FC = () => {
 
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || passwordsDoNotMatch}
                 className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold tracking-wide transition shadow-lg shadow-amber-500/20 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 text-xs"
               >
                 {isSubmitting ? (
