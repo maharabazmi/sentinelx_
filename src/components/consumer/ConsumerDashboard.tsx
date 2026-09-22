@@ -173,8 +173,8 @@ export const ConsumerDashboard: React.FC = () => {
               </span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-black text-white font-['Orbitron'] tracking-tight">
-              INSPECTOR CONSOLE: {user?.fullName?.toUpperCase()}
+              <h1 className="text-2xl sm:text-3xl font-black text-white font-['Orbitron'] tracking-tight">
+              AUTHORITY CONSOLE: {user?.fullName?.toUpperCase()}
             </h1>
 
             <p className="text-xs text-slate-400 flex items-center gap-3 font-mono">
@@ -252,7 +252,7 @@ export const ConsumerDashboard: React.FC = () => {
           <StatCard
             title="Field Investigations"
             value={stats.activeInvestigations}
-            subtitle="Inspectors deployed on-site"
+            subtitle="Authorities deployed on-site"
             icon={Scale}
             variant="blue"
           />
@@ -289,7 +289,7 @@ export const ConsumerDashboard: React.FC = () => {
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Search tracking # or shop name..."
-                className="sx-input"
+                className="sx-input sx-input-with-icon"
               />
             </div>
 
@@ -303,7 +303,7 @@ export const ConsumerDashboard: React.FC = () => {
                 <option value={ComplaintStatus.SUBMITTED}>Submitted (New)</option>
                 <option value={ComplaintStatus.UNDER_REVIEW}>Under Review</option>
                 <option value={ComplaintStatus.VERIFIED}>Verified Grievance</option>
-                <option value={ComplaintStatus.INVESTIGATION}>Inspector Dispatched</option>
+                <option value={ComplaintStatus.INVESTIGATION}>Authority Dispatched</option>
                 <option value={ComplaintStatus.RESOLVED}>Resolved (Fined)</option>
                 <option value={ComplaintStatus.REJECTED}>Dismissed</option>
               </select>
@@ -573,7 +573,7 @@ export const ConsumerDashboard: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-slate-300 mb-1">Inspector Notes & Enforcement Order</label>
+                    <label className="block font-semibold text-slate-300 mb-1">Authority Notes & Enforcement Order</label>
                     <textarea
                       rows={3}
                       value={inspectorNotes}
@@ -588,7 +588,7 @@ export const ConsumerDashboard: React.FC = () => {
                       type="button"
                       disabled={isUpdatingStatus}
                       onClick={() => handleUpdateComplaint(ComplaintStatus.REJECTED)}
-                      className="px-4 py-2 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-500/40 text-xs font-semibold transition"
+                      className="dismiss-grievance-button px-4 py-2 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-500/40 text-xs font-semibold transition"
                     >
                       Dismiss Grievance
                     </button>
@@ -599,7 +599,7 @@ export const ConsumerDashboard: React.FC = () => {
                       onClick={() => handleUpdateComplaint(ComplaintStatus.INVESTIGATION)}
                       className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition"
                     >
-                      Dispatch Inspector
+                      Dispatch Authority
                     </button>
 
                     <button
