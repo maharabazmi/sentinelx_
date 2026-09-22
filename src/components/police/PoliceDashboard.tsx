@@ -300,6 +300,46 @@ export const PoliceDashboard: React.FC = () => {
     }
   };
 
+  // Resolve Coverage Police Station dynamically
+  const getSOSStation = (sos: SOSRequest): string => {
+    if (sos.assignedStation && sos.assignedStation.trim()) {
+      return sos.assignedStation;
+    }
+    const loc = (sos.locationName || '').toLowerCase();
+    if (loc.includes('dhanmondi')) return 'Dhanmondi Police Station, Dhaka';
+    if (loc.includes('gulshan')) return 'Gulshan Police Station, Dhaka';
+    if (loc.includes('uttara')) return 'Uttara Police Station, Dhaka';
+    if (loc.includes('banani')) return 'Banani Police Station, Dhaka';
+    if (loc.includes('mirpur')) return 'Mirpur Police Station, Dhaka';
+    if (loc.includes('mohammadpur')) return 'Mohammadpur Police Station, Dhaka';
+    if (loc.includes('tejgaon')) return 'Tejgaon Police Station, Dhaka';
+    if (loc.includes('motijheel')) return 'Motijheel Police Station, Dhaka';
+    if (loc.includes('agrabad') || loc.includes('kotwali')) return 'Agrabad / Kotwali, Chattogram';
+    return user?.stationOrThana || 'Dhaka Metropolitan Police';
+  };
+
+  // Determine if an SOS beacon belongs to the logged-in police officer's station
+  const isSOSInOfficerStation = (sos: SOSRequest): boolean => {
+    if (!user?.stationOrThana) return true;
+    const offClean = user.stationOrThana.toLowerCase();
+    if (offClean.includes('central command') || offClean.includes('headquarters') || offClean.includes('hq') || offClean.includes('admin')) {
+      return true;
+    }
+
+    const sosStation = getSOSStation(sos).toLowerCase();
+    const extractThana = (str: string) => {
+      return str.split(',')[0].replace(/(police\s*station|model\s*thana|thana|division|district)/gi, '').trim().toLowerCase();
+    };
+
+    const offKw = extractThana(user.stationOrThana);
+    const sosKw = extractThana(sosStation);
+
+    if (offKw && sosKw) {
+      return offKw === sosKw || offKw.includes(sosKw) || sosKw.includes(offKw);
+    }
+    return false;
+  };
+
   // Handle Respond to SOS with Live ETA
   const handleRespondToSOS = async (sosId: string, status: SOSStatus, unitName: string, customEta?: string) => {
     const targetSOS = sosRequests.find(s => s.id === sosId);
@@ -377,46 +417,6 @@ export const PoliceDashboard: React.FC = () => {
     const matchesCrime = selectedCrimeType === 'ALL' || r.crimeType === selectedCrimeType;
     return matchesSearch && matchesStatus && matchesCrime;
   });
-
-  // Resolve Coverage Police Station dynamically
-  const getSOSStation = (sos: SOSRequest): string => {
-    if (sos.assignedStation && sos.assignedStation.trim()) {
-      return sos.assignedStation;
-    }
-    const loc = (sos.locationName || '').toLowerCase();
-    if (loc.includes('dhanmondi')) return 'Dhanmondi Police Station, Dhaka';
-    if (loc.includes('gulshan')) return 'Gulshan Police Station, Dhaka';
-    if (loc.includes('uttara')) return 'Uttara Police Station, Dhaka';
-    if (loc.includes('banani')) return 'Banani Police Station, Dhaka';
-    if (loc.includes('mirpur')) return 'Mirpur Police Station, Dhaka';
-    if (loc.includes('mohammadpur')) return 'Mohammadpur Police Station, Dhaka';
-    if (loc.includes('tejgaon')) return 'Tejgaon Police Station, Dhaka';
-    if (loc.includes('motijheel')) return 'Motijheel Police Station, Dhaka';
-    if (loc.includes('agrabad') || loc.includes('kotwali')) return 'Agrabad / Kotwali, Chattogram';
-    return user?.stationOrThana || 'Dhaka Metropolitan Police';
-  };
-
-  // Determine if an SOS beacon belongs to the logged-in police officer's station
-  const isSOSInOfficerStation = (sos: SOSRequest): boolean => {
-    if (!user?.stationOrThana) return true;
-    const offClean = user.stationOrThana.toLowerCase();
-    if (offClean.includes('central command') || offClean.includes('headquarters') || offClean.includes('hq') || offClean.includes('admin')) {
-      return true;
-    }
-
-    const sosStation = getSOSStation(sos).toLowerCase();
-    const extractThana = (str: string) => {
-      return str.split(',')[0].replace(/(police\s*station|model\s*thana|thana|division|district)/gi, '').trim().toLowerCase();
-    };
-
-    const offKw = extractThana(user.stationOrThana);
-    const sosKw = extractThana(sosStation);
-
-    if (offKw && sosKw) {
-      return offKw === sosKw || offKw.includes(sosKw) || sosKw.includes(offKw);
-    }
-    return false;
-  };
 
   const stationActiveSOS = sosRequests.filter(s => isSOSInOfficerStation(s) && s.status !== SOSStatus.RESOLVED);
   const allActiveSOS = sosRequests.filter(s => s.status !== SOSStatus.RESOLVED);
