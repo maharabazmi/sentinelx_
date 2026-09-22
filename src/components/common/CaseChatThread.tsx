@@ -12,7 +12,12 @@ import {
   Gavel,
   FileText,
   BadgeAlert,
-  Radio
+  Radio,
+  Paperclip,
+  Image as ImageIcon,
+  X,
+  Download,
+  Maximize2
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { ApiClient } from '../../services/api';
@@ -38,6 +43,9 @@ export const CaseChatThread: React.FC<CaseChatThreadProps> = ({
   const { user } = useAuth();
   const [messages, setMessages] = useState<CaseMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
+  const [attachment, setAttachment] = useState<{ url: string; name: string; type: string } | null>(null);
+  const [previewModalImage, setPreviewModalImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isOfficialNotice, setIsOfficialNotice] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
@@ -89,19 +97,50 @@ export const CaseChatThread: React.FC<CaseChatThreadProps> = ({
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('File size exceeds 5MB limit.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAttachment({
+        url: reader.result as string,
+        name: file.name,
+        type: file.type || 'application/octet-stream'
+      });
+      setError(null);
+    };
+    reader.onerror = () => {
+      setError('Failed to read file.');
+    };
+    reader.readAsDataURL(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const handleSend = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!newMessage.trim() || isSending) return;
+    if ((!newMessage.trim() && !attachment) || isSending) return;
 
     const messageText = newMessage.trim();
     const noticeFlag = isOfficialNotice;
+    const currentAttachment = attachment;
+
     setNewMessage('');
+    setAttachment(null);
     setIsOfficialNotice(false);
     setIsSending(true);
 
     try {
       const res = await ApiClient.sendCaseMessage(caseId, {
-        message: messageText,
+        message: messageText || (currentAttachment ? `[Attachment: ${currentAttachment.name}]` : ''),
+        attachmentUrl: currentAttachment?.url,
+        attachmentName: currentAttachment?.name,
+        attachmentType: currentAttachment?.type,
         caseType,
         isOfficialNotice: noticeFlag
       });
@@ -307,6 +346,37 @@ export const CaseChatThread: React.FC<CaseChatThreadProps> = ({
                     </div>
                   )}
 
+                  {msg.attachmentUrl && (
+                    <div className="mt-1 mb-2">
+                      {msg.attachmentType?.startsWith('image') || msg.attachmentUrl.startsWith('data:image') ? (
+                        <div
+                          className="relative group cursor-pointer overflow-hidden rounded-xl border border-white/10 max-w-xs shadow-md"
+                          onClick={() => setPreviewModalImage(msg.attachmentUrl || null)}
+                        >
+                          <img
+                            src={msg.attachmentUrl}
+                            alt={msg.attachmentName || 'Evidence'}
+                            className="max-h-48 w-full object-cover group-hover:scale-105 transition duration-200"
+                          />
+                          <div className="absolute inset-0 bg-slate-950/50 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1.5 text-white text-[11px] font-bold transition">
+                            <Maximize2 className="w-3.5 h-3.5" />
+                            <span>Click to Zoom</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <a
+                          href={msg.attachmentUrl}
+                          download={msg.attachmentName || 'evidence_file'}
+                          className="inline-flex items-center gap-2 p-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 text-xs border border-white/10 transition"
+                        >
+                          <FileText className="w-4 h-4 text-blue-400" />
+                          <span className="truncate max-w-[180px] font-mono text-[11px]">{msg.attachmentName || 'Attached Document'}</span>
+                          <Download className="w-3.5 h-3.5 text-slate-400 ml-1" />
+                        </a>
+                      )}
+                    </div>
+                  )}
+
                   <p className="text-xs leading-relaxed whitespace-pre-wrap">{msg.message}</p>
                 </div>
               </div>
@@ -343,7 +413,48 @@ export const CaseChatThread: React.FC<CaseChatThreadProps> = ({
           </div>
         )}
 
+        {/* Attachment preview chip */}
+        {attachment && (
+          <div className="flex items-center justify-between p-2 rounded-xl bg-slate-800/90 border border-[#02baff]/40 text-xs text-[#02baff] animate-in fade-in">
+            <div className="flex items-center gap-2 truncate">
+              {attachment.type.startsWith('image') ? (
+                <ImageIcon className="w-4 h-4 text-[#02baff] flex-shrink-0" />
+              ) : (
+                <FileText className="w-4 h-4 text-[#02baff] flex-shrink-0" />
+              )}
+              <span className="truncate font-mono text-[11px]">{attachment.name}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAttachment(null)}
+              className="p-1 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white"
+              title="Remove attachment"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
         <div className="flex items-center gap-2">
+          {/* Hidden File Input */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            className="hidden"
+            accept="image/*,.pdf,.doc,.docx,.txt"
+          />
+
+          {/* Paperclip Button */}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-[#02baff]/50 text-slate-400 hover:text-[#02baff] transition active:scale-95 flex-shrink-0"
+            title="Attach Evidence Photo or Document (Max 5MB)"
+          >
+            <Paperclip className="w-4 h-4" />
+          </button>
+
           <textarea
             rows={2}
             value={newMessage}
@@ -359,7 +470,7 @@ export const CaseChatThread: React.FC<CaseChatThreadProps> = ({
 
           <button
             type="submit"
-            disabled={!newMessage.trim() || isSending}
+            disabled={(!newMessage.trim() && !attachment) || isSending}
             className={`px-4 py-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-md active:scale-95 disabled:opacity-40 flex-shrink-0 ${
               isAuthority
                 ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/25'
@@ -395,6 +506,28 @@ export const CaseChatThread: React.FC<CaseChatThreadProps> = ({
           </div>
         )}
       </form>
+
+      {/* Lightbox Image Preview Modal */}
+      {previewModalImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md animate-in fade-in"
+          onClick={() => setPreviewModalImage(null)}
+        >
+          <div className="relative max-w-3xl max-h-[90vh] p-2 bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden shadow-2xl">
+            <button
+              onClick={() => setPreviewModalImage(null)}
+              className="absolute top-4 right-4 p-2 rounded-xl bg-slate-950/80 text-white hover:bg-slate-800 transition z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <img
+              src={previewModalImage}
+              alt="Evidence Zoom"
+              className="max-h-[82vh] w-auto object-contain rounded-xl"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

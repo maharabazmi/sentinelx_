@@ -332,6 +332,9 @@ export interface CaseMessage {
   senderRole: UserRole;
   senderBadge?: string;
   message: string;
+  attachmentUrl?: string;
+  attachmentName?: string;
+  attachmentType?: string;
   isOfficialNotice: boolean;
   timestamp: string;
 }
