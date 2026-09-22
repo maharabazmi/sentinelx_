@@ -15,6 +15,8 @@ from ..services.email_service import EmailService
 _pending_email_otps = {}
 # Verified Emails Cache: normalized_email -> expiry_timestamp
 _verified_emails = {}
+# Pending Password Reset OTPs: normalized_email -> {"otp": str, "expires_at": float, "userId": str, "fullName": str}
+_pending_password_reset_otps = {}
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
@@ -431,4 +433,103 @@ def change_password():
         "token": new_token,
         "user": safe_user
     })
+
+# Step 4: Forgot Password - Request 6-digit OTP
+@auth_bp.route("/forgot-password/request-otp", methods=["POST"])
+def forgot_password_request_otp():
+    data = request.get_json() or {}
+    identifier = (data.get("email") or data.get("identifier") or "").strip().lower()
+
+    if not identifier:
+        return jsonify({"error": "Please enter your registered email address or National ID."}), 400
+
+    with get_db() as db:
+        user = db.query(User).filter(
+            (User.email.ilike(identifier)) |
+            (User.nidNumber == identifier) |
+            (User.phone == identifier) |
+            (User.badgeNumber.ilike(identifier))
+        ).first()
+
+        if not user or not user.email:
+            return jsonify({"error": "No verified account associated with this email or identifier."}), 404
+
+        otp_code = f"{random.randint(100000, 999999):06d}"
+        expires_at = time.time() + 600  # 10 minutes
+
+        normalized_email = user.email.strip().lower()
+        _pending_password_reset_otps[normalized_email] = {
+            "otp": otp_code,
+            "expires_at": expires_at,
+            "userId": user.id,
+            "fullName": user.fullName,
+        }
+
+        email_result = EmailService.send_password_reset_otp(normalized_email, otp_code, user.fullName)
+
+        resp = {
+            "success": True,
+            "message": f"6-digit password reset code sent to {normalized_email}.",
+            "email": normalized_email,
+            "expiresInSeconds": 600,
+            "emailMode": email_result.get("mode")
+        }
+        if email_result.get("mode") == "dev_simulated":
+            resp["devOtp"] = otp_code
+
+        return jsonify(resp)
+
+# Step 5: Forgot Password - Confirm OTP & Reset Password
+@auth_bp.route("/forgot-password/reset", methods=["POST"])
+def forgot_password_reset():
+    data = request.get_json() or {}
+    email = (data.get("email") or "").strip().lower()
+    otp_code = str(data.get("otp", "")).strip()
+    new_password = (data.get("newPassword") or "").strip()
+
+    if not email or not otp_code or not new_password:
+        return jsonify({"error": "Email, 6-digit OTP code, and new password are required."}), 400
+
+    if len(new_password) < 6:
+        return jsonify({"error": "New password must be at least 6 characters long."}), 400
+
+    record = _pending_password_reset_otps.get(email)
+    if not record:
+        return jsonify({"error": "No pending reset request for this email. Please request a new code."}), 400
+
+    if time.time() > record["expires_at"]:
+        _pending_password_reset_otps.pop(email, None)
+        return jsonify({"error": "Reset code has expired. Please request a new code."}), 400
+
+    if record["otp"] != otp_code:
+        return jsonify({"error": "Invalid verification code. Please check and try again."}), 400
+
+    with get_db() as db:
+        user = db.query(User).filter(User.id == record["userId"]).first()
+        if not user:
+            return jsonify({"error": "User account not found."}), 404
+
+        user.passwordHash = hash_password(new_password)
+        user.mustChangePassword = False
+        db.commit()
+
+        _pending_password_reset_otps.pop(email, None)
+
+        AuditService.log(
+            user_id=user.id,
+            user_name=user.fullName,
+            user_role=user.role,
+            action="PASSWORD_RESET_VIA_OTP",
+            resource="USER_SECURITY",
+            resource_id=user.id,
+            ip_address=request.remote_addr,
+            status="SUCCESS",
+            details="User successfully reset password using 6-digit email OTP.",
+        )
+
+    return jsonify({
+        "success": True,
+        "message": "Password successfully reset! You can now sign in with your new password."
+    })
+
 

@@ -37,11 +37,14 @@ def handle_case_messages(case_id):
     # 2. POST: Post an inquiry or response message
     data = request.get_json() or {}
     message_text = data.get("message", "").strip()
+    attachment_url = data.get("attachmentUrl")
+    attachment_name = data.get("attachmentName")
+    attachment_type = data.get("attachmentType")
     case_type = data.get("caseType", "").strip().upper()
     is_official_notice = bool(data.get("isOfficialNotice", False))
 
-    if not message_text:
-        return jsonify({"error": "Message body cannot be empty."}), 400
+    if not message_text and not attachment_url:
+        return jsonify({"error": "Message body or attachment is required."}), 400
 
     # Auto-detect caseType if omitted
     if not case_type:
@@ -67,6 +70,9 @@ def handle_case_messages(case_id):
         senderRole=sender_role,
         senderBadge=sender_badge,
         message=message_text,
+        attachmentUrl=attachment_url,
+        attachmentName=attachment_name,
+        attachmentType=attachment_type,
         isOfficialNotice=is_official_notice,
         timestamp=now_iso,
     )

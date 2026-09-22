@@ -137,6 +137,30 @@ export class ApiClient {
     return res;
   }
 
+  static async requestPasswordResetOtp(identifier: string): Promise<{
+    success: boolean;
+    message: string;
+    email: string;
+    expiresInSeconds: number;
+    emailMode: string;
+    devOtp?: string;
+  }> {
+    return this.request('/auth/forgot-password/request-otp', {
+      method: 'POST',
+      body: JSON.stringify({ identifier })
+    });
+  }
+
+  static async resetPasswordWithOtp(data: { email: string; otp: string; newPassword: string }): Promise<{
+    success: boolean;
+    message: string;
+  }> {
+    return this.request('/auth/forgot-password/reset', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
   // --- Citizen API ---
   static async submitCrimeReport(data: Partial<CrimeReport>): Promise<{ success: boolean; report: CrimeReport; message: string }> {
     return this.request('/citizen/reports', {
@@ -401,12 +425,33 @@ export class ApiClient {
     return this.request('/admin/security-config');
   }
 
+  static async getAdminCrimeReports(): Promise<{ success: boolean; total: number; reports: CrimeReport[] }> {
+    return this.request('/admin/reports');
+  }
+
+  static async logAdminAuditExport(recordCount: number): Promise<{ success: boolean }> {
+    return this.request('/admin/audit-logs/log-export', {
+      method: 'POST',
+      body: JSON.stringify({ recordCount })
+    });
+  }
+
   // --- Case Messages & Hearing Inquiries ---
   static async getCaseMessages(caseId: string): Promise<{ success: boolean; caseId: string; count: number; messages: CaseMessage[] }> {
     return this.request(`/cases/${encodeURIComponent(caseId)}/messages`);
   }
 
-  static async sendCaseMessage(caseId: string, data: { message: string; caseType?: string; isOfficialNotice?: boolean }): Promise<{ success: boolean; message: CaseMessage }> {
+  static async sendCaseMessage(
+    caseId: string,
+    data: {
+      message?: string;
+      attachmentUrl?: string;
+      attachmentName?: string;
+      attachmentType?: string;
+      caseType?: string;
+      isOfficialNotice?: boolean;
+    }
+  ): Promise<{ success: boolean; message: CaseMessage }> {
     return this.request(`/cases/${encodeURIComponent(caseId)}/messages`, {
       method: 'POST',
       body: JSON.stringify(data)

@@ -1,6 +1,7 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Lock, AlertCircle, RefreshCw, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { ForgotPasswordModal } from './ForgotPasswordModal';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -109,9 +111,18 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-slate-300 font-semibold mb-1.5">
-              Secret Password
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-slate-300 font-semibold">
+                Secret Password
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(true)}
+                className="text-xs font-mono text-amber-400 hover:text-amber-300 hover:underline transition"
+              >
+                Forgot Password?
+              </button>
+            </div>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -148,7 +159,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           </button>
         </form>
 
-
         <div className="mt-5 text-center">
           <p className="text-xs text-slate-400">
             Don't have a verified account?{' '}
@@ -164,6 +174,16 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           </p>
         </div>
       </div>
+
+      {/* Forgot Password OTP Modal */}
+      <ForgotPasswordModal
+        isOpen={showForgotPassword}
+        onClose={() => setShowForgotPassword(false)}
+        onSuccess={() => {
+          setShowForgotPassword(false);
+          setError(null);
+        }}
+      />
     </div>
   );
 };
