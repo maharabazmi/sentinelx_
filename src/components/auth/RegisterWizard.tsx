@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   CheckCircle2,
@@ -15,7 +15,9 @@ import {
   RefreshCw,
   Lock,
   Eye,
-  EyeOff
+  EyeOff,
+  Send,
+  Check
 } from 'lucide-react';
 import { ApiClient } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -51,8 +53,26 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // Email OTP Verification State
+  const [emailOtp, setEmailOtp] = useState('');
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [isEmailOtpSent, setIsEmailOtpSent] = useState(false);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [otpCooldown, setOtpCooldown] = useState(0);
+  const [devOtpNotice, setDevOtpNotice] = useState<string | null>(null);
+  const [emailSuccessMessage, setEmailSuccessMessage] = useState<string | null>(null);
+
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Countdown timer for OTP resend
+  useEffect(() => {
+    if (otpCooldown > 0) {
+      const timer = setTimeout(() => setOtpCooldown(c => c - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [otpCooldown]);
 
   const registerSteps: StepItem[] = [
     { id: 1, label: 'NID Check', description: 'National Registry' },
@@ -74,6 +94,14 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
     setConfirmPassword('');
     setShowPassword(false);
     setShowConfirmPassword(false);
+    setEmailOtp('');
+    setIsSendingOtp(false);
+    setIsVerifyingOtp(false);
+    setIsEmailOtpSent(false);
+    setIsEmailVerified(false);
+    setOtpCooldown(0);
+    setDevOtpNotice(null);
+    setEmailSuccessMessage(null);
     setError(null);
     setIsSubmitting(false);
   };
@@ -124,6 +152,53 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
     }
   };
 
+  // Step 3: Email OTP Handlers
+  const handleSendEmailOtp = async () => {
+    if (!email || !email.includes('@') || !email.includes('.')) {
+      setError('Please provide a valid notification email address.');
+      return;
+    }
+    setError(null);
+    setEmailSuccessMessage(null);
+    setIsSendingOtp(true);
+    try {
+      const res = await ApiClient.sendEmailOtp(email, verificationResult?.fullNameEn);
+      if (res.success) {
+        setIsEmailOtpSent(true);
+        setOtpCooldown(60);
+        setEmailSuccessMessage(`6-digit verification code sent to ${email}`);
+        if (res.devOtp) {
+          setDevOtpNotice(`Dev Preview: Code is ${res.devOtp}`);
+        }
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to dispatch email verification code.');
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const handleVerifyEmailOtp = async () => {
+    if (!emailOtp || emailOtp.trim().length !== 6) {
+      setError('Please enter the 6-digit verification code from your email.');
+      return;
+    }
+    setError(null);
+    setIsVerifyingOtp(true);
+    try {
+      const res = await ApiClient.verifyEmailOtp(email, emailOtp.trim());
+      if (res.success) {
+        setIsEmailVerified(true);
+        setDevOtpNotice(null);
+        setEmailSuccessMessage('✓ Email address successfully verified.');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Invalid or expired verification code.');
+    } finally {
+      setIsVerifyingOtp(false);
+    }
+  };
+
   // Step 3: Complete Registration
   const handleCompleteRegistration = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,6 +212,10 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
     }
     if (isAlreadyRegistered) {
       setError('This NID is already linked to an existing account. Please sign in instead.');
+      return;
+    }
+    if (email && !isEmailVerified) {
+      setError('Please verify your email address using the 6-digit security code before completing registration.');
       return;
     }
 
@@ -154,7 +233,8 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
         password,
         address: verificationResult.address,
         thana: verificationResult.thana,
-        district: verificationResult.district
+        district: verificationResult.district,
+        isEmailVerified: isEmailVerified
       });
       setStep(4);
     } catch (err: any) {
@@ -376,18 +456,120 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-300 mb-1.5">
-                  Notification Email <span className="text-emerald-400">*</span>
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  className="sx-input"
-                  required
-                />
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block font-semibold text-slate-300">
+                    Notification Email <span className="text-emerald-400">*</span>
+                  </label>
+                  {isEmailVerified && (
+                    <span className="text-[11px] text-emerald-400 font-bold flex items-center gap-1">
+                      <Check className="w-3.5 h-3.5" /> Verified
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={e => {
+                      setEmail(e.target.value);
+                      if (isEmailVerified) setIsEmailVerified(false);
+                      if (isEmailOtpSent) setIsEmailOtpSent(false);
+                      setEmailSuccessMessage(null);
+                    }}
+                    disabled={isEmailVerified}
+                    placeholder="citizen@example.com"
+                    className={`sx-input ${isEmailVerified ? 'border-emerald-500/50 bg-emerald-950/20 text-emerald-300' : ''}`}
+                    required
+                  />
+
+                  {!isEmailVerified && (
+                    <button
+                      type="button"
+                      onClick={handleSendEmailOtp}
+                      disabled={isSendingOtp || otpCooldown > 0 || !email}
+                      className="px-3 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold text-xs whitespace-nowrap transition shadow-md shadow-blue-500/20 disabled:opacity-50 flex items-center gap-1.5 active:scale-95 flex-shrink-0"
+                    >
+                      {isSendingOtp ? (
+                        <>
+                          <RefreshCw className="w-3 h-3 animate-spin" />
+                          <span>Sending...</span>
+                        </>
+                      ) : otpCooldown > 0 ? (
+                        <span>Resend ({otpCooldown}s)</span>
+                      ) : (
+                        <>
+                          <Send className="w-3 h-3" />
+                          <span>{isEmailOtpSent ? 'Resend Code' : 'Verify Email'}</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+
+                {emailSuccessMessage && (
+                  <p className="text-[11px] text-emerald-400 mt-1 font-medium flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" />
+                    <span>{emailSuccessMessage}</span>
+                  </p>
+                )}
+
+                {devOtpNotice && (
+                  <div className="mt-1.5 p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] flex items-center justify-between">
+                    <span>{devOtpNotice}</span>
+                    <button
+                      type="button"
+                      onClick={() => setEmailOtp(devOtpNotice.replace(/\D/g, ''))}
+                      className="text-[10px] underline text-amber-200 font-bold hover:text-white"
+                    >
+                      Auto-Fill
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
+
+            {/* OTP Entry Row */}
+            {isEmailOtpSent && !isEmailVerified && (
+              <div className="p-3.5 rounded-2xl bg-slate-950/70 border border-cyan-500/40 space-y-2 animate-in fade-in">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-semibold text-cyan-300">
+                    Enter 6-Digit Email Verification Code <span className="text-emerald-400">*</span>
+                  </label>
+                  <span className="text-[10px] text-slate-400 font-mono">10 min validity</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    maxLength={6}
+                    value={emailOtp}
+                    onChange={e => setEmailOtp(e.target.value.replace(/\D/g, ''))}
+                    placeholder="e.g. 482910"
+                    className="sx-input font-mono text-center tracking-[4px] text-sm font-bold text-cyan-300"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={handleVerifyEmailOtp}
+                    disabled={isVerifyingOtp || emailOtp.length !== 6}
+                    className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs whitespace-nowrap transition shadow-md shadow-emerald-500/20 disabled:opacity-50 flex items-center gap-1.5 active:scale-95 flex-shrink-0"
+                  >
+                    {isVerifyingOtp ? (
+                      <>
+                        <RefreshCw className="w-3 h-3 animate-spin" />
+                        <span>Verifying...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Confirm Code</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>

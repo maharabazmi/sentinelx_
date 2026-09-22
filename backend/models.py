@@ -53,6 +53,10 @@ class User(Base):
     department = Column(String(128), nullable=True)
     stationOrThana = Column(String(128), nullable=False)
     isNIDVerified = Column(Boolean, default=False)
+    isEmailVerified = Column(Boolean, default=False)
+    mustChangePassword = Column(Boolean, default=False)
+    emailVerificationCode = Column(String(64), nullable=True)
+    emailVerificationExpiresAt = Column(String(64), nullable=True)
     passwordHash = Column(String(256), nullable=False)
     createdAt = Column(String(64), default=utcnow_iso)
 
@@ -68,11 +72,15 @@ class User(Base):
             "designation": self.designation,
             "department": self.department,
             "stationOrThana": self.stationOrThana,
-            "isNIDVerified": self.isNIDVerified,
+            "isNIDVerified": bool(self.isNIDVerified),
+            "isEmailVerified": bool(self.isEmailVerified),
+            "mustChangePassword": bool(self.mustChangePassword),
             "createdAt": self.createdAt,
         }
         if not safe:
             data["passwordHash"] = self.passwordHash
+            data["emailVerificationCode"] = self.emailVerificationCode
+            data["emailVerificationExpiresAt"] = self.emailVerificationExpiresAt
         return data
 
 

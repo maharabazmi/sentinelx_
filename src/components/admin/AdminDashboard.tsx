@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Cpu,
   Shield,
@@ -22,7 +22,10 @@ import {
   X,
   Radio,
   Server,
-  KeyRound
+  KeyRound,
+  Copy,
+  Check,
+  MailCheck
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { ApiClient } from '../../services/api';
@@ -121,6 +124,14 @@ export const AdminDashboard: React.FC = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [provisionedSuccessData, setProvisionedSuccessData] = useState<{
+    user: User;
+    temporaryPassword?: string;
+    emailDispatched?: boolean;
+    emailMode?: string;
+    emailMessage?: string;
+  } | null>(null);
+  const [copiedCredentials, setCopiedCredentials] = useState(false);
 
   // Search & Filter State
   const [auditSearchQuery, setAuditSearchQuery] = useState('');
@@ -207,6 +218,35 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
+  // Auto-generate strong temporary password
+  const handleGenerateRandomPassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+    let rand = '';
+    for (let i = 0; i < 6; i++) {
+      rand += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    const generated = `SentX#${rand}!`;
+    setNewPassword(generated);
+    setShowNewPassword(true);
+  };
+
+  const handleCopyCredentials = () => {
+    if (!provisionedSuccessData) return;
+    const { user, temporaryPassword } = provisionedSuccessData;
+    const text = `SENTINELX OFFICIAL CREDENTIALS
+Officer: ${user.fullName}
+Role: ${user.role}
+Rank: ${user.designation || 'Officer'}
+Badge: ${user.badgeNumber || 'N/A'}
+Station: ${user.stationOrThana}
+Login Email: ${user.email}
+Temporary Password: ${temporaryPassword}
+Portal URL: ${window.location.origin}`;
+    navigator.clipboard.writeText(text);
+    setCopiedCredentials(true);
+    setTimeout(() => setCopiedCredentials(false), 2500);
+  };
+
   // Create Authority User
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -233,6 +273,13 @@ export const AdminDashboard: React.FC = () => {
       });
 
       if (res.success) {
+        setProvisionedSuccessData({
+          user: res.user,
+          temporaryPassword: res.temporaryPassword || newPassword,
+          emailDispatched: res.emailDispatched,
+          emailMode: res.emailMode,
+          emailMessage: res.emailMessage
+        });
         setShowAddUserModal(false);
         setNewFullName('');
         setNewNID('');
@@ -1249,13 +1296,24 @@ export const AdminDashboard: React.FC = () => {
               )}
 
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">Temporary Password</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block font-semibold text-slate-300">Temporary Password</label>
+                  <button
+                    type="button"
+                    onClick={handleGenerateRandomPassword}
+                    className="text-[11px] text-purple-400 hover:text-purple-300 font-bold flex items-center gap-1 transition"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    <span>Auto-Generate</span>
+                  </button>
+                </div>
                 <div className="relative">
                   <input
                     type={showNewPassword ? 'text' : 'password'}
                     value={newPassword}
                     onChange={e => setNewPassword(e.target.value)}
-                    className="sx-input pr-10"
+                    placeholder="Click Auto-Generate or enter custom"
+                    className="sx-input pr-10 font-mono"
                     required
                   />
                   <button
@@ -1268,16 +1326,144 @@ export const AdminDashboard: React.FC = () => {
                     {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Officer will receive credentials by email and must set a personal password upon first login.
+                </p>
               </div>
 
               <button
                 type="submit"
                 disabled={isCreatingUser}
-                className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold tracking-wide transition shadow-lg shadow-purple-600/30 active:scale-95 disabled:opacity-50"
+                className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold tracking-wide transition shadow-lg shadow-purple-600/30 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {isCreatingUser ? 'Provisioning Credentials...' : 'Provision Official Account'}
+                {isCreatingUser ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Transmitting & Provisioning Credentials...</span>
+                  </>
+                ) : (
+                  <>
+                    <KeyRound className="w-4 h-4" />
+                    <span>Provision Official Account</span>
+                  </>
+                )}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: PROVISIONING SUCCESS & CREDENTIALS DISPATCH                          */}
+      {/* ========================================================================= */}
+      {provisionedSuccessData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in">
+          <div className="bg-slate-900 border border-purple-500/60 rounded-3xl w-full max-w-md p-6 sm:p-8 shadow-2xl relative text-slate-100 space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400">
+                  <MailCheck className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white font-display">Official Account Provisioned</h3>
+                  <p className="text-[11px] text-purple-300 font-mono">Credentials Dispatched</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setProvisionedSuccessData(null)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">Officer Name:</span>
+                  <strong className="text-white font-semibold">{provisionedSuccessData.user.fullName}</strong>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">Assigned Role:</span>
+                  <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono text-[10px] font-bold">
+                    {provisionedSuccessData.user.role}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">Rank / Designation:</span>
+                  <span className="text-slate-200">{provisionedSuccessData.user.designation || 'Officer'}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">Station / Jurisdiction:</span>
+                  <span className="text-slate-200 truncate max-w-[220px]">{provisionedSuccessData.user.stationOrThana}</span>
+                </div>
+                <div className="flex items-center justify-between border-t border-slate-800/80 pt-2">
+                  <span className="text-slate-400">Login Email:</span>
+                  <span className="text-cyan-400 font-mono font-bold">{provisionedSuccessData.user.email}</span>
+                </div>
+              </div>
+
+              {/* Temporary Password Box with 1-click Copy */}
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950/40 to-slate-950 border border-purple-500/40 text-center space-y-2">
+                <span className="text-[10px] font-mono text-purple-300 uppercase tracking-wider block font-bold">
+                  Temporary Access Password
+                </span>
+                <div className="flex items-center justify-center gap-2">
+                  <code className="text-lg font-bold font-mono tracking-widest text-white bg-slate-950/80 px-4 py-1.5 rounded-xl border border-purple-500/30">
+                    {provisionedSuccessData.temporaryPassword}
+                  </code>
+                </div>
+                <p className="text-[10px] text-amber-300 font-medium">
+                  Mandatory: Officer will be prompted to set their permanent password upon first login.
+                </p>
+              </div>
+
+              {/* Email Status Pill */}
+              <div className={`p-2.5 rounded-xl text-[11px] flex items-center gap-2 ${
+                provisionedSuccessData.emailMode === 'smtp'
+                  ? 'bg-emerald-950/40 border border-emerald-500/30 text-emerald-300'
+                  : 'bg-blue-950/40 border border-blue-500/30 text-blue-300'
+              }`}>
+                {provisionedSuccessData.emailMode === 'smtp' ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                    <span>Credentials transmitted via SMTP to {provisionedSuccessData.user.email}</span>
+                  </>
+                ) : (
+                  <>
+                    <Server className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+                    <span>Dev Simulator: Credentials logged to Flask terminal</span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 pt-1">
+              <button
+                type="button"
+                onClick={handleCopyCredentials}
+                className="flex-1 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition shadow-lg shadow-purple-600/30 flex items-center justify-center gap-2 active:scale-95"
+              >
+                {copiedCredentials ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-300" />
+                    <span>Copied Credentials!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>Copy All Credentials</span>
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setProvisionedSuccessData(null)}
+                className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition"
+              >
+                Done
+              </button>
+            </div>
           </div>
         </div>
       )}

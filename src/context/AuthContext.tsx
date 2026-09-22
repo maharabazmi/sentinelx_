@@ -12,6 +12,7 @@ export interface AuthContextType {
   login: (identifier: string, pass: string) => Promise<void>;
   adminClearanceLogin: (clearanceKey: string, identifier: string, pass: string) => Promise<void>;
   register: (data: any) => Promise<void>;
+  changePassword: (currentPass: string, newPass: string) => Promise<void>;
   logout: () => void;
   refreshAlerts: () => Promise<void>;
   refreshNotifications: () => Promise<void>;
@@ -122,6 +123,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const changePassword = async (currentPass: string, newPass: string) => {
+    setIsLoading(true);
+    try {
+      const res = await ApiClient.changePassword(currentPass, newPass);
+      if (res.success) {
+        setUser(res.user);
+        setToken(res.token);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = () => {
     ApiClient.clearToken();
     setUser(null);
@@ -155,6 +169,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         adminClearanceLogin,
         register,
+        changePassword,
         logout,
         refreshAlerts,
         refreshNotifications,

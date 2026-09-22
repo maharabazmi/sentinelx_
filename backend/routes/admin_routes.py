@@ -1,4 +1,6 @@
 import time
+import secrets
+import string
 from flask import Blueprint, request, jsonify, g
 from ..database import get_db, DB_ENGINE_TYPE
 from ..models import (
@@ -16,6 +18,7 @@ from ..models import (
 from ..middleware.auth import verify_auth, require_roles
 from ..services.ai_prediction_service import DemonstrationAIPredictionService
 from ..services.audit_service import AuditService
+from ..services.email_service import EmailService
 from ..config import Config
 from .auth_routes import hash_password
 
@@ -98,8 +101,16 @@ def create_user():
     department = data.get("department")
     station_or_thana = data.get("stationOrThana", "Central Command, Dhaka")
 
-    if not full_name or not email or not phone or not nid_number or not role or not password:
-        return jsonify({"error": "Missing mandatory user fields."}), 400
+    if not full_name or not email or not phone or not nid_number or not role:
+        return jsonify({"error": "Missing mandatory user fields (Full Name, NID, Email, Phone, Role)."}), 400
+
+    # Auto-generate temporary password if omitted or empty
+    temporary_password = str(password or "").strip()
+    if not temporary_password:
+        prefix = "SentX#"
+        chars = string.ascii_letters + string.digits
+        rand_part = ''.join(secrets.choice(chars) for _ in range(6))
+        temporary_password = f"{prefix}{rand_part}!"
 
     normalized_nid = normalize_nid(nid_number)
     normalized_email = normalize_email(email)
@@ -113,6 +124,7 @@ def create_user():
             return jsonify({"error": "Phone number already exists."}), 400
 
         user_id = f"user-{role[:3].lower()}-{int(time.time() * 1000)}"
+        is_authority = role in ("POLICE", "CONSUMER_RIGHTS", "ADMIN")
         new_user = User(
             id=user_id,
             nidNumber=normalized_nid,
@@ -125,13 +137,26 @@ def create_user():
             department=department.strip() if department else None,
             stationOrThana=station_or_thana.strip(),
             isNIDVerified=True,
+            isEmailVerified=True,  # Officially verified by Administrator
+            mustChangePassword=is_authority,  # Mandatory password update on first login
             createdAt=utcnow_iso(),
-            passwordHash=hash_password(password),
+            passwordHash=hash_password(temporary_password),
         )
         db.add(new_user)
         db.commit()
 
         user_dict = new_user.to_dict()
+
+    # Dispatch official onboarding credentials email
+    email_result = EmailService.send_temporary_password(
+        to_email=normalized_email,
+        full_name=full_name.strip(),
+        role=role,
+        designation=designation.strip() if designation else None,
+        badge=badge_number.strip() if badge_number else None,
+        station_or_thana=station_or_thana.strip(),
+        temp_password=temporary_password
+    )
 
     AuditService.log(
         user_id=admin_user.id,
@@ -142,12 +167,16 @@ def create_user():
         resource_id=user_id,
         ip_address=request.remote_addr,
         status="SUCCESS",
-        details=f"Admin provisioned new account [{full_name}] with role [{role}]. Station: [{station_or_thana}].",
+        details=f"Admin provisioned new account [{full_name}] with role [{role}] and temporary credentials. Station: [{station_or_thana}].",
     )
 
     return jsonify({
         "success": True,
-        "user": user_dict
+        "user": user_dict,
+        "temporaryPassword": temporary_password,
+        "emailDispatched": email_result.get("success", False),
+        "emailMode": email_result.get("mode"),
+        "emailMessage": email_result.get("message")
     }), 201
 
 # 3. AI Crime Predictions & Strategic Command

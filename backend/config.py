@@ -28,3 +28,13 @@ class Config:
     PORT = int(os.getenv("FLASK_PORT", os.getenv("PORT", "5000")))
     HOST = os.getenv("FLASK_HOST", "0.0.0.0")
     DEBUG = os.getenv("FLASK_DEBUG", "True").lower() in ("true", "1", "yes")
+
+    # Email / SMTP Configuration (Gmail, Outlook, or Custom SMTP)
+    SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
+    SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USER = os.getenv("SMTP_USER", "")
+    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+    SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL", os.getenv("SMTP_USER", "no-reply@sentinelx.gov.bd"))
+    SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME", "SentinelX National Command")
+    SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "True").lower() in ("true", "1", "yes")
+    FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")

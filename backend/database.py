@@ -71,13 +71,20 @@ def init_db():
     except Exception:
         pass
 
-    try:
-        with engine.connect() as conn:
-            conn.execute(text("ALTER TABLE sos_requests ADD COLUMN assignedStation VARCHAR(128)"))
-            conn.commit()
-            logger.info("[DB] Added assignedStation column to sos_requests table.")
-    except Exception:
-        pass
+    # Resilient schema migration: ensure user email verification and password change columns exist
+    for col_name, col_sql in [
+        ("isEmailVerified", "BOOLEAN DEFAULT 0"),
+        ("mustChangePassword", "BOOLEAN DEFAULT 0"),
+        ("emailVerificationCode", "VARCHAR(64)"),
+        ("emailVerificationExpiresAt", "VARCHAR(64)")
+    ]:
+        try:
+            with engine.connect() as conn:
+                conn.execute(text(f"ALTER TABLE users ADD COLUMN {col_name} {col_sql}"))
+                conn.commit()
+                logger.info(f"[DB] Added {col_name} column to users table.")
+        except Exception:
+            pass
 
     with get_db() as db:
         user_count = db.query(User).count()
