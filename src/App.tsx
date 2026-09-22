@@ -71,7 +71,24 @@ const AppContent: React.FC = () => {
       );
     }
 
-    // 2. Active Dashboard Views (when authenticated and currentTab === 'dashboard')
+    // 2. Security Clearance Protocol: If authority account must change temp password, keep dashboard locked
+    if (user.mustChangePassword) {
+      return (
+        <div className="min-h-[70vh] flex flex-col items-center justify-center text-center p-6 space-y-4">
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+            <Lock className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold text-white font-['Orbitron']">
+            Security Clearance Protocol
+          </h2>
+          <p className="text-xs text-slate-400 max-w-md">
+            Officer credential initialization in progress. Please establish your permanent security password to access operational modules.
+          </p>
+        </div>
+      );
+    }
+
+    // 3. Active Dashboard Views (when authenticated and currentTab === 'dashboard')
     switch (user.role) {
       case UserRole.CITIZEN:
         return <CitizenDashboard />;
