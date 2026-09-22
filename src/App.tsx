@@ -6,6 +6,7 @@ import { EmergencyAlertBanner } from './components/common/EmergencyAlertBanner';
 import { LoginModal } from './components/auth/LoginModal';
 import { RegisterWizard } from './components/auth/RegisterWizard';
 import { AdminClearanceModal } from './components/auth/AdminClearanceModal';
+import { ForcePasswordChangeModal } from './components/auth/ForcePasswordChangeModal';
 import { LandingPage } from './components/public/LandingPage';
 import { CitizenDashboard } from './components/citizen/CitizenDashboard';
 import { PoliceDashboard } from './components/police/PoliceDashboard';
@@ -160,6 +161,9 @@ const AppContent: React.FC = () => {
         isOpen={isAdminClearanceOpen}
         onClose={() => setIsAdminClearanceOpen(false)}
       />
+
+      {/* Mandatory First-Login Password Change Modal */}
+      <ForcePasswordChangeModal />
     </div>
   );
 };

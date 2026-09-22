@@ -36,6 +36,8 @@ class AuthenticatedUser:
         self.department = data.get("department")
         self.stationOrThana = data.get("stationOrThana")
         self.isNIDVerified = data.get("isNIDVerified", False)
+        self.isEmailVerified = data.get("isEmailVerified", False)
+        self.mustChangePassword = data.get("mustChangePassword", False)
         self.createdAt = data.get("createdAt")
 
     def to_dict(self):
@@ -51,6 +53,8 @@ class AuthenticatedUser:
             "department": self.department,
             "stationOrThana": self.stationOrThana,
             "isNIDVerified": self.isNIDVerified,
+            "isEmailVerified": self.isEmailVerified,
+            "mustChangePassword": self.mustChangePassword,
             "createdAt": self.createdAt,
         }
 

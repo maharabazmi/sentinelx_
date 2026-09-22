@@ -99,6 +99,44 @@ export class ApiClient {
     return this.request('/auth/me');
   }
 
+  static async sendEmailOtp(email: string, fullName?: string): Promise<{
+    success: boolean;
+    message: string;
+    expiresInSeconds: number;
+    emailMode: string;
+    devOtp?: string;
+  }> {
+    return this.request('/auth/send-email-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email, fullName })
+    });
+  }
+
+  static async verifyEmailOtp(email: string, otp: string): Promise<{
+    success: boolean;
+    message: string;
+    verifiedEmail: string;
+  }> {
+    return this.request('/auth/verify-email-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email, otp })
+    });
+  }
+
+  static async changePassword(currentPassword: string, newPassword: string): Promise<{
+    success: boolean;
+    message: string;
+    token: string;
+    user: User;
+  }> {
+    const res = await this.request<{ success: boolean; message: string; token: string; user: User }>('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword })
+    });
+    if (res.token) this.setToken(res.token);
+    return res;
+  }
+
   // --- Citizen API ---
   static async submitCrimeReport(data: Partial<CrimeReport>): Promise<{ success: boolean; report: CrimeReport; message: string }> {
     return this.request('/citizen/reports', {
@@ -298,7 +336,14 @@ export class ApiClient {
     return this.request('/admin/users');
   }
 
-  static async createAdminUser(data: any): Promise<{ success: boolean; user: User }> {
+  static async createAdminUser(data: any): Promise<{
+    success: boolean;
+    user: User;
+    temporaryPassword?: string;
+    emailDispatched?: boolean;
+    emailMode?: string;
+    emailMessage?: string;
+  }> {
     return this.request('/admin/users', {
       method: 'POST',
       body: JSON.stringify(data)

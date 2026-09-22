@@ -106,6 +106,8 @@ export interface User {
   department?: string; // Police division / Consumer Directorate
   stationOrThana?: string;
   isNIDVerified: boolean;
+  isEmailVerified?: boolean;
+  mustChangePassword?: boolean;
   createdAt: string;
 }
 
