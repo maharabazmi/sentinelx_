@@ -6,6 +6,7 @@ import random
 import logging
 from typing import List, Optional, Tuple
 from ..models import User, CrimeReport, utcnow_iso
+from ..data.bangladesh_geo_data import ALL_64_DISTRICTS, ALL_THANAS
 from .notification_service import NotificationService
 
 logger = logging.getLogger("sentinelx.jurisdiction")
@@ -384,6 +385,50 @@ BANGLADESH_DISTRICTS = [
     "jessore", "feni", "brahmanbaria", "tangail", "dinajpur", "kushtia"
 ]
 
+def normalize_consumer_district(value: str) -> str:
+    """Canonicalize common Bangladesh district spellings and labels for queue routing."""
+    normalized = re.sub(r"[^a-z0-9]+", " ", (value or "").casefold()).strip()
+    normalized = re.sub(r"\b(district|dist|zilla|zila|division|of)\b", " ", normalized)
+    normalized = " ".join(normalized.split())
+    aliases = {
+        "chittagong": "chattogram", "comilla": "cumilla", "barisal": "barishal",
+        "bogra": "bogura", "jessore": "jashore", "coxs bazar": "cox s bazar",
+    }
+    return aliases.get(normalized, normalized)
+
+
+def get_consumer_officer_district(officer: User) -> str:
+    """Use the officer's explicit district, with a district parsed from their office as a legacy fallback."""
+    assigned = normalize_consumer_district(officer.assignedDistrict or "")
+    if assigned:
+        return assigned
+    station = re.sub(r"[^a-z0-9]+", " ", (officer.stationOrThana or "").casefold()).strip()
+    district_names = sorted(ALL_64_DISTRICTS, key=len, reverse=True)
+    for district in district_names:
+        key = re.sub(r"[^a-z0-9]+", " ", district.casefold()).strip()
+        if re.search(rf"\b{re.escape(key)}\b", station):
+            return normalize_consumer_district(district)
+
+    # Older DNCRP accounts sometimes stored only a Thana/office name. Resolve that
+    # location to its nearest district centre as a one-time-compatible fallback.
+    thana_names = sorted(ALL_THANAS, key=len, reverse=True)
+    for thana in thana_names:
+        key = re.sub(r"[^a-z0-9]+", " ", thana.casefold()).strip()
+        if re.search(rf"\b{re.escape(key)}\b", station):
+            thana_lat, thana_lng = ALL_THANAS[thana]
+            nearest_district = min(
+                ALL_64_DISTRICTS.items(),
+                key=lambda entry: (entry[1][0] - thana_lat) ** 2 + (entry[1][1] - thana_lng) ** 2,
+            )[0]
+            return normalize_consumer_district(nearest_district)
+    return ""
+
+
+def is_consumer_district_match(district_a: str, district_b: str) -> bool:
+    a = normalize_consumer_district(district_a)
+    b = normalize_consumer_district(district_b)
+    return bool(a and b and a == b)
+
 
 def parse_consumer_jurisdiction(station_or_thana: str) -> Tuple[str, str]:
     """
@@ -399,6 +444,12 @@ def parse_consumer_jurisdiction(station_or_thana: str) -> Tuple[str, str]:
         return ("", "")
 
     raw = station_or_thana.strip()
+    low = raw.lower()
+
+    # Central HQ / Directorate / National / Intake postings have nationwide jurisdiction
+    if any(h in low for h in ["central", "directorate", "hq", "headquarters", "command", "national", "intake", "commission"]):
+        return ("", "")
+
     thana_kw = ""
     district_kw = ""
 
@@ -407,7 +458,7 @@ def parse_consumer_jurisdiction(station_or_thana: str) -> Tuple[str, str]:
         thana_candidate = parts[0]
         district_candidate = parts[1] if len(parts) > 1 else ""
 
-        if any(h in thana_candidate.lower() for h in ["central", "command", "directorate", "hq", "headquarters"]):
+        if any(h in thana_candidate.lower() for h in ["central", "command", "directorate", "hq", "headquarters", "national", "intake"]):
             thana_kw = ""
         else:
             thana_kw = extract_thana_keyword(thana_candidate).strip().lower()
@@ -415,13 +466,12 @@ def parse_consumer_jurisdiction(station_or_thana: str) -> Tuple[str, str]:
         district_kw = district_candidate.strip().lower()
         district_kw = re.sub(r"(?i)\s*(district|division)\b", "", district_kw).strip()
     else:
-        low = raw.lower()
         for d in BANGLADESH_DISTRICTS:
             if d in low:
                 district_kw = d
                 break
 
-        if any(h in low for h in ["central", "directorate", "hq", "command", "headquarters"]):
+        if any(h in low for h in ["central", "directorate", "hq", "command", "headquarters", "national", "intake"]):
             thana_kw = ""
         else:
             thana_kw = extract_thana_keyword(raw).strip().lower()
@@ -435,6 +485,10 @@ def is_consumer_in_jurisdiction(officer_station: str, shop_thana: str, shop_dist
     """
     if not officer_station:
         return False
+
+    st_clean = officer_station.strip().lower()
+    if any(h in st_clean for h in ["central", "hq", "commission", "directorate", "national", "intake", "command"]):
+        return True
 
     thana_kw, district_kw = parse_consumer_jurisdiction(officer_station)
     s_thana = (shop_thana or "").strip().lower()
@@ -468,10 +522,5 @@ def is_consumer_in_jurisdiction(officer_station: str, shop_thana: str, shop_dist
     if district_kw:
         return _dist_match(district_kw, s_dist)
 
-    # If Central HQ with no district specified
-    st_clean = officer_station.strip().lower()
-    if any(h in st_clean for h in ["central", "hq", "commission"]):
-        return True
-
-    return False
+    return True
 

@@ -51,6 +51,7 @@ class User(Base):
     badgeNumber = Column(String(64), nullable=True)
     designation = Column(String(128), nullable=True)
     department = Column(String(128), nullable=True)
+    assignedDistrict = Column(String(64), nullable=True, index=True)
     stationOrThana = Column(String(128), nullable=False)
     isNIDVerified = Column(Boolean, default=False)
     isEmailVerified = Column(Boolean, default=False)
@@ -71,6 +72,7 @@ class User(Base):
             "badgeNumber": self.badgeNumber,
             "designation": self.designation,
             "department": self.department,
+            "assignedDistrict": self.assignedDistrict,
             "stationOrThana": self.stationOrThana,
             "isNIDVerified": bool(self.isNIDVerified),
             "isEmailVerified": bool(self.isEmailVerified),
@@ -106,6 +108,7 @@ class CrimeReport(Base):
     submittedAt = Column(String(64), default=utcnow_iso)
     severity = Column(String(32), nullable=False, default="MEDIUM")
     status = Column(String(32), nullable=False, default="SUBMITTED", index=True)
+    workflowQueue = Column(String(32), nullable=False, default="INTAKE", index=True)
     evidenceJson = Column(Text, default="[]")
     verificationNotes = Column(Text, nullable=True)
     verifiedByOfficerId = Column(String(64), nullable=True)
@@ -158,6 +161,7 @@ class CrimeReport(Base):
             "submittedAt": self.submittedAt,
             "severity": self.severity,
             "status": self.status,
+            "workflowQueue": self.workflowQueue,
             "evidence": self.evidence,
             "verificationNotes": self.verificationNotes,
             "verifiedByOfficerId": self.verifiedByOfficerId,
@@ -294,8 +298,12 @@ class ConsumerComplaint(Base):
     description = Column(Text, nullable=False)
     submittedAt = Column(String(64), default=utcnow_iso)
     status = Column(String(32), nullable=False, default="SUBMITTED", index=True)
+    workflowQueue = Column(String(32), nullable=False, default="INTAKE", index=True)
     evidenceJson = Column(Text, default="[]")
     inspectorNotes = Column(Text, nullable=True)
+    investigationSummary = Column(Text, nullable=True)
+    finalFinding = Column(Text, nullable=True)
+    rewardAmount = Column(Float, nullable=True)
     penaltyImposed = Column(Text, nullable=True)
     assignedOfficerName = Column(String(128), nullable=True)
     assignedOfficerId = Column(String(64), nullable=True)
@@ -345,8 +353,12 @@ class ConsumerComplaint(Base):
             "description": self.description,
             "submittedAt": self.submittedAt,
             "status": self.status,
+            "workflowQueue": self.workflowQueue,
             "evidence": self.evidence,
             "inspectorNotes": self.inspectorNotes,
+            "investigationSummary": self.investigationSummary,
+            "finalFinding": self.finalFinding,
+            "rewardAmount": self.rewardAmount,
             "penaltyImposed": self.penaltyImposed,
             "assignedOfficerName": self.assignedOfficerName,
             "assignedOfficerId": self.assignedOfficerId,

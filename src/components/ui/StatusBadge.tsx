@@ -66,10 +66,20 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
       case ReportStatus.INVESTIGATION:
       case ComplaintStatus.VERIFIED:
       case ComplaintStatus.INVESTIGATION:
+      case ComplaintStatus.INVESTIGATION_SUMMARY:
         return {
           bg: 'bg-[#0147bf]/15 text-[#02baff] border-[#02baff]/30',
           dot: 'bg-[#02baff] animate-pulse',
           icon: ShieldCheck,
+          label: status.replace(/_/g, ' ')
+        };
+
+      case ComplaintStatus.ADJUDICATION_REVIEW:
+      case ComplaintStatus.FINAL_DECISION:
+        return {
+          bg: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+          dot: 'bg-amber-400 animate-pulse',
+          icon: Scale,
           label: status.replace(/_/g, ' ')
         };
 

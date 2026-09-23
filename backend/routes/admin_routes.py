@@ -85,6 +85,34 @@ def get_users():
             "users": [u.to_dict() for u in users]
         })
 
+@admin_bp.route("/users/<user_id>/assigned-district", methods=["PATCH"])
+def update_user_assigned_district(user_id):
+    data = request.get_json() or {}
+    assigned_district = (data.get("assignedDistrict") or "").strip()
+    if not assigned_district:
+        return jsonify({"error": "Select a district for this DNCRP officer."}), 400
+    with get_db() as db:
+        authority = db.query(User).filter(User.id == user_id).first()
+        if not authority:
+            return jsonify({"error": "User not found."}), 404
+        if authority.role != "CONSUMER_RIGHTS":
+            return jsonify({"error": "District assignment applies only to DNCRP officers."}), 400
+        authority.assignedDistrict = assigned_district
+        db.commit()
+        user_dict = authority.to_dict()
+    AuditService.log(
+        user_id=g.user.id,
+        user_name=g.user.fullName,
+        user_role=g.user.role,
+        action="UPDATE_DNCRP_OFFICER_DISTRICT",
+        resource=authority.fullName,
+        resource_id=authority.id,
+        ip_address=request.remote_addr,
+        status="SUCCESS",
+        details=f"DNCRP officer district assigned to [{assigned_district}].",
+    )
+    return jsonify({"success": True, "user": user_dict})
+
 @admin_bp.route("/users", methods=["POST"])
 def create_user():
     admin_user = g.user
@@ -99,10 +127,13 @@ def create_user():
     badge_number = data.get("badgeNumber")
     designation = data.get("designation")
     department = data.get("department")
+    assigned_district = data.get("assignedDistrict")
     station_or_thana = data.get("stationOrThana", "Central Command, Dhaka")
 
     if not full_name or not email or not phone or not nid_number or not role:
         return jsonify({"error": "Missing mandatory user fields (Full Name, NID, Email, Phone, Role)."}), 400
+    if role == "CONSUMER_RIGHTS" and (not designation or not assigned_district):
+        return jsonify({"error": "DNCRP officer category and assigned district are required."}), 400
 
     # Auto-generate temporary password if omitted or empty
     temporary_password = str(password or "").strip()
@@ -135,6 +166,7 @@ def create_user():
             badgeNumber=badge_number.strip() if badge_number else None,
             designation=designation.strip() if designation else None,
             department=department.strip() if department else None,
+            assignedDistrict=assigned_district.strip() if assigned_district else None,
             stationOrThana=station_or_thana.strip(),
             isNIDVerified=True,
             isEmailVerified=True,  # Officially verified by Administrator

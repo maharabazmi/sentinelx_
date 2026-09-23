@@ -462,6 +462,36 @@ html.light .hover\:text-slate-300:hover,
   color: #0f172a !important;
 }
 
+html.light .consumer-intake-actions,
+.light .consumer-intake-actions {
+  background-color: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+}
+
+html.light .consumer-intake-handover,
+.light .consumer-intake-handover {
+  background-color: #1d4ed8 !important;
+  color: #ffffff !important;
+  border: 1px solid #1e40af !important;
+}
+
+html.light .consumer-intake-handover:hover,
+.light .consumer-intake-handover:hover {
+  background-color: #1e40af !important;
+}
+
+html.light .consumer-intake-reject,
+.light .consumer-intake-reject {
+  background-color: #fff1f2 !important;
+  border-color: #e11d48 !important;
+  color: #9f1239 !important;
+}
+
+html.light .consumer-intake-reject:hover,
+.light .consumer-intake-reject:hover {
+  background-color: #ffe4e6 !important;
+}
+
 html.light .bg-\[\#05070e\],
 html.light .bg-\[\#0d1525\],
 .light .bg-\[\#05070e\],

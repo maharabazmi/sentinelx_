@@ -9,12 +9,14 @@ from ..models import (
     SOSRequest,
     EmergencyAlert,
     BarcodeVerification,
+    User,
     utcnow_iso,
 )
 from ..middleware.auth import verify_auth, require_roles
 from ..services.notification_service import NotificationService
 from ..services.audit_service import AuditService
 from ..services.jurisdiction_service import JurisdictionService, extract_thana_keyword
+from ..services.jurisdiction_service import get_consumer_officer_district, is_consumer_district_match
 from ..services.geocoding_service import GeocodingService
 
 citizen_bp = Blueprint("citizen", __name__, url_prefix="/api/citizen")
@@ -215,6 +217,7 @@ def submit_consumer_complaint():
         description=description.strip(),
         submittedAt=now_iso,
         status="SUBMITTED",
+        workflowQueue="INTAKE",
         evidence=evidence,
         timeline=[{
             "timestamp": now_iso,
@@ -227,6 +230,12 @@ def submit_consumer_complaint():
         db.add(new_complaint)
         db.commit()
         complaint_dict = new_complaint.to_dict()
+        all_consumer_officers = db.query(User).filter(User.role == "CONSUMER_RIGHTS").all()
+        intake_officer_ids = [
+            officer.id for officer in all_consumer_officers
+            if (officer.designation or "").strip().casefold() == "complaint intake officer" and
+            (not get_consumer_officer_district(officer) or is_consumer_district_match(get_consumer_officer_district(officer), shop_district))
+        ]
 
     NotificationService.create_complaint_notification(
         user_id=user.id,
@@ -234,6 +243,14 @@ def submit_consumer_complaint():
         message=f"Your complaint regarding {shop_name} has been received by the Consumer Rights Directorate.",
         related_id=complaint_id,
     )
+
+    for officer_id in intake_officer_ids:
+        NotificationService.create_complaint_notification(
+            user_id=officer_id,
+            title=f"New DNCRP Dispute: {tracking_number}",
+            message=f"A citizen submitted a new dispute against {shop_name}. Complaint Intake review is required.",
+            related_id=complaint_id,
+        )
 
     AuditService.log(
         user_id=user.id,

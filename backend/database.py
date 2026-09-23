@@ -63,6 +63,28 @@ def init_db():
         logger.warning(f"[DB] User identity uniqueness index migration skipped: {e}")
 
     # Resilient schema migration: ensure assignedOfficerId and assignedStation columns exist
+    for col_name, col_sql in [
+        ("investigationSummary", "TEXT"),
+        ("finalFinding", "TEXT"),
+        ("rewardAmount", "FLOAT"),
+        ("workflowQueue", "VARCHAR(32) DEFAULT 'INTAKE'"),
+    ]:
+        try:
+            with engine.connect() as conn:
+                conn.execute(text(f"ALTER TABLE consumer_complaints ADD COLUMN {col_name} {col_sql}"))
+                conn.commit()
+        except Exception:
+            pass
+
+    # Assigned consumer-rights district belongs to officers, not complaint records.
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE users ADD COLUMN assignedDistrict VARCHAR(64)"))
+            conn.commit()
+            logger.info("[DB] Added assignedDistrict column to users table.")
+    except Exception:
+        pass
+
     try:
         with engine.connect() as conn:
             conn.execute(text("ALTER TABLE crime_reports ADD COLUMN assignedOfficerId VARCHAR(64)"))
@@ -119,16 +141,19 @@ def init_db():
             db.commit()
             logger.info("[DB] Database seeded successfully with initial users, crime reports, alerts, and BSTI catalog.")
         else:
-            # Ensure newly added seed police officers and seed users exist
+            # Ensure newly added seed police officers, users, and incoming consumer complaints exist
             records = get_seed_records()
             added_count = 0
             for u in records.get("users", []):
                 if not db.query(User).filter(User.id == u.id).first():
                     db.merge(u)
                     added_count += 1
+            for c in records.get("complaints", []):
+                db.merge(c)
+                added_count += 1
             if added_count > 0:
                 db.commit()
-                logger.info(f"[DB] Synced {added_count} newly added seed users/officers into database.")
+                logger.info(f"[DB] Synced {added_count} newly added seed users/officers/complaints into database.")
             else:
                 logger.info(f"Database already populated ({user_count} users found).")
 
