@@ -41,6 +41,9 @@ export enum ComplaintStatus {
   VERIFIED = 'VERIFIED',
   REJECTED = 'REJECTED',
   INVESTIGATION = 'INVESTIGATION',
+  INVESTIGATION_SUMMARY = 'INVESTIGATION_SUMMARY',
+  ADJUDICATION_REVIEW = 'ADJUDICATION_REVIEW',
+  FINAL_DECISION = 'FINAL_DECISION',
   RESOLVED = 'RESOLVED'
 }
 
@@ -104,6 +107,7 @@ export interface User {
   badgeNumber?: string; // Police
   designation?: string; // Police / Authority
   department?: string; // Police division / Consumer Directorate
+  assignedDistrict?: string;
   stationOrThana?: string;
   isNIDVerified: boolean;
   isEmailVerified?: boolean;
@@ -230,8 +234,12 @@ export interface ConsumerComplaint {
   description: string;
   submittedAt: string;
   status: ComplaintStatus;
+  workflowQueue?: 'INTAKE' | 'INVESTIGATION' | 'ADJUDICATION' | 'COMPLETED' | 'REJECTED';
   evidence: EvidenceFile[];
   inspectorNotes?: string;
+  investigationSummary?: string;
+  finalFinding?: string;
+  rewardAmount?: number;
   penaltyImposed?: string;
   assignedOfficerName?: string;
   assignedOfficerId?: string;

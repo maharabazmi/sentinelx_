@@ -118,7 +118,7 @@ const AppContent: React.FC = () => {
       />
 
       {/* Main Role Content */}
-      <main className="flex-1">
+      <main className="flex-1 min-h-0 overflow-visible">
         {renderMainContent()}
       </main>
 

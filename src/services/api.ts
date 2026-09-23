@@ -372,6 +372,13 @@ export class ApiClient {
     return this.request('/admin/users');
   }
 
+  static async updateAdminUserDistrict(userId: string, assignedDistrict: string): Promise<{ success: boolean; user: User }> {
+    return this.request(`/admin/users/${encodeURIComponent(userId)}/assigned-district`, {
+      method: 'PATCH',
+      body: JSON.stringify({ assignedDistrict })
+    });
+  }
+
   static async createAdminUser(data: any): Promise<{
     success: boolean;
     user: User;

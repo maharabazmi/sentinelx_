@@ -15,6 +15,7 @@ def generate_token(user: User) -> str:
         "role": user.role,
         "department": user.department,
         "badgeNumber": user.badgeNumber,
+        "assignedDistrict": user.assignedDistrict,
         "exp": datetime.now(timezone.utc) + timedelta(hours=Config.JWT_EXPIRATION_HOURS),
         "iat": datetime.now(timezone.utc),
     }
@@ -34,6 +35,7 @@ class AuthenticatedUser:
         self.badgeNumber = data.get("badgeNumber")
         self.designation = data.get("designation")
         self.department = data.get("department")
+        self.assignedDistrict = data.get("assignedDistrict")
         self.stationOrThana = data.get("stationOrThana")
         self.isNIDVerified = data.get("isNIDVerified", False)
         self.isEmailVerified = data.get("isEmailVerified", False)
@@ -51,6 +53,7 @@ class AuthenticatedUser:
             "badgeNumber": self.badgeNumber,
             "designation": self.designation,
             "department": self.department,
+            "assignedDistrict": self.assignedDistrict,
             "stationOrThana": self.stationOrThana,
             "isNIDVerified": self.isNIDVerified,
             "isEmailVerified": self.isEmailVerified,

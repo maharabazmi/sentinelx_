@@ -63,6 +63,8 @@ export const AdminDashboard: React.FC = () => {
 
   const [systemStats, setSystemStats] = useState<any>(null);
   const [usersList, setUsersList] = useState<User[]>([]);
+  const [districtEdits, setDistrictEdits] = useState<Record<string, string>>({});
+  const [savingDistrictUserId, setSavingDistrictUserId] = useState<string | null>(null);
   const [predictions, setPredictions] = useState<AIPredictionData[]>([]);
   const [riskMatrix, setRiskMatrix] = useState<ComparativeRiskRank[]>([]);
   const [resourceAllocations, setResourceAllocations] = useState<ResourceAllocationAdvice[]>([]);
@@ -98,6 +100,7 @@ export const AdminDashboard: React.FC = () => {
   const [newDesignation, setNewDesignation] = useState('');
   const [newDepartment, setNewDepartment] = useState('');
   const [policeDistrict, setPoliceDistrict] = useState('Dhaka');
+  const [dncrpDistrict, setDncrpDistrict] = useState('Dhaka');
   const [policeThana, setPoliceThana] = useState('');
   const [newStation, setNewStation] = useState('');
 
@@ -166,6 +169,22 @@ export const AdminDashboard: React.FC = () => {
       console.error('Error loading admin data:', err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSaveOfficerDistrict = async (officer: User) => {
+    const assignedDistrict = districtEdits[officer.id] ?? officer.assignedDistrict ?? '';
+    if (!assignedDistrict) return;
+    setSavingDistrictUserId(officer.id);
+    try {
+      const result = await ApiClient.updateAdminUserDistrict(officer.id, assignedDistrict);
+      if (result.success) {
+        setUsersList(current => current.map(item => item.id === officer.id ? result.user : item));
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to update DNCRP district.');
+    } finally {
+      setSavingDistrictUserId(null);
     }
   };
 
@@ -278,6 +297,7 @@ Portal URL: ${window.location.origin}`;
         badgeNumber: newBadge,
         designation: newDesignation,
         department: newRole === UserRole.POLICE ? newDepartment : undefined,
+        assignedDistrict: newRole === UserRole.CONSUMER_RIGHTS ? dncrpDistrict : undefined,
         stationOrThana: newStation,
         password: newPassword
       });
@@ -299,6 +319,7 @@ Portal URL: ${window.location.origin}`;
         setNewDesignation('');
         setNewDepartment('');
         setPoliceThana('');
+        setDncrpDistrict('Dhaka');
         setNewStation('');
         setNewPassword('');
         setConfirmNewPassword('');
@@ -1287,6 +1308,29 @@ Portal URL: ${window.location.origin}`;
                     <p>Station: <span className="text-slate-300">{u.stationOrThana}</span></p>
                   )}
                 </div>
+                {u.role === UserRole.CONSUMER_RIGHTS && (
+                  <div className="flex items-center gap-2 border-t border-slate-800 pt-3">
+                    <select
+                      value={districtEdits[u.id] ?? u.assignedDistrict ?? ''}
+                      onChange={event => setDistrictEdits(current => ({ ...current, [u.id]: event.target.value }))}
+                      className="sx-input min-w-0 flex-1"
+                      aria-label={`Assigned district for ${u.fullName}`}
+                    >
+                      <option value="">Select assigned district</option>
+                      {BANGLADESH_DIVISIONS.flatMap(div => div.districts).map(district => (
+                        <option key={district.id} value={district.name}>{district.name}</option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      disabled={savingDistrictUserId === u.id || !(districtEdits[u.id] ?? u.assignedDistrict)}
+                      onClick={() => handleSaveOfficerDistrict(u)}
+                      className="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white text-xs font-bold"
+                    >
+                      {savingDistrictUserId === u.id ? 'Saving…' : 'Save'}
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -1482,16 +1526,52 @@ Portal URL: ${window.location.origin}`;
                   </div>
                 </div>
               ) : (
-                <div>
-                  <label className="block font-semibold text-slate-300 mb-1">Station / Department / Office</label>
-                  <input
-                    type="text"
-                    value={newStation}
-                    onChange={e => setNewStation(e.target.value)}
-                    placeholder="e.g. DNCRP Headquarters, Motijheel"
-                    className="sx-input"
-                    required
-                  />
+                <div className="space-y-3">
+                  {newRole === UserRole.CONSUMER_RIGHTS && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block font-semibold text-slate-300 mb-1">DNCRP Officer Category</label>
+                        <select
+                          value={newDesignation}
+                          onChange={e => setNewDesignation(e.target.value)}
+                          className="sx-input"
+                          required
+                        >
+                          <option value="">Select officer category</option>
+                          <option value="Complaint Intake Officer">Complaint Intake Officer</option>
+                          <option value="Investigation Officer">Investigation Officer</option>
+                          <option value="Adjudication Officer">Adjudication Officer</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-slate-300 mb-1">Assigned DNCRP District</label>
+                        <select
+                          value={dncrpDistrict}
+                          onChange={e => setDncrpDistrict(e.target.value)}
+                          className="sx-input"
+                          required
+                        >
+                          {BANGLADESH_DIVISIONS.flatMap(div => div.districts).map(district => (
+                            <option key={district.id} value={district.name}>{district.name} ({district.nameBn})</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
+                  {newRole !== UserRole.CONSUMER_RIGHTS && (
+                    <div>
+                      <label className="block font-semibold text-slate-300 mb-1">Station / Department / Office</label>
+                      <input
+                        type="text"
+                        value={newStation}
+                        onChange={e => setNewStation(e.target.value)}
+                        placeholder="e.g. Department Headquarters"
+                        className="sx-input"
+                        required
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1621,6 +1701,12 @@ Portal URL: ${window.location.origin}`;
                   <span className="text-slate-400">Station / Jurisdiction:</span>
                   <span className="text-slate-200 truncate max-w-[220px]">{provisionedSuccessData.user.stationOrThana}</span>
                 </div>
+                {provisionedSuccessData.user.role === UserRole.CONSUMER_RIGHTS && provisionedSuccessData.user.assignedDistrict && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400">Assigned DNCRP District:</span>
+                    <span className="text-amber-300">{provisionedSuccessData.user.assignedDistrict}</span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between border-t border-slate-800/80 pt-2">
                   <span className="text-slate-400">Login Email:</span>
                   <span className="text-cyan-400 font-mono font-bold">{provisionedSuccessData.user.email}</span>

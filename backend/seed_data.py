@@ -130,7 +130,7 @@ def get_seed_records():
             phone="+8801712884433",
             role="CONSUMER_RIGHTS",
             badgeNumber="DNCRP-OFFICER-44",
-            designation="Deputy Director (Enforcement & Vigilance)",
+            designation="Complaint Intake Officer",
             department="Directorate of National Consumers Right Protection (DNCRP)",
             stationOrThana="Dhaka Central Directorate",
             isNIDVerified=True,
@@ -621,6 +621,7 @@ def get_seed_records():
             description="The store charged BDT 2,450 for a baby milk tin with printed government Maximum Retail Price (MRP) of BDT 1,850. Merchant altered price sticker with manual marker.",
             submittedAt=(now - timedelta(days=3)).isoformat(),
             status="INVESTIGATION",
+            workflowQueue="INVESTIGATION",
             evidence=[{
                 "id": "ev-comp-1",
                 "fileName": "cash_memo_overcharging.jpg",
@@ -660,6 +661,7 @@ def get_seed_records():
             description="Sold expired medication with scratch-off expiration date stamp.",
             submittedAt=(now - timedelta(days=8)).isoformat(),
             status="RESOLVED",
+            workflowQueue="COMPLETED",
             evidence=[],
             inspectorNotes="Mobile court fine of BDT 30,000 imposed. Expired stock confiscated and destroyed in presence of Magistrate. Citizen awarded 25% fine incentive (BDT 7,500) per DNCRP Act Section 76(4).",
             penaltyImposed="BDT 30,000 Administrative Fine + 25% reward disbursed to complainant.",
@@ -669,6 +671,69 @@ def get_seed_records():
                 {"timestamp": (now - timedelta(days=8)).isoformat(), "status": "SUBMITTED", "note": "Complaint submitted with product batch photograph."},
                 {"timestamp": (now - timedelta(days=6)).isoformat(), "status": "VERIFIED", "note": "Directorate inspectors verified expired lot numbers.", "officerName": "Shamim Reza"},
                 {"timestamp": (now - timedelta(days=4)).isoformat(), "status": "RESOLVED", "note": "Case resolved. Fine deposited and incentive paid to citizen.", "officerName": "Shamim Reza"}
+            ]
+        ),
+        ConsumerComplaint(
+            id="comp-003",
+            trackingNumber="DNCRP-DHK-2026-9041",
+            complainantId="user-cit-1",
+            complainantName="Tanvir Hossain",
+            complainantPhone="+8801711234567",
+            shopName="Dhaka Bazaar & Superstore",
+            shopAddress="Road 27, Dhanmondi, Dhaka",
+            shopDistrict="Dhaka",
+            shopThana="Dhanmondi",
+            tradeLicenseOrBIN="BIN-99081234",
+            productName="Fortified Soybean Oil (5 Liter Bottle)",
+            brandName="Rupchanda Pure",
+            barcode="8901122334455",
+            issueType="PRICE_GOUGING",
+            pricePaid=980.0,
+            mrp=890.0,
+            description="Merchant demanded BDT 980 for 5L soybean oil bottle with printed government MRP of BDT 890. Overcharge marker placed over official price tag.",
+            submittedAt=(now - timedelta(hours=4)).isoformat(),
+            status="SUBMITTED",
+            workflowQueue="INTAKE",
+            assignedOfficerId=None,
+            assignedOfficerName=None,
+            evidence=[{
+                "id": "ev-comp-3",
+                "fileName": "oil_price_memo.jpg",
+                "fileType": "image",
+                "fileUrl": "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80",
+                "fileSize": "640 KB",
+                "uploadedAt": (now - timedelta(hours=4)).isoformat()
+            }],
+            timeline=[
+                {"timestamp": (now - timedelta(hours=4)).isoformat(), "status": "SUBMITTED", "note": "Consumer grievance registered. Awaiting DNCRP Complaint Intake review."}
+            ]
+        ),
+        ConsumerComplaint(
+            id="comp-004",
+            trackingNumber="DNCRP-CTG-2026-7712",
+            complainantId="user-cit-2",
+            complainantName="Farhana Sultana",
+            complainantPhone="+8801819876543",
+            shopName="Chattogram Medical Hall",
+            shopAddress="Jubilee Road, Kotwali, Chattogram",
+            shopDistrict="Chattogram",
+            shopThana="Kotwali",
+            tradeLicenseOrBIN="BIN-77120938",
+            productName="Pediatric Antibiotic Syrup (100ml)",
+            brandName="Cef-3 Oral Suspension",
+            barcode="8949012384712",
+            issueType="EXPIRED_GOODS",
+            pricePaid=320.0,
+            mrp=320.0,
+            description="Pharmacy sold expired pediatric antibiotic syrup with tampered expiration date sticker pasted over original batch date.",
+            submittedAt=(now - timedelta(hours=2)).isoformat(),
+            status="SUBMITTED",
+            workflowQueue="INTAKE",
+            assignedOfficerId=None,
+            assignedOfficerName=None,
+            evidence=[],
+            timeline=[
+                {"timestamp": (now - timedelta(hours=2)).isoformat(), "status": "SUBMITTED", "note": "Consumer grievance registered. Awaiting DNCRP Complaint Intake review."}
             ]
         )
     ]

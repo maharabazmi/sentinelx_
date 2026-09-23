@@ -91,10 +91,17 @@ export const Header: React.FC<HeaderProps> = ({
           </span>
         );
       case UserRole.CONSUMER_RIGHTS:
+        const dncrpCategory = [
+          'Complaint Intake Officer',
+          'Investigation Officer',
+          'Adjudication Officer'
+        ].includes(user?.designation || '')
+          ? user?.designation
+          : 'DNCRP AUTHORITY';
         return (
-          <span className="px-2 py-0.5 text-[11px] font-bold rounded-md bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center gap-1.5 font-mono">
+          <span className="px-2 py-0.5 text-[11px] font-bold rounded-md bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center gap-1.5 font-mono whitespace-nowrap">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-            DNCRP ENFORCEMENT
+            {dncrpCategory}
           </span>
         );
       case UserRole.ADMIN:
