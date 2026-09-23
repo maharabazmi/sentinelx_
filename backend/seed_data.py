@@ -632,6 +632,7 @@ def get_seed_records():
             inspectorNotes="DNCRP authority team conducted physical audit. Found 42 units of tampering with MRP. Notice served under Consumer Rights Protection Act 2009 Section 40.",
             penaltyImposed="Show-cause notice issued with penalty assessment of BDT 50,000.",
             assignedOfficerName="Shamim Reza",
+            assignedOfficerId="user-cr-1",
             timeline=[
                 {"timestamp": (now - timedelta(days=3)).isoformat(), "status": "SUBMITTED", "note": "Complaint registered by citizen with purchase receipt."},
                 {"timestamp": (now - timedelta(days=2)).isoformat(), "status": "UNDER_REVIEW", "note": "Initial scrutiny confirmed evidence meets legal threshold.", "officerName": "Shamim Reza"},
@@ -663,6 +664,7 @@ def get_seed_records():
             inspectorNotes="Mobile court fine of BDT 30,000 imposed. Expired stock confiscated and destroyed in presence of Magistrate. Citizen awarded 25% fine incentive (BDT 7,500) per DNCRP Act Section 76(4).",
             penaltyImposed="BDT 30,000 Administrative Fine + 25% reward disbursed to complainant.",
             assignedOfficerName="Shamim Reza",
+            assignedOfficerId="user-cr-1",
             timeline=[
                 {"timestamp": (now - timedelta(days=8)).isoformat(), "status": "SUBMITTED", "note": "Complaint submitted with product batch photograph."},
                 {"timestamp": (now - timedelta(days=6)).isoformat(), "status": "VERIFIED", "note": "Directorate inspectors verified expired lot numbers.", "officerName": "Shamim Reza"},

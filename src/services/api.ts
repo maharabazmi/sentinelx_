@@ -313,13 +313,20 @@ export class ApiClient {
   }
 
   // --- Consumer Rights API ---
-  static async getConsumerSummary(): Promise<{ success: boolean; stats: any }> {
-    return this.request('/consumer/dashboard-summary');
+  static async getConsumerSummary(params?: any): Promise<{ success: boolean; stats: any }> {
+    const query = params ? `?${new URLSearchParams(params).toString()}` : '';
+    return this.request(`/consumer/dashboard-summary${query}`);
   }
 
   static async getConsumerComplaints(params?: any): Promise<{ success: boolean; complaints: ConsumerComplaint[] }> {
     const query = params ? `?${new URLSearchParams(params).toString()}` : '';
     return this.request(`/consumer/complaints${query}`);
+  }
+
+  static async claimConsumerComplaint(id: string): Promise<{ success: boolean; complaint: ConsumerComplaint; message: string }> {
+    return this.request(`/consumer/complaints/${id}/claim`, {
+      method: 'POST'
+    });
   }
 
   static async updateComplaintStatus(id: string, data: any): Promise<{ success: boolean; complaint: ConsumerComplaint }> {
@@ -329,8 +336,13 @@ export class ApiClient {
     });
   }
 
-  static async getShops(): Promise<{ success: boolean; shops: ShopReputation[] }> {
-    return this.request('/consumer/shops');
+  static async getConsumerOfficers(): Promise<{ success: boolean; officers: any[] }> {
+    return this.request('/consumer/officers');
+  }
+
+  static async getShops(params?: any): Promise<{ success: boolean; shops: ShopReputation[] }> {
+    const query = params ? `?${new URLSearchParams(params).toString()}` : '';
+    return this.request(`/consumer/shops${query}`);
   }
 
   static async registerShop(data: Partial<ShopReputation>): Promise<{ success: boolean; shop: ShopReputation }> {

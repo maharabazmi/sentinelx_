@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Scale,
   Barcode,
@@ -21,7 +21,9 @@ import {
   ChevronRight,
   Filter,
   Sliders,
-  MessageSquare
+  MessageSquare,
+  MapPin,
+  UserCheck
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { ApiClient } from '../../services/api';
@@ -47,6 +49,10 @@ export const ConsumerDashboard: React.FC = () => {
   const [barcodes, setBarcodes] = useState<BarcodeVerification[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Queue Scope & Assignment State
+  const [queueScope, setQueueScope] = useState<'jurisdiction' | 'my_cases' | 'unassigned' | 'all'>('jurisdiction');
+  const [claimLoadingId, setClaimLoadingId] = useState<string | null>(null);
+
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -68,12 +74,12 @@ export const ConsumerDashboard: React.FC = () => {
   const [newBarcodeStatus, setNewBarcodeStatus] = useState<'AUTHENTIC' | 'COUNTERFEIT_FLAGGED'>('AUTHENTIC');
   const [showAddBarcodeModal, setShowAddBarcodeModal] = useState(false);
 
-  const fetchConsumerData = async () => {
+  const fetchConsumerData = async (scope = queueScope) => {
     setIsLoading(true);
     try {
       const [sumRes, compRes, barRes] = await Promise.all([
-        ApiClient.getConsumerSummary(),
-        ApiClient.getConsumerComplaints(),
+        ApiClient.getConsumerSummary({ scope }),
+        ApiClient.getConsumerComplaints({ scope }),
         ApiClient.getBarcodes()
       ]);
 
@@ -88,10 +94,26 @@ export const ConsumerDashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchConsumerData();
-    const interval = setInterval(fetchConsumerData, 10000);
+    fetchConsumerData(queueScope);
+    const interval = setInterval(() => fetchConsumerData(queueScope), 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [queueScope]);
+
+  // Claim Dispute (Take Charge)
+  const handleClaimComplaint = async (e: React.MouseEvent, complaintId: string) => {
+    e.stopPropagation();
+    setClaimLoadingId(complaintId);
+    try {
+      const res = await ApiClient.claimConsumerComplaint(complaintId);
+      if (res.success) {
+        fetchConsumerData(queueScope);
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to claim dispute.');
+    } finally {
+      setClaimLoadingId(null);
+    }
+  };
 
   // Update Complaint Status & Penalty Action
   const handleUpdateComplaint = async (status: ComplaintStatus) => {
@@ -115,7 +137,7 @@ export const ConsumerDashboard: React.FC = () => {
         setSelectedComplaint(null);
         setInspectorNotes('');
         setFineAmount('50000');
-        fetchConsumerData();
+        fetchConsumerData(queueScope);
       }
     } catch (err: any) {
       alert(err.message || 'Failed to update complaint record.');
@@ -173,9 +195,21 @@ export const ConsumerDashboard: React.FC = () => {
               </span>
             </div>
 
-              <h1 className="text-2xl sm:text-3xl font-black text-white font-['Orbitron'] tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-black text-white font-['Orbitron'] tracking-tight">
               AUTHORITY CONSOLE: {user?.fullName?.toUpperCase()}
             </h1>
+
+            <div className="flex flex-wrap items-center gap-2 pt-0.5">
+              <span className="px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-400 text-xs font-mono border border-blue-500/30 flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-blue-400" />
+                Operational Jurisdiction: <strong className="text-white">{user?.stationOrThana || 'National HQ, Dhaka'}</strong>
+              </span>
+              {stats?.thanaKeyword && (
+                <span className="px-2 py-0.5 rounded bg-slate-800 text-[11px] font-mono text-slate-300 border border-slate-700">
+                  Thana: {stats.thanaKeyword.toUpperCase()}
+                </span>
+              )}
+            </div>
 
             <p className="text-xs text-slate-400 flex items-center gap-3 font-mono">
               <span>Cell: <strong className="text-slate-200">{user?.department || 'National Market Surveillance Cell'}</strong></span>
@@ -280,6 +314,58 @@ export const ConsumerDashboard: React.FC = () => {
       {/* ========================================================================= */}
       {activeTab === 'complaints' && (
         <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Queue Scope Tabs */}
+          <div className="flex flex-wrap items-center gap-2">
+            {[
+              {
+                id: 'jurisdiction',
+                label: 'Jurisdiction Queue',
+                count: stats?.newComplaints ?? 0,
+                desc: 'All disputes routed to this jurisdiction'
+              },
+              {
+                id: 'my_cases',
+                label: 'My Assigned Claims',
+                count: stats?.myAssignedCount ?? 0,
+                desc: 'Claims assigned to me'
+              },
+              {
+                id: 'unassigned',
+                label: 'Unassigned Claims',
+                count: stats?.unassignedJurisdictionCount ?? 0,
+                desc: 'Awaiting authority assignment'
+              },
+              ...(user?.role === 'ADMIN' ? [{
+                id: 'all',
+                label: 'Nationwide Monitored',
+                count: null,
+                desc: 'All divisions'
+              }] : [])
+            ].map(tab => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setQueueScope(tab.id as any)}
+                className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
+                  queueScope === tab.id
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50 shadow-md shadow-amber-500/10'
+                    : 'bg-slate-900 hover:bg-slate-800 text-slate-400 border border-slate-800'
+                }`}
+              >
+                <span>{tab.label}</span>
+                {tab.count !== null && (
+                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-mono font-bold ${
+                    queueScope === tab.id
+                      ? 'bg-amber-500/30 text-amber-200'
+                      : 'bg-slate-800 text-slate-400'
+                  }`}>
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+
           {/* Filters Bar */}
           <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-3 text-xs">
             <div className="relative w-full md:w-72">
@@ -334,17 +420,28 @@ export const ConsumerDashboard: React.FC = () => {
                     <th className="py-3.5 px-4 font-semibold">Product & Violation</th>
                     <th className="py-3.5 px-4 font-semibold">Pricing (MRP vs Paid)</th>
                     <th className="py-3.5 px-4 font-semibold">Status</th>
+                    <th className="py-3.5 px-4 font-semibold">Assigned Authority</th>
                     <th className="py-3.5 px-4 font-semibold text-right">Enforcement Action</th>
                   </tr>
                 </thead>
 
                 <tbody className="divide-y divide-slate-800/60">
                   {isLoading && complaints.length === 0 ? (
-                    Array.from({ length: 4 }).map((_, i) => <TableRowSkeleton key={i} cols={6} />)
+                    Array.from({ length: 4 }).map((_, i) => <TableRowSkeleton key={i} cols={7} />)
                   ) : filteredComplaints.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-500">
-                        No consumer dispute records match current filter criteria.
+                      <td colSpan={7} className="py-12 px-4 text-center">
+                        <EmptyState
+                          title="No Consumer Disputes in Queue"
+                          description={
+                            queueScope === 'my_cases'
+                              ? "You have not claimed or been assigned any disputes yet. View the Jurisdiction Queue to take charge of incoming claims."
+                              : queueScope === 'unassigned'
+                              ? "All grievance claims in your jurisdiction are currently assigned to active authorities."
+                              : `No consumer dispute records currently found for jurisdiction (${user?.stationOrThana || 'your station'}). Newly appointed authorities start with clean operational queues.`
+                          }
+                          icon={Scale}
+                        />
                       </td>
                     </tr>
                   ) : (
@@ -380,16 +477,42 @@ export const ConsumerDashboard: React.FC = () => {
                         <td className="py-3.5 px-4">
                           <StatusBadge status={comp.status} size="sm" />
                         </td>
+                        <td className="py-3.5 px-4">
+                          {comp.assignedOfficerName ? (
+                            <div className="flex items-center gap-1.5">
+                              <ShieldCheck className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                              <span className="font-semibold text-slate-200">{comp.assignedOfficerName}</span>
+                              {comp.assignedOfficerId === user?.id && (
+                                <span className="px-1.5 py-0.2 bg-blue-500/20 text-blue-300 text-[10px] rounded font-mono">You</span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[11px] font-mono">
+                              Unassigned
+                            </span>
+                          )}
+                        </td>
                         <td className="py-3.5 px-4 text-right">
-                          <button
-                            onClick={e => {
-                              e.stopPropagation();
-                              setSelectedComplaint(comp);
-                            }}
-                            className="px-3 py-1.5 rounded-lg bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 text-xs font-semibold transition"
-                          >
-                            Enforce
-                          </button>
+                          <div className="flex items-center justify-end gap-2">
+                            {(!comp.assignedOfficerId || comp.assignedOfficerId !== user?.id) && (
+                              <button
+                                onClick={e => handleClaimComplaint(e, comp.id)}
+                                disabled={claimLoadingId === comp.id}
+                                className="px-2.5 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 text-xs font-semibold transition"
+                              >
+                                {claimLoadingId === comp.id ? 'Claiming...' : 'Take Charge'}
+                              </button>
+                            )}
+                            <button
+                              onClick={e => {
+                                e.stopPropagation();
+                                setSelectedComplaint(comp);
+                              }}
+                              className="px-3 py-1.5 rounded-lg bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 text-xs font-semibold transition"
+                            >
+                              Enforce
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))

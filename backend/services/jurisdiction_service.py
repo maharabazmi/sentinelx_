@@ -375,3 +375,103 @@ class JurisdictionService:
                 return True
 
         return False
+
+
+BANGLADESH_DISTRICTS = [
+    "dhaka", "chattogram", "chittagong", "sylhet", "rajshahi", "khulna",
+    "barishal", "barisal", "rangpur", "mymensingh", "cumilla", "comilla",
+    "gazipur", "narayanganj", "bogura", "bogra", "cox's bazar", "jashore",
+    "jessore", "feni", "brahmanbaria", "tangail", "dinajpur", "kushtia"
+]
+
+
+def parse_consumer_jurisdiction(station_or_thana: str) -> Tuple[str, str]:
+    """
+    Parses a DNCRP officer's stationOrThana into (thana_keyword, district_keyword).
+    e.g.
+    'Gulshan, Dhaka' -> ('gulshan', 'dhaka')
+    'Uttara, Dhaka' -> ('uttara', 'dhaka')
+    'Kotwali, Chattogram' -> ('kotwali', 'chattogram')
+    'Dhaka Central Directorate' -> ('', 'dhaka')
+    'Central Command HQ, Dhaka' -> ('', 'dhaka')
+    """
+    if not station_or_thana:
+        return ("", "")
+
+    raw = station_or_thana.strip()
+    thana_kw = ""
+    district_kw = ""
+
+    if "," in raw:
+        parts = [p.strip() for p in raw.split(",")]
+        thana_candidate = parts[0]
+        district_candidate = parts[1] if len(parts) > 1 else ""
+
+        if any(h in thana_candidate.lower() for h in ["central", "command", "directorate", "hq", "headquarters"]):
+            thana_kw = ""
+        else:
+            thana_kw = extract_thana_keyword(thana_candidate).strip().lower()
+
+        district_kw = district_candidate.strip().lower()
+        district_kw = re.sub(r"(?i)\s*(district|division)\b", "", district_kw).strip()
+    else:
+        low = raw.lower()
+        for d in BANGLADESH_DISTRICTS:
+            if d in low:
+                district_kw = d
+                break
+
+        if any(h in low for h in ["central", "directorate", "hq", "command", "headquarters"]):
+            thana_kw = ""
+        else:
+            thana_kw = extract_thana_keyword(raw).strip().lower()
+
+    return (thana_kw, district_kw)
+
+
+def is_consumer_in_jurisdiction(officer_station: str, shop_thana: str, shop_district: str = None) -> bool:
+    """
+    Determines whether a consumer complaint or shop is within a DNCRP officer's jurisdiction.
+    """
+    if not officer_station:
+        return False
+
+    thana_kw, district_kw = parse_consumer_jurisdiction(officer_station)
+    s_thana = (shop_thana or "").strip().lower()
+    s_dist = (shop_district or "").strip().lower()
+
+    # Normalize district names for Chittagong / Chattogram
+    def _dist_match(d1: str, d2: str) -> bool:
+        if not d1 or not d2:
+            return True
+        if d1 in d2 or d2 in d1:
+            return True
+        if {d1, d2} <= {"chittagong", "chattogram"}:
+            return True
+        return False
+
+    # If officer has a specific Thana posting (e.g. 'gulshan', 'uttara', 'kotwali')
+    if thana_kw:
+        thana_match = (
+            thana_kw in s_thana or
+            s_thana in thana_kw or
+            is_same_thana(thana_kw, s_thana)
+        )
+        if not thana_match:
+            return False
+
+        if district_kw and s_dist:
+            return _dist_match(district_kw, s_dist)
+        return True
+
+    # If officer has district-level jurisdiction (e.g. Dhaka Central Directorate)
+    if district_kw:
+        return _dist_match(district_kw, s_dist)
+
+    # If Central HQ with no district specified
+    st_clean = officer_station.strip().lower()
+    if any(h in st_clean for h in ["central", "hq", "commission"]):
+        return True
+
+    return False
+

@@ -298,6 +298,7 @@ class ConsumerComplaint(Base):
     inspectorNotes = Column(Text, nullable=True)
     penaltyImposed = Column(Text, nullable=True)
     assignedOfficerName = Column(String(128), nullable=True)
+    assignedOfficerId = Column(String(64), nullable=True)
     timelineJson = Column(Text, default="[]")
 
     @property
@@ -348,6 +349,7 @@ class ConsumerComplaint(Base):
             "inspectorNotes": self.inspectorNotes,
             "penaltyImposed": self.penaltyImposed,
             "assignedOfficerName": self.assignedOfficerName,
+            "assignedOfficerId": self.assignedOfficerId,
             "timeline": self.timeline,
         }
 
