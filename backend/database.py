@@ -71,6 +71,14 @@ def init_db():
     except Exception:
         pass
 
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE consumer_complaints ADD COLUMN assignedOfficerId VARCHAR(64)"))
+            conn.commit()
+            logger.info("[DB] Added assignedOfficerId column to consumer_complaints table.")
+    except Exception:
+        pass
+
     # Resilient schema migration: ensure user email verification and password change columns exist
     for col_name, col_sql in [
         ("isEmailVerified", "BOOLEAN DEFAULT 0"),
