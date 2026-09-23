@@ -2,7 +2,8 @@ import random
 import time
 import re
 import math
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+from collections import defaultdict
 import numpy as np
 try:
     from sklearn.ensemble import RandomForestClassifier
@@ -330,63 +331,92 @@ class DemonstrationAIPredictionService:
                     result.append(p)
         return result
 
+    def _generate_tactical_action(self, thana: str, crime: str, risk_level: str) -> str:
+        """Generates contextual operational tactical directives based on dominant threat and risk level."""
+        crime_upper = (crime or "").upper()
+        if "THEFT" in crime_upper or "ROBBERY" in crime_upper:
+            if risk_level in ("CRITICAL", "HIGH"):
+                return f"Deploy motorcycle rapid response squads at Metro Station gates and arterial intersections in {thana}."
+            return f"Increase evening foot beats and commercial bazaar checkpoints in {thana}."
+        elif "CYBER" in crime_upper or "FRAUD" in crime_upper or "SCAM" in crime_upper:
+            if risk_level in ("CRITICAL", "HIGH"):
+                return f"Cyber Crime mobile forensics van and ATM skimmer sweeps along {thana} commercial avenues."
+            return f"Bank liaison security alerts and MFS agent transaction monitoring in {thana}."
+        elif "EXTORTION" in crime_upper:
+            if risk_level in ("CRITICAL", "HIGH"):
+                return f"Dedicated anti-extortion taskforce and CCTV sweeps across logistics clearing hubs in {thana}."
+            return f"Merchant association liaison patrols and anonymous extortion tip hotline in {thana}."
+        elif "HARASSMENT" in crime_upper:
+            if risk_level in ("CRITICAL", "HIGH"):
+                return f"Deploy plainclothes women safety units and enhance lighting around transit points in {thana}."
+            return f"Routine foot patrols around schools, universities, and public parks in {thana}."
+        elif "DRUG" in crime_upper:
+            return f"Coordinate narcotics control rapid vehicle checkpoints at entry corridors in {thana}."
+        elif "ASSAULT" in crime_upper:
+            return f"Deploy rapid intervention vehicle and community mediation liaison officers across {thana}."
+        return f"Maintain continuous motorized sweeps and static checkpoints across primary nodes in {thana}."
+
     def get_comparative_risk_matrix(self, db=None) -> list:
-        """Calculates a comparative national risk ranking across major Thanas in Bangladesh."""
-        matrix = [
+        """
+        Adaptive Empirical Hybrid Engine:
+        Calculates live cross-jurisdictional threat rankings from real DB records,
+        with benchmark cold-start priors for regional balance across Bangladesh.
+        """
+        ANCHOR_BENCHMARKS = [
             {
-                "thana": "Mirpur (Sec 1, 10)",
-                "district": "Dhaka",
-                "riskLevel": "CRITICAL",
-                "riskIndex": 91.2,
-                "primaryThreat": "THEFT_ROBBERY",
-                "sevenDayTrend": "+18.4%",
-                "trendDirection": "UP",
-                "activeIncidents": 14,
-                "recommendedAction": "Deploy motorcycle rapid response squads at Metro Station gates",
-            },
-            {
-                "thana": "Gulshan & Banani",
+                "thana": "Mirpur",
                 "district": "Dhaka",
                 "riskLevel": "HIGH",
-                "riskIndex": 84.6,
-                "primaryThreat": "FRAUD_SCAM",
-                "sevenDayTrend": "+8.2%",
+                "riskIndex": 78.5,
+                "primaryThreat": "THEFT_ROBBERY",
+                "sevenDayTrend": "+6.2%",
                 "trendDirection": "UP",
-                "activeIncidents": 9,
-                "recommendedAction": "Cyber Crime mobile forensics van along Kemal Ataturk Ave",
+                "activeIncidents": 2,
+                "recommendedAction": "Deploy motorcycle rapid response squads at Metro Station gates and bus hubs.",
             },
             {
-                "thana": "Agrabad Commercial",
+                "thana": "Gulshan",
+                "district": "Dhaka",
+                "riskLevel": "HIGH",
+                "riskIndex": 84.0,
+                "primaryThreat": "THEFT_ROBBERY",
+                "sevenDayTrend": "+8.4%",
+                "trendDirection": "UP",
+                "activeIncidents": 2,
+                "recommendedAction": "Cyber Crime mobile forensics van and ATM skimmer sweeps along Kemal Ataturk Ave.",
+            },
+            {
+                "thana": "Agrabad",
                 "district": "Chattogram",
                 "riskLevel": "MEDIUM",
-                "riskIndex": 68.5,
+                "riskIndex": 58.5,
                 "primaryThreat": "EXTORTION",
-                "sevenDayTrend": "-4.1%",
+                "sevenDayTrend": "-3.1%",
                 "trendDirection": "DOWN",
-                "activeIncidents": 5,
-                "recommendedAction": "CCTV integration with CMP Command and logistics patrol",
+                "activeIncidents": 1,
+                "recommendedAction": "CCTV integration with CMP Command and commercial freight corridor patrol.",
             },
             {
                 "thana": "Dhanmondi",
                 "district": "Dhaka",
-                "riskLevel": "HIGH",
-                "riskIndex": 79.4,
+                "riskLevel": "MEDIUM",
+                "riskIndex": 54.0,
                 "primaryThreat": "HARASSMENT",
-                "sevenDayTrend": "+12.0%",
+                "sevenDayTrend": "+4.0%",
                 "trendDirection": "UP",
-                "activeIncidents": 8,
-                "recommendedAction": "Increase foot patrols around Dhanmondi Lake bridge and schools",
+                "activeIncidents": 1,
+                "recommendedAction": "Increase foot patrols around Dhanmondi Lake bridge and educational institutions.",
             },
             {
-                "thana": "Zindabazar",
+                "thana": "Kotwali",
                 "district": "Sylhet",
                 "riskLevel": "MEDIUM",
-                "riskIndex": 58.1,
+                "riskIndex": 52.0,
                 "primaryThreat": "THEFT_ROBBERY",
-                "sevenDayTrend": "-8.5%",
+                "sevenDayTrend": "-5.5%",
                 "trendDirection": "DOWN",
-                "activeIncidents": 4,
-                "recommendedAction": "Community policing and market evening foot beats",
+                "activeIncidents": 1,
+                "recommendedAction": "Community policing and evening foot beats near commercial market intersections.",
             },
             {
                 "thana": "Motijheel",
@@ -396,62 +426,259 @@ class DemonstrationAIPredictionService:
                 "primaryThreat": "CYBER_CRIME",
                 "sevenDayTrend": "-2.0%",
                 "trendDirection": "STABLE",
-                "activeIncidents": 3,
-                "recommendedAction": "Routine checkpoint monitoring and commercial banking CCTV sweeps",
+                "activeIncidents": 1,
+                "recommendedAction": "Routine checkpoint monitoring and commercial banking CCTV perimeter sweeps.",
             },
         ]
 
-        if db:
-            try:
-                # Add real verified case count highlights from DB
-                for item in matrix:
-                    count = db.query(CrimeReport).filter(
-                        CrimeReport.thana.ilike(f"%{item['thana'].split()[0]}%")
-                    ).count()
-                    if count > 0:
-                        item["activeIncidents"] = max(item["activeIncidents"], count)
-            except Exception:
-                pass
+        if not db:
+            return ANCHOR_BENCHMARKS
 
-        return matrix
+        try:
+            reports = db.query(CrimeReport).all()
+            if not reports:
+                return ANCHOR_BENCHMARKS
+
+            # Find latest timestamp for rolling 7-day velocity window
+            timestamps = []
+            for r in reports:
+                dt_str = r.submittedAt or r.occurredAt
+                if dt_str:
+                    try:
+                        timestamps.append(datetime.fromisoformat(dt_str.replace("Z", "+00:00")))
+                    except Exception:
+                        pass
+
+            ref_time = max(timestamps) if timestamps else datetime.now(timezone.utc)
+            t7 = ref_time - timedelta(days=7)
+            t14 = ref_time - timedelta(days=14)
+
+            # Aggregate real DB incidents by (thana, district)
+            by_thana = defaultdict(list)
+            for r in reports:
+                t_name = (r.thana or "Unknown").strip().title()
+                d_name = (r.district or "Unknown").strip().title()
+                by_thana[(t_name, d_name)].append(r)
+
+            live_matrix = []
+            for (t_name, d_name), reps in by_thana.items():
+                active_count = len(reps)
+
+                # Primary threat (dominant crime type by live frequency)
+                crime_counts = defaultdict(int)
+                for r in reps:
+                    if r.crimeType:
+                        crime_counts[r.crimeType.strip().upper()] += 1
+                top_crime = max(crime_counts.items(), key=lambda x: x[1])[0] if crime_counts else "THEFT_ROBBERY"
+
+                # 7-day velocity calculation
+                recent_count = 0
+                prior_count = 0
+                for r in reps:
+                    dt_str = r.submittedAt or r.occurredAt
+                    if dt_str:
+                        try:
+                            dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+                            if dt >= t7:
+                                recent_count += 1
+                            elif dt >= t14:
+                                prior_count += 1
+                        except Exception:
+                            pass
+
+                if prior_count > 0:
+                    diff_pct = ((recent_count - prior_count) / prior_count) * 100.0
+                elif recent_count > 0:
+                    diff_pct = float(recent_count * 12.0)
+                else:
+                    diff_pct = 0.0
+
+                trend_dir = "UP" if diff_pct > 0 else ("DOWN" if diff_pct < 0 else "STABLE")
+                trend_str = f"+{diff_pct:.1f}%" if diff_pct > 0 else (f"{diff_pct:.1f}%" if diff_pct < 0 else "0.0%")
+
+                # Risk Index & Severity Weighting
+                sev_weight = sum(
+                    5.0 if (r.severity or "").upper() == "CRITICAL"
+                    else (3.0 if (r.severity or "").upper() == "HIGH"
+                    else (1.5 if (r.severity or "").upper() == "MEDIUM" else 0.5))
+                    for r in reps
+                )
+                trend_bonus = 6.0 if trend_dir == "UP" else (-4.0 if trend_dir == "DOWN" else 0.0)
+                raw_index = 40.0 + min(35.0, active_count * 3.5) + min(15.0, sev_weight) + trend_bonus
+                risk_index = round(min(96.5, max(28.0, raw_index)), 1)
+
+                if risk_index >= 85.0:
+                    risk_level = "CRITICAL"
+                elif risk_index >= 70.0:
+                    risk_level = "HIGH"
+                elif risk_index >= 50.0:
+                    risk_level = "MEDIUM"
+                else:
+                    risk_level = "LOW"
+
+                rec_action = self._generate_tactical_action(t_name, top_crime, risk_level)
+
+                live_matrix.append({
+                    "thana": t_name,
+                    "district": d_name,
+                    "riskLevel": risk_level,
+                    "riskIndex": risk_index,
+                    "primaryThreat": top_crime,
+                    "sevenDayTrend": trend_str,
+                    "trendDirection": trend_dir,
+                    "activeIncidents": active_count,
+                    "recommendedAction": rec_action,
+                })
+
+            live_matrix.sort(key=lambda x: x["riskIndex"], reverse=True)
+
+            # Supplement with regional anchor benchmarks if fewer than 6
+            if len(live_matrix) < 6:
+                existing_keys = {m["thana"].lower() for m in live_matrix}
+                for bench in ANCHOR_BENCHMARKS:
+                    if bench["thana"].lower() not in existing_keys:
+                        live_matrix.append(bench)
+                        existing_keys.add(bench["thana"].lower())
+                    if len(live_matrix) >= 6:
+                        break
+
+            return live_matrix[:8]
+        except Exception:
+            return ANCHOR_BENCHMARKS
 
     def get_resource_allocation_advice(self, db=None) -> list:
-        """Strategic force multiplication advisor: suggests patrol reassignments from low to high risk areas."""
-        return [
+        """
+        Strategic Force Multiplier & Resource Allocation Advisor:
+        Algorithmically identifies intra-district operational imbalances (Surge Risk vs. Surplus/Low Risk)
+        and computes dynamic patrol redistribution directives.
+        """
+        BENCHMARK_ALLOCATIONS = [
             {
                 "id": "ALLOC-001",
                 "sourceStation": "Uttara Model Thana (Dhaka)",
-                "sourceRisk": "LOW (Index: 32%)",
-                "targetStation": "Mirpur 10 / Pallabi (Dhaka)",
-                "targetRisk": "CRITICAL (Index: 91%)",
+                "sourceRisk": "LOW (Index: 45.0%)",
+                "targetStation": "Gulshan Commercial Zone (Dhaka)",
+                "targetRisk": "CRITICAL (Index: 96.0%)",
                 "recommendedUnits": "2 Mobile Patrol Vans + 4 Officers",
                 "timeWindow": "18:00 - 23:00 (Rush Hour Surge)",
-                "tacticalRationale": "Uttara evening incident density is 68% below baseline, while Mirpur Metro nodes experience intense pedestrian snatching clusters.",
-                "expectedImpact": "Estimated 28% decrease in evening snatching reports near Mirpur 10 roundabout.",
+                "tacticalRationale": "Uttara evening incident density is 50% below metropolitan baseline, while Gulshan experiences high commercial theft/fraud clusters.",
+                "expectedImpact": "Estimated 28% decrease in evening snatching reports near Gulshan commercial nodes.",
             },
             {
                 "id": "ALLOC-002",
                 "sourceStation": "Motijheel Commercial (Dhaka)",
-                "sourceRisk": "LOW (Index: 38%)",
-                "targetStation": "Gulshan Diplomatic Zone (Dhaka)",
-                "targetRisk": "HIGH (Index: 85%)",
-                "recommendedUnits": "1 Cyber Crime Unit + 2 Plainclothes Investigators",
-                "timeWindow": "20:00 - 02:00 (Weekend Night)",
-                "tacticalRationale": "Commercial banking hours in Motijheel conclude by 18:00; Gulshan financial nightlife and ATM transaction scams peak between 20:00 and midnight.",
-                "expectedImpact": "Faster response to MFS digital cash withdrawal fraud and ATM skimmer detection.",
+                "sourceRisk": "LOW (Index: 48.5%)",
+                "targetStation": "Mirpur Metro Hub (Dhaka)",
+                "targetRisk": "HIGH (Index: 78.5%)",
+                "recommendedUnits": "1 Rapid Action Team + 2 Motorcycle Patrols",
+                "timeWindow": "17:00 - 22:00 (Commuter Rush)",
+                "tacticalRationale": "Motijheel corporate banking activity concludes by 18:00; Mirpur Metro station exits face peak pedestrian commuter rush.",
+                "expectedImpact": "Estimated 24% reduction in transit harassment and mobile snatching incidents.",
             },
             {
                 "id": "ALLOC-003",
                 "sourceStation": "Pahartali Thana (Chattogram)",
-                "sourceRisk": "LOW (Index: 29%)",
+                "sourceRisk": "LOW (Index: 38.0%)",
                 "targetStation": "Agrabad Commercial (Chattogram)",
-                "targetRisk": "MEDIUM (Index: 69%)",
-                "recommendedUnits": "1 Mobile Patrol Vehicle",
+                "targetRisk": "MEDIUM (Index: 68.5%)",
+                "recommendedUnits": "1 Mobile Patrol Vehicle + 2 Officers",
                 "timeWindow": "11:00 - 17:00 (Corporate Clearing Hours)",
                 "tacticalRationale": "Reinforces logistics security along Badamtali intersection during month-end container freight clearance.",
                 "expectedImpact": "Deterrence of local extortion networks targeting freight forwarders.",
             },
         ]
+
+        if not db:
+            return BENCHMARK_ALLOCATIONS
+
+        try:
+            matrix = self.get_comparative_risk_matrix(db)
+            if not matrix:
+                return BENCHMARK_ALLOCATIONS
+
+            by_dist = defaultdict(list)
+            for item in matrix:
+                by_dist[item["district"]].append(item)
+
+            dynamic_allocations = []
+            alloc_counter = 1
+
+            # 1. Primary Intra-Dhaka Reallocation
+            if "Dhaka" in by_dist and len(by_dist["Dhaka"]) >= 2:
+                d_items = sorted(by_dist["Dhaka"], key=lambda x: x["riskIndex"], reverse=True)
+                target = d_items[0]
+                source = d_items[-1]
+                delta = target["riskIndex"] - source["riskIndex"]
+                ratio = int(min(80, max(25, round((1.0 - (source["riskIndex"] / max(target["riskIndex"], 1))) * 100))))
+                crime_name = target["primaryThreat"].replace("_", " ").lower()
+
+                dynamic_allocations.append({
+                    "id": f"ALLOC-00{alloc_counter}",
+                    "sourceStation": f"{source['thana']} Model Thana (Dhaka)",
+                    "sourceRisk": f"{source['riskLevel']} (Index: {source['riskIndex']}%)",
+                    "targetStation": f"{target['thana']} Commercial Zone (Dhaka)",
+                    "targetRisk": f"{target['riskLevel']} (Index: {target['riskIndex']}%)",
+                    "recommendedUnits": "2 Mobile Patrol Vans + 4 Officers" if target["riskLevel"] == "CRITICAL" else "1 Mobile Van + 2 Officers",
+                    "timeWindow": "18:00 - 23:00 (Rush Hour Surge)",
+                    "tacticalRationale": f"{source['thana']} operational volume is {ratio}% below metropolitan baseline ({source['activeIncidents']} logged), while {target['thana']} faces concentrated {crime_name} pressure ({target['activeIncidents']} verified incidents).",
+                    "expectedImpact": f"Estimated {int(min(38, max(18, round(delta * 0.35))))}% decrease in evening incidents near {target['thana']} intersections.",
+                })
+                alloc_counter += 1
+
+                # 2. Secondary Intra-Dhaka Reallocation if multiple sectors exist
+                if len(d_items) >= 4:
+                    t2 = d_items[1]
+                    s2 = d_items[-2]
+                    d2 = t2["riskIndex"] - s2["riskIndex"]
+                    c2_name = t2["primaryThreat"].replace("_", " ").lower()
+                    dynamic_allocations.append({
+                        "id": f"ALLOC-00{alloc_counter}",
+                        "sourceStation": f"{s2['thana']} Commercial (Dhaka)",
+                        "sourceRisk": f"{s2['riskLevel']} (Index: {s2['riskIndex']}%)",
+                        "targetStation": f"{t2['thana']} Metro Sector (Dhaka)",
+                        "targetRisk": f"{t2['riskLevel']} (Index: {t2['riskIndex']}%)",
+                        "recommendedUnits": "1 Cyber Mobile Unit + 2 Plainclothes Investigators" if "CYBER" in t2["primaryThreat"] or "FRAUD" in t2["primaryThreat"] else "1 Rapid Action Team + 2 Motorcycle Patrols",
+                        "timeWindow": "20:00 - 02:00 (Nightlife & Commuter Window)",
+                        "tacticalRationale": f"Commercial banking in {s2['thana']} concludes by 18:00; {t2['thana']} transit corridors require reinforcement against peak evening {c2_name} clusters ({t2['activeIncidents']} active incidents).",
+                        "expectedImpact": f"Estimated {int(min(32, max(16, round(max(d2, 8.0) * 0.40))))}% reduction in snatching & harassment reports near {t2['thana']} nodes.",
+                    })
+                    alloc_counter += 1
+
+            # 3. Chattogram or Regional Reallocation
+            if "Chattogram" in by_dist and len(by_dist["Chattogram"]) >= 2:
+                c_items = sorted(by_dist["Chattogram"], key=lambda x: x["riskIndex"], reverse=True)
+                ctarget = c_items[0]
+                csource = c_items[-1]
+                cdelta = ctarget["riskIndex"] - csource["riskIndex"]
+                ccrime_name = ctarget["primaryThreat"].replace("_", " ").lower()
+                dynamic_allocations.append({
+                    "id": f"ALLOC-00{alloc_counter}",
+                    "sourceStation": f"{csource['thana']} Thana (Chattogram)",
+                    "sourceRisk": f"{csource['riskLevel']} (Index: {csource['riskIndex']}%)",
+                    "targetStation": f"{ctarget['thana']} Logistics Hub (Chattogram)",
+                    "targetRisk": f"{ctarget['riskLevel']} (Index: {ctarget['riskIndex']}%)",
+                    "recommendedUnits": "1 Mobile Patrol Vehicle + 2 Officers",
+                    "timeWindow": "11:00 - 17:00 (Corporate Clearing Hours)",
+                    "tacticalRationale": f"Reinforces security along {ctarget['thana']} freight intersections during container transit; {csource['thana']} daytime incident density is low ({csource['activeIncidents']} logged).",
+                    "expectedImpact": f"Deterrence of local {ccrime_name} networks targeting logistics forwarders.",
+                })
+                alloc_counter += 1
+
+            # If fewer than 3, fill with non-overlapping benchmark allocations
+            if len(dynamic_allocations) < 3:
+                existing_targets = {a["targetStation"].lower() for a in dynamic_allocations}
+                for bench in BENCHMARK_ALLOCATIONS:
+                    if bench["targetStation"].lower() not in existing_targets:
+                        bench_copy = dict(bench)
+                        bench_copy["id"] = f"ALLOC-00{len(dynamic_allocations) + 1}"
+                        dynamic_allocations.append(bench_copy)
+                        existing_targets.add(bench["targetStation"].lower())
+                    if len(dynamic_allocations) >= 3:
+                        break
+
+            return dynamic_allocations[:3]
+        except Exception:
+            return BENCHMARK_ALLOCATIONS
 
     def generate_predictive_analysis(
         self,
