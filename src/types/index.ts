@@ -273,11 +273,22 @@ export interface AIPredictionData {
   id: string;
   targetDistrict: string;
   targetThana: string;
-  predictedRiskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'EXTREME';
+  predictedRiskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'EXTREME' | 'CRITICAL';
   confidenceScore: number; // 0 - 100%
-  primaryRiskCrimeType: CrimeType;
+  primaryRiskCrimeType: CrimeType | string;
   riskProbability: number;
   timeWindow: string;
+  // Aliases and UI extensions
+  district?: string;
+  thana?: string;
+  crimeType?: CrimeType | string;
+  weatherContext?: string;
+  factors?: Array<{ name: string; impact: number }>;
+  recommendedAction?: string;
+  recommendedUnits?: number;
+  latitude?: number;
+  longitude?: number;
+  radiusMeters?: number;
   temporalFactors: {
     dayOfWeek: string;
     timeOfDay: string;

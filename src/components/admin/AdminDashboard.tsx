@@ -824,7 +824,7 @@ Portal URL: ${window.location.origin}`;
                         Simulation Forecast Result
                       </span>
                       <h3 className="text-xl font-bold text-white font-display mt-0.5">
-                        {simResult.thana}, {simResult.district}
+                        {simResult.thana || simResult.targetThana || simThana}, {simResult.district || simResult.targetDistrict || simDistrict}
                       </h3>
                     </div>
 
@@ -845,19 +845,23 @@ Portal URL: ${window.location.origin}`;
 
                     <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
                       <span className="text-slate-500 text-[10px] block">Crime Category</span>
-                      <strong className="text-slate-200 text-sm truncate block">{simResult.crimeType}</strong>
+                      <strong className="text-slate-200 text-sm truncate block">
+                        {(simResult.crimeType || simResult.primaryRiskCrimeType || simCrimeType || 'THEFT_ROBBERY').replace(/_/g, ' ')}
+                      </strong>
                     </div>
 
                     <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
                       <span className="text-slate-500 text-[10px] block">Weather Correlation</span>
-                      <strong className="text-slate-200 text-sm truncate block">{simResult.weatherContext}</strong>
+                      <strong className="text-slate-200 text-sm truncate block">
+                        {simResult.weatherContext || simResult.temporalFactors?.weatherCondition || simWeather}
+                      </strong>
                     </div>
                   </div>
 
                   <div className="space-y-2 text-xs">
                     <span className="text-slate-400 font-semibold block">Contributing Risk Factors:</span>
                     <div className="space-y-1.5">
-                      {simResult.factors.map((f, i) => (
+                      {(simResult.factors || []).map((f, i) => (
                         <div key={i} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/40 border border-slate-800 text-[11px]">
                           <span className="text-slate-300">{f.name}</span>
                           <span className="font-mono text-purple-400 font-bold">+{f.impact}%</span>
@@ -869,13 +873,13 @@ Portal URL: ${window.location.origin}`;
                   <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 text-xs text-slate-300 space-y-3">
                     <div>
                       <span className="font-bold text-white font-display block">Recommended Command Action:</span>
-                      <p className="leading-relaxed mt-0.5">{simResult.recommendedAction}</p>
+                      <p className="leading-relaxed mt-0.5">{simResult.recommendedAction || simResult.recommendedPatrolStrategy}</p>
                     </div>
 
                     <div className="pt-3 border-t border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="text-[11px] text-purple-300">
                         <span>Recommended Reinforcement: </span>
-                        <strong className="text-white font-mono">{(simResult as any).recommendedUnits || 2} Patrol Units</strong>
+                        <strong className="text-white font-mono">{simResult.recommendedUnits || (simResult as any).recommendedUnits || 2} Patrol Units</strong>
                       </div>
 
                       <button
