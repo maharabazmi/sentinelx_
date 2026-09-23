@@ -470,14 +470,16 @@ html.light .consumer-intake-actions,
 
 html.light .consumer-intake-handover,
 .light .consumer-intake-handover {
-  background-color: #1d4ed8 !important;
+  background-color: #145dcc !important;
   color: #ffffff !important;
-  border: 1px solid #1e40af !important;
+  border: 1px solid #062e6f !important;
+  box-shadow: 0 2px 0 #0b3f91, 0 4px 10px rgba(20, 93, 204, 0.24) !important;
+  text-shadow: none !important;
 }
 
 html.light .consumer-intake-handover:hover,
 .light .consumer-intake-handover:hover {
-  background-color: #1e40af !important;
+  background-color: #0f4eae !important;
 }
 
 html.light .consumer-intake-reject,
