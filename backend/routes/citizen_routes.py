@@ -476,6 +476,7 @@ def download_reward_echeck(complaint_id):
             "Government Consumer Rights Settlement Record",
             "",
             f"Pay to the order of: {user.fullName}",
+            f"Fine collected: BDT {(complaint.fineAmount or complaint.rewardAmount * 4):,.2f}",
             f"Amount: BDT {complaint.rewardAmount:,.2f}",
             f"Reward status: {(complaint.rewardStatus or 'READY_FOR_COLLECTION').replace('_', ' ').title()}",
             f"Payment reference: {complaint.paymentReference or 'Pending assignment'}",
@@ -488,8 +489,7 @@ def download_reward_echeck(complaint_id):
             "This electronic reward certificate is generated from the verified DNCRP case record.",
             "It is not a negotiable bank instrument until processed by the authorized settlement bank.",
         ]
-        stream = BytesIO()
-        content = ["BT", "/F1 12 Tf", "72 740 Td"]
+        content = ["BT", "/F1 12 Tf", "0 0 0 rg", "1 0 0 1 72 740 Tm"]
         for index, line in enumerate(lines):
             if index:
                 content.append("0 -24 Td")
@@ -499,7 +499,7 @@ def download_reward_echeck(complaint_id):
         objects = [
             b"<< /Type /Catalog /Pages 2 0 R >>",
             b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-            b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
+            b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /ProcSet [/PDF /Text] /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
             b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
             b"<< /Length " + str(len(body)).encode() + b" >>\nstream\n" + body + b"\nendstream",
         ]

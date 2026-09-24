@@ -303,6 +303,7 @@ class ConsumerComplaint(Base):
     inspectorNotes = Column(Text, nullable=True)
     investigationSummary = Column(Text, nullable=True)
     finalFinding = Column(Text, nullable=True)
+    fineAmount = Column(Float, nullable=True)
     rewardAmount = Column(Float, nullable=True)
     rewardStatus = Column(String(32), nullable=True)
     paymentReference = Column(String(128), nullable=True)
@@ -361,6 +362,7 @@ class ConsumerComplaint(Base):
             "inspectorNotes": self.inspectorNotes,
             "investigationSummary": self.investigationSummary,
             "finalFinding": self.finalFinding,
+            "fineAmount": self.fineAmount,
             "rewardAmount": self.rewardAmount,
             "rewardStatus": self.rewardStatus,
             "paymentReference": self.paymentReference,

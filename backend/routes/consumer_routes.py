@@ -358,10 +358,17 @@ def update_complaint_status(complaint_id):
     status = data.get("status")
     inspector_notes = data.get("inspectorNotes")
     penalty_imposed = data.get("penaltyImposed")
+    fine_amount = data.get("fineAmount")
     reward_amount = data.get("rewardAmount")
     note = data.get("note")
     handoff_officer_id = data.get("handoffOfficerId")
     parsed_reward_amount = None
+    parsed_fine_amount = None
+    if fine_amount is not None and status == "RESOLVED":
+        try:
+            parsed_fine_amount = max(0, float(fine_amount))
+        except (TypeError, ValueError):
+            return jsonify({"error": "Fine amount must be a valid non-negative number."}), 400
     if reward_amount is not None and status == "RESOLVED":
         try:
             parsed_reward_amount = max(0, float(reward_amount))
@@ -508,7 +515,8 @@ def update_complaint_status(complaint_id):
         if penalty_imposed:
             complaint.penaltyImposed = penalty_imposed
         if parsed_reward_amount is not None:
-            complaint.rewardAmount = parsed_reward_amount
+            complaint.fineAmount = parsed_fine_amount if parsed_fine_amount is not None else parsed_reward_amount * 4
+            complaint.rewardAmount = round(complaint.fineAmount * 0.25, 2)
             if status == "RESOLVED":
                 complaint.rewardStatus = "READY_FOR_COLLECTION"
                 complaint.paymentReference = complaint.paymentReference or f"DNCRP-RWD-{complaint.trackingNumber}-{int(time.time())}"

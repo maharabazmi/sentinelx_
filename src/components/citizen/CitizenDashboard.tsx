@@ -2277,14 +2277,15 @@ export const CitizenDashboard: React.FC = () => {
                           <strong className="text-lg text-emerald-200 font-mono">৳{Number(comp.rewardAmount).toLocaleString()}</strong>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-slate-300">
+                          <span>Fine collected: <strong className="text-slate-100">৳{Number(comp.fineAmount || 0).toLocaleString()}</strong></span>
+                          <span>25% reward: <strong className="text-emerald-300">৳{Number(comp.rewardAmount).toLocaleString()}</strong></span>
                           <span>Status: <strong className="text-emerald-300">{(comp.rewardStatus || 'READY_FOR_COLLECTION').replace(/_/g, ' ')}</strong></span>
                           <span>Payment reference: <strong className="text-slate-100 font-mono">{comp.paymentReference || 'Pending assignment'}</strong></span>
-                          <span>Fine basis: <strong className="text-slate-100">25% of collected fine</strong></span>
                         </div>
                         <button
                           type="button"
                           onClick={() => handleDownloadRewardCertificate(comp.id)}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 font-bold text-emerald-300 hover:bg-emerald-500/20"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-800 bg-emerald-700 px-3 py-2 font-bold text-white shadow-sm hover:bg-emerald-800"
                         >
                           <Download className="w-3.5 h-3.5" />
                           Download Reward Payment Certificate (PDF)

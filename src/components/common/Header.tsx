@@ -297,7 +297,7 @@ export const Header: React.FC<HeaderProps> = ({
                                   markNotificationRead(notif.id);
                                   handleDownloadRewardEcheck(notif.relatedId!);
                                 }}
-                                className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1.5 text-[11px] font-bold text-emerald-300 hover:bg-emerald-500/20"
+                                className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-emerald-800 bg-emerald-700 px-2.5 py-1.5 text-[11px] font-bold text-white shadow-sm hover:bg-emerald-800"
                               >
                                 <Download className="h-3.5 w-3.5" />
                                 Download E-Check PDF
