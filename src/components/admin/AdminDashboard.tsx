@@ -1379,7 +1379,23 @@ Portal URL: ${window.location.origin}`;
                 <label className="block font-semibold text-slate-300 mb-1">Official Role</label>
                 <select
                   value={newRole}
-                  onChange={e => setNewRole(e.target.value as UserRole)}
+                  onChange={e => {
+                    const selectedRole = e.target.value as UserRole;
+                    setNewRole(selectedRole);
+                    if (selectedRole === UserRole.POLICE) {
+                      setNewDesignation('Sub-Inspector (SI)');
+                      setNewDepartment('General Investigation & GD Registry');
+                      setNewStation('');
+                    } else if (selectedRole === UserRole.CONSUMER_RIGHTS) {
+                      setNewDesignation('');
+                      setNewDepartment('National Market Surveillance Cell');
+                      setNewStation('National Directorate HQ, Dhaka');
+                    } else {
+                      setNewDesignation('');
+                      setNewDepartment('');
+                      setNewStation('');
+                    }
+                  }}
                   className="sx-input"
                   required
                 >
@@ -1544,6 +1560,7 @@ Portal URL: ${window.location.origin}`;
                           <option value="Complaint Intake Officer">Complaint Intake Officer</option>
                           <option value="Investigation Officer">Investigation Officer</option>
                           <option value="Adjudication Officer">Adjudication Officer</option>
+                          <option value="Deputy Director">Deputy Director (Supervising Authority)</option>
                         </select>
                       </div>
                       <div>
@@ -1560,19 +1577,17 @@ Portal URL: ${window.location.origin}`;
                     </div>
                   )}
 
-                  {newRole !== UserRole.CONSUMER_RIGHTS && (
-                    <div>
-                      <label className="block font-semibold text-slate-300 mb-1">Station / Department / Office</label>
-                      <input
-                        type="text"
-                        value={newStation}
-                        onChange={e => setNewStation(e.target.value)}
-                        placeholder="e.g. Department Headquarters"
-                        className="sx-input"
-                        required
-                      />
-                    </div>
-                  )}
+                  <div>
+                    <label className="block font-semibold text-slate-300 mb-1">Station / Department / Office</label>
+                    <input
+                      type="text"
+                      value={newStation}
+                      onChange={e => setNewStation(e.target.value)}
+                      placeholder={newRole === UserRole.CONSUMER_RIGHTS ? 'e.g. National Directorate HQ, Dhaka' : 'e.g. Department Headquarters'}
+                      className="sx-input"
+                      required
+                    />
+                  </div>
                 </div>
               )}
 

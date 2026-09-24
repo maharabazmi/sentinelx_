@@ -231,26 +231,14 @@ def get_complaints():
                     (district_matches(c) and (c.workflowQueue in ("ADJUDICATION", "COMPLETED") or c.status in ("INVESTIGATION_SUMMARY", "ADJUDICATION_REVIEW", "FINAL_DECISION", "RESOLVED"))) or
                     any("Adjudication" in (event.get("note") or "") for event in c.timeline)
                 ]
-            elif scope == "my_cases":
-                filtered = [
-                    c for c in all_records
-                    if c.assignedOfficerId == user.id or
-                    (c.assignedOfficerName and user.fullName.strip().lower() == c.assignedOfficerName.strip().lower())
-                ]
-            elif scope == "unassigned":
-                filtered = [
-                    c for c in all_records
-                    if (
-                        (not c.assignedOfficerId and not c.assignedOfficerName and c.status in ("SUBMITTED", "UNDER_REVIEW")) or
-                        (c.assignedOfficerId == user.id and c.status in ("SUBMITTED", "UNDER_REVIEW"))
-                    ) and district_matches(c)
-                ]
             else:
-                # Default "jurisdiction" / supervisory overview:
+                # Default "jurisdiction" / supervisory overview for Supervising Authorities:
+                # Always return the full jurisdiction complaints set so all 5 supervisory stage tabs
+                # (All Disputes, Intake Stage, Investigation Stage, Adjudication Stage, Resolved / Decided)
+                # retain accurate counts and never drop to 0 when switching tabs.
                 filtered = [
                     c for c in all_records
-                    if (is_intake_officer and (not c.assignedOfficerId or c.assignedOfficerId == user.id) and c.status in ("SUBMITTED", "UNDER_REVIEW")) or
-                    is_consumer_in_jurisdiction(station, c.shopThana, c.shopDistrict) or
+                    if is_consumer_in_jurisdiction(station, c.shopThana, c.shopDistrict) or
                     district_matches(c) or
                     c.assignedOfficerId == user.id or
                     (c.assignedOfficerName and user.fullName.strip().lower() == c.assignedOfficerName.strip().lower())
@@ -308,7 +296,12 @@ def claim_complaint(complaint_id):
             complaint.status = "ADJUDICATION_REVIEW"
             complaint.workflowQueue = "ADJUDICATION"
         else:
-            return jsonify({"error": "Your DNCRP designation is not authorized to accept disputes."}), 403
+            if complaint.status in ("INVESTIGATION_SUMMARY", "ADJUDICATION_REVIEW"):
+                complaint.status = "ADJUDICATION_REVIEW"
+                complaint.workflowQueue = "ADJUDICATION"
+            else:
+                complaint.status = "INVESTIGATION"
+                complaint.workflowQueue = "INVESTIGATION"
 
         complaint.assignedOfficerId = user.id
         complaint.assignedOfficerName = user.fullName
@@ -383,10 +376,16 @@ def update_complaint_status(complaint_id):
         if user.role == "CONSUMER_RIGHTS":
             all_complaints_for_check = db.query(ConsumerComplaint).all()
             normalized_category = officer_category.casefold()
-            is_supervisor = not normalized_category or "director" in normalized_category or "chief" in normalized_category or "inspector" in normalized_category
+            is_supervisor = normalized_category not in ("complaint intake officer", "investigation officer", "adjudication officer")
             workflow_category = (
-                "Investigation Officer" if normalized_category == "investigation officer"
-                else "Adjudication Officer" if (normalized_category == "adjudication officer" or (is_supervisor and complaint.status in ("INVESTIGATION_SUMMARY", "ADJUDICATION_REVIEW", "FINAL_DECISION")))
+                "Investigation Officer" if (
+                    normalized_category == "investigation officer" or
+                    (is_supervisor and (complaint.status == "INVESTIGATION" or (complaint.status == "UNDER_REVIEW" and status == "INVESTIGATION")))
+                )
+                else "Adjudication Officer" if (
+                    normalized_category == "adjudication officer" or
+                    (is_supervisor and complaint.status in ("INVESTIGATION_SUMMARY", "ADJUDICATION_REVIEW", "FINAL_DECISION"))
+                )
                 else "Complaint Intake Officer"
             )
             if workflow_category != "Adjudication Officer" and (penalty_imposed is not None or reward_amount is not None or status in ("FINAL_DECISION", "RESOLVED")):
@@ -477,7 +476,7 @@ def update_complaint_status(complaint_id):
                 ),
             }
             if workflow_category in allowed_transition and status:
-                if workflow_category in ("Investigation Officer", "Adjudication Officer") and not is_assigned and complaint.assignedOfficerId:
+                if not is_supervisor and workflow_category in ("Investigation Officer", "Adjudication Officer") and not is_assigned and complaint.assignedOfficerId:
                     return jsonify({"error": "Only the officer assigned during handover can advance this dispute."}), 403
                 valid_transitions = allowed_transition[workflow_category]
                 if isinstance(valid_transitions[0], str):

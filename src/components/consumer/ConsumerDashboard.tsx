@@ -378,7 +378,7 @@ export const ConsumerDashboard: React.FC = () => {
             { id: 'intake', label: 'Intake Stage', match: (complaint: ConsumerComplaint) => complaint.status === ComplaintStatus.SUBMITTED || complaint.workflowQueue === 'INTAKE' || (complaint.status === ComplaintStatus.UNDER_REVIEW && !complaint.workflowQueue) },
             { id: 'investigation', label: 'Investigation Stage', match: (complaint: ConsumerComplaint) => complaint.workflowQueue === 'INVESTIGATION' || complaint.status === ComplaintStatus.INVESTIGATION },
             { id: 'adjudication', label: 'Adjudication Stage', match: (complaint: ConsumerComplaint) => complaint.workflowQueue === 'ADJUDICATION' || complaint.status === ComplaintStatus.INVESTIGATION_SUMMARY || complaint.status === ComplaintStatus.ADJUDICATION_REVIEW },
-            { id: 'resolved', label: 'Resolved / Decided', match: (complaint: ConsumerComplaint) => complaint.status === ComplaintStatus.RESOLVED || complaint.status === ComplaintStatus.FINAL_DECISION }
+            { id: 'resolved', label: 'Resolved / Decided', match: (complaint: ConsumerComplaint) => complaint.status === ComplaintStatus.RESOLVED || complaint.status === ComplaintStatus.FINAL_DECISION || complaint.status === ComplaintStatus.REJECTED }
           ];
 
   const activeQueue = queueTabs.find(tab => tab.id === activeQueueTab) || queueTabs[0];
@@ -534,7 +534,7 @@ export const ConsumerDashboard: React.FC = () => {
                 type="button"
                 onClick={() => {
                   setActiveQueueTab(tab.id);
-                  setQueueScope(isIntakeOfficer ? 'unassigned' : 'my_cases');
+                  setQueueScope(isIntakeOfficer ? 'unassigned' : isSupervisingAuthority ? 'jurisdiction' : 'my_cases');
                 }}
                 className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
                   activeQueueTab === tab.id
@@ -974,12 +974,12 @@ export const ConsumerDashboard: React.FC = () => {
                       </button>
                     )}
 
-                    {isInvestigationOfficer && selectedComplaint.status === ComplaintStatus.UNDER_REVIEW && (
+                    {(isInvestigationOfficer || isSupervisingAuthority) && selectedComplaint.status === ComplaintStatus.UNDER_REVIEW && selectedComplaint.workflowQueue === 'INVESTIGATION' && (
                       <button type="button" disabled={isUpdatingStatus} onClick={() => handleUpdateComplaint(ComplaintStatus.INVESTIGATION)} className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition">
                         Accept / Take Case
                       </button>
                     )}
-                    {isInvestigationOfficer && selectedComplaint.status === ComplaintStatus.INVESTIGATION && (
+                    {(isInvestigationOfficer || isSupervisingAuthority) && selectedComplaint.status === ComplaintStatus.INVESTIGATION && (
                       <div className="w-full flex flex-col sm:flex-row gap-2">
                         <select value={selectedAdjudicationOfficer} onChange={e => setSelectedAdjudicationOfficer(e.target.value)} className="sx-input flex-1">
                           <option value="">Select Adjudication Officer</option>
@@ -992,17 +992,17 @@ export const ConsumerDashboard: React.FC = () => {
                         </button>
                       </div>
                     )}
-                    {isAdjudicationOfficer && selectedComplaint.assignedOfficerId === user?.id && selectedComplaint.status === ComplaintStatus.INVESTIGATION_SUMMARY && (
+                    {(isAdjudicationOfficer || isSupervisingAuthority) && (isSupervisingAuthority || selectedComplaint.assignedOfficerId === user?.id) && selectedComplaint.status === ComplaintStatus.INVESTIGATION_SUMMARY && (
                       <button type="button" disabled={isUpdatingStatus} onClick={() => handleAdjudicationAccept(selectedComplaint)} className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-slate-950 text-xs font-bold transition">
                         Accept / Take Case for Final Decision
                       </button>
                     )}
-                    {isAdjudicationOfficer && selectedComplaint.assignedOfficerId === user?.id && selectedComplaint.status === ComplaintStatus.ADJUDICATION_REVIEW && (
+                    {(isAdjudicationOfficer || isSupervisingAuthority) && (isSupervisingAuthority || selectedComplaint.assignedOfficerId === user?.id) && selectedComplaint.status === ComplaintStatus.ADJUDICATION_REVIEW && (
                       <button type="button" disabled={isUpdatingStatus} onClick={() => handleUpdateComplaint(ComplaintStatus.FINAL_DECISION)} className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-slate-950 text-xs font-bold transition">
-                        Accept / Take Case for Final Decision
+                        Record Final Finding
                       </button>
                     )}
-                    {isAdjudicationOfficer && selectedComplaint.assignedOfficerId === user?.id && selectedComplaint.status === ComplaintStatus.FINAL_DECISION && (
+                    {(isAdjudicationOfficer || isSupervisingAuthority) && (isSupervisingAuthority || selectedComplaint.assignedOfficerId === user?.id) && selectedComplaint.status === ComplaintStatus.FINAL_DECISION && (
                       <button type="button" disabled={isUpdatingStatus} onClick={() => handleUpdateComplaint(ComplaintStatus.RESOLVED)} className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-md shadow-emerald-600/30 flex items-center gap-1.5">
                         <Gavel className="w-3.5 h-3.5" />
                         <span>Determine Reward & Resolve</span>
