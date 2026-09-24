@@ -157,10 +157,15 @@ def init_db():
                 if not existing_user:
                     db.merge(u)
                     added_count += 1
-                elif u.role == "CONSUMER_RIGHTS" and (not existing_user.assignedDistrict or existing_user.designation != u.designation):
+                elif u.role == "CONSUMER_RIGHTS":
                     existing_user.designation = u.designation
                     existing_user.assignedDistrict = getattr(u, "assignedDistrict", None) or "Dhaka"
                     existing_user.department = u.department
+                    added_count += 1
+            for custom_cr in db.query(User).filter(User.role == "CONSUMER_RIGHTS").all():
+                st = (custom_cr.stationOrThana or "").lower()
+                if any(k in st for k in ("dhaka", "vatara", "hq", "central", "uttara", "gulshan", "dhanmondi", "mirpur", "motijheel")) and custom_cr.assignedDistrict != "Dhaka":
+                    custom_cr.assignedDistrict = "Dhaka"
                     added_count += 1
             for c in records.get("complaints", []):
                 db.merge(c)

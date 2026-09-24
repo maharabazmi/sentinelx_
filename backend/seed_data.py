@@ -665,13 +665,13 @@ def get_seed_records():
             }],
             inspectorNotes="DNCRP authority team conducted physical audit. Found 42 units of tampering with MRP. Notice served under Consumer Rights Protection Act 2009 Section 40.",
             penaltyImposed="Show-cause notice issued with penalty assessment of BDT 50,000.",
-            assignedOfficerName="Shamim Reza",
-            assignedOfficerId="user-cr-1",
+            assignedOfficerName="Tariqul Islam",
+            assignedOfficerId="user-cr-2",
             timeline=[
                 {"timestamp": (now - timedelta(days=3)).isoformat(), "status": "SUBMITTED", "note": "Complaint registered by citizen with purchase receipt."},
-                {"timestamp": (now - timedelta(days=2)).isoformat(), "status": "UNDER_REVIEW", "note": "Initial scrutiny confirmed evidence meets legal threshold.", "officerName": "Shamim Reza"},
-                {"timestamp": (now - timedelta(days=1)).isoformat(), "status": "VERIFIED", "note": "Physical raid on merchant premises confirmed violations.", "officerName": "Shamim Reza"},
-                {"timestamp": now.isoformat(), "status": "INVESTIGATION", "note": "Formal inquiry hearing scheduled under DNCRP rules.", "officerName": "Shamim Reza"}
+                {"timestamp": (now - timedelta(days=2)).isoformat(), "status": "UNDER_REVIEW", "note": "Initial scrutiny confirmed evidence meets legal threshold. Handed over to Investigation Officer Tariqul Islam.", "officerName": "Shamim Reza"},
+                {"timestamp": (now - timedelta(days=1)).isoformat(), "status": "VERIFIED", "note": "Physical raid on merchant premises confirmed violations.", "officerName": "Tariqul Islam"},
+                {"timestamp": now.isoformat(), "status": "INVESTIGATION", "note": "Formal inquiry hearing scheduled under DNCRP rules.", "officerName": "Tariqul Islam"}
             ]
         ),
         ConsumerComplaint(
@@ -695,15 +695,17 @@ def get_seed_records():
             submittedAt=(now - timedelta(days=8)).isoformat(),
             status="RESOLVED",
             workflowQueue="COMPLETED",
+            rewardAmount=7500.0,
+            finalFinding="Mobile court fine of BDT 30,000 imposed. Citizen awarded 25% statutory reward (BDT 7,500).",
             evidence=[],
             inspectorNotes="Mobile court fine of BDT 30,000 imposed. Expired stock confiscated and destroyed in presence of Magistrate. Citizen awarded 25% fine incentive (BDT 7,500) per DNCRP Act Section 76(4).",
             penaltyImposed="BDT 30,000 Administrative Fine + 25% reward disbursed to complainant.",
-            assignedOfficerName="Shamim Reza",
-            assignedOfficerId="user-cr-1",
+            assignedOfficerName="Nasreen Akter",
+            assignedOfficerId="user-cr-3",
             timeline=[
                 {"timestamp": (now - timedelta(days=8)).isoformat(), "status": "SUBMITTED", "note": "Complaint submitted with product batch photograph."},
-                {"timestamp": (now - timedelta(days=6)).isoformat(), "status": "VERIFIED", "note": "Directorate inspectors verified expired lot numbers.", "officerName": "Shamim Reza"},
-                {"timestamp": (now - timedelta(days=4)).isoformat(), "status": "RESOLVED", "note": "Case resolved. Fine deposited and incentive paid to citizen.", "officerName": "Shamim Reza"}
+                {"timestamp": (now - timedelta(days=6)).isoformat(), "status": "VERIFIED", "note": "Directorate inspectors verified expired lot numbers.", "officerName": "Tariqul Islam"},
+                {"timestamp": (now - timedelta(days=4)).isoformat(), "status": "RESOLVED", "note": "Case resolved. Fine deposited and incentive paid to citizen.", "officerName": "Nasreen Akter"}
             ]
         ),
         ConsumerComplaint(
@@ -799,6 +801,36 @@ def get_seed_records():
                 {"timestamp": (now - timedelta(days=2)).isoformat(), "status": "SUBMITTED", "note": "Complaint filed with digital weigh receipt."},
                 {"timestamp": (now - timedelta(days=1)).isoformat(), "status": "INVESTIGATION", "note": "Assigned to Investigation Officer Tariqul Islam."},
                 {"timestamp": now.isoformat(), "status": "INVESTIGATION_SUMMARY", "note": "Handover from Investigation Officer Tariqul Islam to Adjudication Officer Nasreen Akter."}
+            ]
+        ),
+        ConsumerComplaint(
+            id="comp-006",
+            trackingNumber="DNCRP-DHK-2026-5120",
+            complainantId="user-cit-1",
+            complainantName="Tanvir Hossain",
+            complainantPhone="+8801711234567",
+            shopName="Mirpur Gadget Corner",
+            shopAddress="Section 10, Mirpur, Dhaka",
+            shopDistrict="Dhaka",
+            shopThana="Mirpur",
+            tradeLicenseOrBIN="BIN-66120934",
+            productName="USB-C Fast Charger Adapter",
+            brandName="Generic Tech",
+            barcode="8909988776655",
+            issueType="COUNTERFEIT_PRODUCT",
+            pricePaid=650.0,
+            mrp=650.0,
+            description="Customer alleged charger was counterfeit, but failed to attach purchase cash memo or verifiable merchant invoice.",
+            submittedAt=(now - timedelta(days=5)).isoformat(),
+            status="REJECTED",
+            workflowQueue="REJECTED",
+            evidence=[],
+            inspectorNotes="Rejected at Intake: No valid purchase receipt/cash memo provided under Section 60 procedural rules.",
+            assignedOfficerName="Shamim Reza",
+            assignedOfficerId="user-cr-1",
+            timeline=[
+                {"timestamp": (now - timedelta(days=5)).isoformat(), "status": "SUBMITTED", "note": "Complaint submitted without purchase invoice."},
+                {"timestamp": (now - timedelta(days=4)).isoformat(), "status": "REJECTED", "note": "Rejected at Intake due to missing purchase receipt evidence.", "officerName": "Shamim Reza"}
             ]
         )
     ]
