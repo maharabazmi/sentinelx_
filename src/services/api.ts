@@ -51,10 +51,29 @@ export class ApiClient {
       headers
     });
 
-    const data = await response.json();
+    let data: any = null;
+    const contentType = response.headers.get('content-type') || '';
+
+    if (contentType.includes('application/json')) {
+      try {
+        data = await response.json();
+      } catch {
+        data = null;
+      }
+    } else {
+      const text = await response.text();
+      try {
+        data = JSON.parse(text);
+      } catch {
+        if (!response.ok) {
+          throw new Error(`Server error (${response.status}): ${response.statusText || 'Request failed'}`);
+        }
+        throw new Error('Unexpected response format received from server.');
+      }
+    }
 
     if (!response.ok) {
-      throw new Error(data.error || `Request failed with status ${response.status}`);
+      throw new Error(data?.error || data?.message || `Request failed with status ${response.status}`);
     }
 
     return data;
