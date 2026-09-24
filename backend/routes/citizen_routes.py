@@ -474,3 +474,18 @@ def lookup_barcode(barcode):
             "found": True,
             "product": product.to_dict()
         })
+
+# 11. SentinelX Dual-Engine AI Civic & Legal Copilot (4-Tier Gemini Cascade + Local SQLite/Legal RAG)
+@citizen_bp.route("/assistant", methods=["POST"])
+def ask_citizen_assistant():
+    from ..services.chatbot_service import ChatbotService
+    user = g.user
+    data = request.get_json() or {}
+    message = data.get("message", "")
+    history = data.get("history", [])
+    result = ChatbotService.process_message(user=user, message=message, history=history)
+    return jsonify({
+        "success": True,
+        **result,
+    })
+
