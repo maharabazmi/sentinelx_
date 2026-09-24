@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import sentiBotIcon from '/Logo/SentiBot-01.png';
 import {
-  Bot,
   Send,
   X,
   Sparkles,
@@ -173,14 +173,14 @@ export const CitizenAICopilot: React.FC<CitizenAICopilotProps> = ({
           onClick={() => setIsOpen(true)}
           className="fixed bottom-6 right-6 z-50 group flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-gradient-to-r from-[#0147bf] via-[#0284c7] to-[#02baff] text-white shadow-2xl shadow-[#02baff]/30 border border-cyan-300/40 hover:scale-[1.03] active:scale-95 transition-all"
         >
-          <div className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-slate-950/40 border border-white/20">
-            <Bot className="w-5 h-5 text-cyan-200" />
+          <div className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-slate-950/40 border border-white/20 overflow-hidden">
+            <img src={sentiBotIcon} alt="SentiBot" className="w-7 h-7 object-contain" />
             <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
             <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400" />
           </div>
           <div className="text-left pr-1">
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-black font-['Orbitron'] tracking-wider">SENTINELX AI COPILOT</span>
+              <span className="text-xs font-black font-['Orbitron'] tracking-wider">SentiBot</span>
               <Sparkles className="w-3.5 h-3.5 text-amber-300" />
             </div>
             <p className="text-[10px] text-cyan-100/90 font-mono">
@@ -200,28 +200,28 @@ export const CitizenAICopilot: React.FC<CitizenAICopilotProps> = ({
           }`}
         >
           {/* HEADER */}
-          <div className="px-4 py-3.5 bg-gradient-to-r from-[#091326] via-[#0b1b36] to-[#081224] light:from-slate-100 light:via-white light:to-slate-100 border-b border-[#02baff]/25 light:border-slate-200 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0147bf] to-[#02baff] flex items-center justify-center shadow-md shadow-[#02baff]/20">
-                <Bot className="w-5 h-5 text-white" />
+          <div className="px-4 py-3 bg-gradient-to-r from-[#091326] via-[#0b1b36] to-[#081224] light:from-slate-100 light:via-white light:to-slate-100 border-b border-[#02baff]/25 light:border-slate-200 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0147bf] to-[#02baff] flex items-center justify-center shadow-md shadow-[#02baff]/20 overflow-hidden shrink-0">
+                <img src={sentiBotIcon} alt="SentiBot" className="w-7 h-7 object-contain" />
               </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <h3 className="text-xs font-black text-white font-['Orbitron'] tracking-wide">
-                    SENTINELX CIVIC & LEGAL COPILOT
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <h3 className="text-xs font-black text-white font-['Orbitron'] tracking-wide whitespace-nowrap">
+                    SentiBot
                   </h3>
-                  <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-mono">
+                  <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-mono whitespace-nowrap">
                     LIVE DB
                   </span>
                 </div>
-                <p className="text-[10px] text-cyan-300/80 font-mono flex items-center gap-1 mt-0.5">
-                  <Cpu className="w-3 h-3 text-cyan-400" />
-                  <span>{activeEngine}</span>
+                <p className="text-[10px] text-cyan-300/80 font-mono flex items-center gap-1 mt-0.5 truncate">
+                  <Cpu className="w-3 h-3 text-cyan-400 shrink-0" />
+                  <span className="truncate">{activeEngine}</span>
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 shrink-0">
               <button
                 type="button"
                 onClick={() => setIsExpanded(prev => !prev)}
