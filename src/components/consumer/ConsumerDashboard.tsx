@@ -45,14 +45,18 @@ export const ConsumerDashboard: React.FC = () => {
   const officerCategory = user?.designation || '';
   const isInvestigationOfficer = officerCategory === 'Investigation Officer';
   const isAdjudicationOfficer = officerCategory === 'Adjudication Officer';
-  const isIntakeOfficer = user?.role === 'CONSUMER_RIGHTS' && officerCategory.trim().toLowerCase() === 'complaint intake officer';
+  const isIntakeOfficer = user?.role === 'CONSUMER_RIGHTS' && (
+    officerCategory.trim().toLowerCase() === 'complaint intake officer' ||
+    officerCategory.trim().toLowerCase().includes('intake')
+  );
+  const isSupervisingAuthority = !isIntakeOfficer && !isInvestigationOfficer && !isAdjudicationOfficer;
   const authorityCategoryLabel = [
     'Complaint Intake Officer',
     'Investigation Officer',
     'Adjudication Officer'
   ].includes(officerCategory)
     ? officerCategory
-    : 'DNCRP Authority';
+    : (officerCategory || 'DNCRP Authority');
   const [activeTab, setActiveTab] = useState<'complaints' | 'barcodes'>('complaints');
 
   const [stats, setStats] = useState<any>(null);
@@ -63,10 +67,13 @@ export const ConsumerDashboard: React.FC = () => {
   const [adjudicationOfficers, setAdjudicationOfficers] = useState<any[]>([]);
   const [selectedInvestigationOfficer, setSelectedInvestigationOfficer] = useState('');
   const [selectedAdjudicationOfficer, setSelectedAdjudicationOfficer] = useState('');
-  const [activeQueueTab, setActiveQueueTab] = useState('intake');
+  const defaultTabId = isIntakeOfficer ? 'intake' : isInvestigationOfficer ? 'investigation_queue' : isAdjudicationOfficer ? 'adjudication_queue' : 'all_complaints';
+  const [activeQueueTab, setActiveQueueTab] = useState(defaultTabId);
 
   // Queue Scope & Assignment State
-  const [queueScope, setQueueScope] = useState<'jurisdiction' | 'my_cases' | 'unassigned' | 'all'>(isIntakeOfficer ? 'unassigned' : 'my_cases');
+  const [queueScope, setQueueScope] = useState<'jurisdiction' | 'my_cases' | 'unassigned' | 'all'>(
+    isIntakeOfficer ? 'unassigned' : isSupervisingAuthority ? 'jurisdiction' : 'my_cases'
+  );
 
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState('');
@@ -109,6 +116,10 @@ export const ConsumerDashboard: React.FC = () => {
   };
 
   useEffect(() => {
+    setActiveQueueTab(defaultTabId);
+  }, [defaultTabId]);
+
+  useEffect(() => {
     if (isIntakeOfficer && queueScope !== 'unassigned') {
       setQueueScope('unassigned');
       return;
@@ -119,14 +130,13 @@ export const ConsumerDashboard: React.FC = () => {
   }, [queueScope, isIntakeOfficer]);
 
   useEffect(() => {
-    if (!isIntakeOfficer && !isInvestigationOfficer) return;
     ApiClient.getConsumerOfficers()
       .then(res => {
         setInvestigationOfficers((res.officers || []).filter(officer => officer.designation === 'Investigation Officer'));
         setAdjudicationOfficers((res.officers || []).filter(officer => officer.designation === 'Adjudication Officer'));
       })
-      .catch(err => console.error('Error loading Investigation Officers:', err));
-  }, [isIntakeOfficer, isInvestigationOfficer]);
+      .catch(err => console.error('Error loading DNCRP Officers:', err));
+  }, []);
 
   // Update Complaint Status & Penalty Action
   const handleUpdateComplaint = async (status: ComplaintStatus) => {
@@ -219,17 +229,25 @@ export const ConsumerDashboard: React.FC = () => {
       ]
     : isInvestigationOfficer
       ? [
-          { id: 'investigation_queue', label: 'Investigation Queue', match: (complaint: ConsumerComplaint) => complaint.status === ComplaintStatus.UNDER_REVIEW && complaint.workflowQueue === 'INVESTIGATION' },
+          { id: 'investigation_queue', label: 'Investigation Queue', match: (complaint: ConsumerComplaint) => (complaint.status === ComplaintStatus.UNDER_REVIEW && complaint.workflowQueue === 'INVESTIGATION') || (complaint.workflowQueue === 'INVESTIGATION' && !complaint.assignedOfficerId) },
           { id: 'assigned', label: 'My Assigned Cases', match: (complaint: ConsumerComplaint) => complaint.status === ComplaintStatus.INVESTIGATION && complaint.assignedOfficerId === user?.id },
-          { id: 'under_investigation', label: 'Under Investigation', match: (complaint: ConsumerComplaint) => complaint.status === ComplaintStatus.INVESTIGATION },
+          { id: 'under_investigation', label: 'Under Investigation', match: (complaint: ConsumerComplaint) => complaint.status === ComplaintStatus.INVESTIGATION || complaint.workflowQueue === 'INVESTIGATION' },
           { id: 'completed', label: 'Completed Investigations', match: (complaint: ConsumerComplaint) => complaint.status === ComplaintStatus.INVESTIGATION_SUMMARY || complaint.workflowQueue === 'ADJUDICATION' }
         ]
-      : [
-          { id: 'adjudication_queue', label: 'Adjudication Queue', match: (complaint: ConsumerComplaint) => complaint.status === ComplaintStatus.INVESTIGATION_SUMMARY && complaint.workflowQueue === 'ADJUDICATION' },
-          { id: 'under_review', label: 'Under Review', match: (complaint: ConsumerComplaint) => complaint.status === ComplaintStatus.ADJUDICATION_REVIEW },
-          { id: 'decided', label: 'Decided Cases', match: (complaint: ConsumerComplaint) => complaint.status === ComplaintStatus.FINAL_DECISION || complaint.status === ComplaintStatus.RESOLVED },
-          { id: 'reward', label: 'Reward/Compensation', match: (complaint: ConsumerComplaint) => complaint.status === ComplaintStatus.RESOLVED && complaint.rewardAmount != null }
-        ];
+      : isAdjudicationOfficer
+        ? [
+            { id: 'adjudication_queue', label: 'Adjudication Queue', match: (complaint: ConsumerComplaint) => (complaint.status === ComplaintStatus.INVESTIGATION_SUMMARY && complaint.workflowQueue === 'ADJUDICATION') || complaint.workflowQueue === 'ADJUDICATION' },
+            { id: 'under_review', label: 'Under Review', match: (complaint: ConsumerComplaint) => complaint.status === ComplaintStatus.ADJUDICATION_REVIEW },
+            { id: 'decided', label: 'Decided Cases', match: (complaint: ConsumerComplaint) => complaint.status === ComplaintStatus.FINAL_DECISION || complaint.status === ComplaintStatus.RESOLVED },
+            { id: 'reward', label: 'Reward/Compensation', match: (complaint: ConsumerComplaint) => complaint.status === ComplaintStatus.RESOLVED && complaint.rewardAmount != null }
+          ]
+        : [
+            { id: 'all_complaints', label: 'All Disputes', match: () => true },
+            { id: 'intake', label: 'Intake Stage', match: (complaint: ConsumerComplaint) => complaint.status === ComplaintStatus.SUBMITTED || complaint.workflowQueue === 'INTAKE' || (complaint.status === ComplaintStatus.UNDER_REVIEW && !complaint.workflowQueue) },
+            { id: 'investigation', label: 'Investigation Stage', match: (complaint: ConsumerComplaint) => complaint.workflowQueue === 'INVESTIGATION' || complaint.status === ComplaintStatus.INVESTIGATION },
+            { id: 'adjudication', label: 'Adjudication Stage', match: (complaint: ConsumerComplaint) => complaint.workflowQueue === 'ADJUDICATION' || complaint.status === ComplaintStatus.INVESTIGATION_SUMMARY || complaint.status === ComplaintStatus.ADJUDICATION_REVIEW },
+            { id: 'resolved', label: 'Resolved / Decided', match: (complaint: ConsumerComplaint) => complaint.status === ComplaintStatus.RESOLVED || complaint.status === ComplaintStatus.FINAL_DECISION }
+          ];
 
   const activeQueue = queueTabs.find(tab => tab.id === activeQueueTab) || queueTabs[0];
   const filteredComplaints = complaints.filter(c => {
@@ -766,7 +784,7 @@ export const ConsumerDashboard: React.FC = () => {
                   </div>
 
                   <div className="flex flex-wrap items-center justify-end gap-2.5 pt-2">
-                    {isIntakeOfficer && (selectedComplaint.status === ComplaintStatus.SUBMITTED || selectedComplaint.status === ComplaintStatus.UNDER_REVIEW) && (
+                    {(isIntakeOfficer || isSupervisingAuthority) && (selectedComplaint.status === ComplaintStatus.SUBMITTED || selectedComplaint.status === ComplaintStatus.UNDER_REVIEW) && (
                       <div className="consumer-intake-actions w-full flex flex-col gap-2 rounded-xl border border-slate-700/60 bg-slate-950/40 p-3">
                         <div>
                           <p className="font-bold text-slate-200">Intake decision</p>
@@ -787,7 +805,7 @@ export const ConsumerDashboard: React.FC = () => {
                       </div>
                     )}
 
-                    {isIntakeOfficer && (selectedComplaint.status === ComplaintStatus.SUBMITTED || selectedComplaint.status === ComplaintStatus.UNDER_REVIEW) && (
+                    {(isIntakeOfficer || isSupervisingAuthority) && (selectedComplaint.status === ComplaintStatus.SUBMITTED || selectedComplaint.status === ComplaintStatus.UNDER_REVIEW) && (
                       <button type="button" disabled={isUpdatingStatus} onClick={() => handleUpdateComplaint(ComplaintStatus.REJECTED)} className="consumer-intake-reject px-4 py-2 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-500/40 text-xs font-semibold transition">
                         Reject Complaint at Intake
                       </button>
