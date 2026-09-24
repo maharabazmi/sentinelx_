@@ -34,6 +34,7 @@ import {
   Award,
   ShieldCheck,
   Printer,
+  Download,
   Car,
   Navigation
 } from 'lucide-react';
@@ -77,6 +78,20 @@ export const CitizenDashboard: React.FC = () => {
   const [activeSOS, setActiveSOS] = useState<SOSRequest | null>(null);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [activeChatCase, setActiveChatCase] = useState<{ caseId: string; caseType: 'CRIME' | 'CONSUMER'; title: string; officer?: string } | null>(null);
+
+  const handleDownloadRewardCertificate = async (complaintId: string) => {
+    try {
+      const blob = await ApiClient.downloadRewardEcheck(complaintId);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'reward-payment-certificate.pdf';
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(err.message || 'Unable to download the reward payment certificate.');
+    }
+  };
 
   // ----------------------------------------------------
   // MULTI-STEP CRIME REPORT FORM STATE
@@ -2250,6 +2265,30 @@ export const CitizenDashboard: React.FC = () => {
                           DNCRP Enforcement Action Taken
                         </span>
                         <p className="text-slate-200 mt-1">{comp.penaltyImposed}</p>
+                      </div>
+                    )}
+
+                    {comp.rewardAmount != null && (
+                      <div className="p-4 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 space-y-3 text-xs">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="font-bold text-emerald-300 flex items-center gap-1.5">
+                            <Award className="w-4 h-4" /> 25% Citizen Reward
+                          </span>
+                          <strong className="text-lg text-emerald-200 font-mono">৳{Number(comp.rewardAmount).toLocaleString()}</strong>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-slate-300">
+                          <span>Status: <strong className="text-emerald-300">{(comp.rewardStatus || 'READY_FOR_COLLECTION').replace(/_/g, ' ')}</strong></span>
+                          <span>Payment reference: <strong className="text-slate-100 font-mono">{comp.paymentReference || 'Pending assignment'}</strong></span>
+                          <span>Fine basis: <strong className="text-slate-100">25% of collected fine</strong></span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadRewardCertificate(comp.id)}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 font-bold text-emerald-300 hover:bg-emerald-500/20"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          Download Reward Payment Certificate (PDF)
+                        </button>
                       </div>
                     )}
 

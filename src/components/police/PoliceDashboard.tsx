@@ -808,7 +808,7 @@ export const PoliceDashboard: React.FC = () => {
                           <StatusBadge status={report.status} size="sm" />
                         </td>
                         <td className="py-3.5 px-2 sm:px-4 text-right">
-                          <div className="flex flex-wrap items-center justify-end gap-1.5">
+                          <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
                             {!report.assignedOfficerId && report.status !== ReportStatus.CASE_CLOSED && report.status !== ReportStatus.REJECTED && (
                               <button
                                 onClick={e => {
@@ -839,7 +839,7 @@ export const PoliceDashboard: React.FC = () => {
                                 e.stopPropagation();
                                 setSelectedReport(report);
                               }}
-                              className="px-2 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 text-[11px] font-semibold transition"
+                              className="px-2 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 text-[11px] font-semibold transition whitespace-nowrap"
                             >
                               Review Case
                             </button>

@@ -1,7 +1,8 @@
 import time
 import random
+from io import BytesIO
 from datetime import datetime, timezone
-from flask import Blueprint, request, jsonify, g
+from flask import Blueprint, request, jsonify, g, send_file
 from ..database import get_db
 from ..models import (
     CrimeReport,
@@ -454,6 +455,68 @@ def mark_notification_read(notif_id):
     user = g.user
     NotificationService.mark_as_read(notif_id, user.id)
     return jsonify({"success": True})
+
+@citizen_bp.route("/consumer/rewards/<complaint_id>/e-check.pdf", methods=["GET"])
+def download_reward_echeck(complaint_id):
+    user = g.user
+    with get_db() as db:
+        complaint = db.query(ConsumerComplaint).filter(
+            ConsumerComplaint.id == complaint_id,
+            ConsumerComplaint.complainantId == user.id,
+            ConsumerComplaint.status == "RESOLVED",
+        ).first()
+        if not complaint or not complaint.rewardAmount or complaint.rewardAmount <= 0:
+            return jsonify({"error": "Reward e-check is not available for this case."}), 404
+
+        def pdf_text(value):
+            return str(value or "").replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+
+        lines = [
+            "SENTINELX / DNCRP ELECTRONIC REWARD E-CHECK",
+            "Government Consumer Rights Settlement Record",
+            "",
+            f"Pay to the order of: {user.fullName}",
+            f"Amount: BDT {complaint.rewardAmount:,.2f}",
+            f"Reward status: {(complaint.rewardStatus or 'READY_FOR_COLLECTION').replace('_', ' ').title()}",
+            f"Payment reference: {complaint.paymentReference or 'Pending assignment'}",
+            "Settlement bank: Government Consumer Rights Settlement Account",
+            f"Case tracking number: {complaint.trackingNumber}",
+            f"Issue: {complaint.issueType}",
+            f"Merchant: {complaint.shopName}",
+            f"Issued: {(complaint.rewardPaidAt or datetime.now(timezone.utc).isoformat())[:19].replace('T', ' ')} UTC",
+            "",
+            "This electronic reward certificate is generated from the verified DNCRP case record.",
+            "It is not a negotiable bank instrument until processed by the authorized settlement bank.",
+        ]
+        stream = BytesIO()
+        content = ["BT", "/F1 12 Tf", "72 740 Td"]
+        for index, line in enumerate(lines):
+            if index:
+                content.append("0 -24 Td")
+            content.append(f"({pdf_text(line)}) Tj")
+        content.append("ET")
+        body = "\n".join(content).encode("latin-1", "replace")
+        objects = [
+            b"<< /Type /Catalog /Pages 2 0 R >>",
+            b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
+            b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+            b"<< /Length " + str(len(body)).encode() + b" >>\nstream\n" + body + b"\nendstream",
+        ]
+        pdf = BytesIO(b"%PDF-1.4\n")
+        offsets = [0]
+        for number, obj in enumerate(objects, start=1):
+            offsets.append(pdf.tell())
+            pdf.write(f"{number} 0 obj\n".encode())
+            pdf.write(obj)
+            pdf.write(b"\nendobj\n")
+        xref = pdf.tell()
+        pdf.write(f"xref\n0 {len(objects) + 1}\n0000000000 65535 f \n".encode())
+        for offset in offsets[1:]:
+            pdf.write(f"{offset:010d} 00000 n \n".encode())
+        pdf.write(f"trailer\n<< /Size {len(objects) + 1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF".encode())
+        pdf.seek(0)
+        return send_file(pdf, mimetype="application/pdf", as_attachment=True, download_name=f"reward-e-check-{complaint.trackingNumber}.pdf")
 
 # 10. Barcode Product Lookup
 @citizen_bp.route("/barcode/<barcode>", methods=["GET"])

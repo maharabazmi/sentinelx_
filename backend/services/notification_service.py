@@ -47,6 +47,10 @@ class NotificationService:
         return cls._create_item(user_id, "COMPLAINT_UPDATE", title, message, severity="INFO", related_id=related_id)
 
     @classmethod
+    def create_reward_notification(cls, user_id: str, title: str, message: str, related_id: str = None):
+        return cls._create_item(user_id, "REWARD_COMPENSATION", title, message, severity="INFO", related_id=related_id)
+
+    @classmethod
     def create_sos_notification(cls, user_id: str, title: str, message: str, related_id: str = None):
         return cls._create_item(user_id, "SOS_UPDATE", title, message, severity="EMERGENCY", related_id=related_id)
 

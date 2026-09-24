@@ -464,6 +464,7 @@ def update_complaint_status(complaint_id):
                 "Investigation Officer": (("UNDER_REVIEW", "INVESTIGATION"), ("INVESTIGATION", "INVESTIGATION_SUMMARY")),
                 "Adjudication Officer": (
                     ("INVESTIGATION_SUMMARY", "ADJUDICATION_REVIEW"),
+                    ("INVESTIGATION_SUMMARY", "FINAL_DECISION"),
                     ("ADJUDICATION_REVIEW", "FINAL_DECISION"),
                     ("FINAL_DECISION", "RESOLVED"),
                 ),
@@ -508,6 +509,9 @@ def update_complaint_status(complaint_id):
             complaint.penaltyImposed = penalty_imposed
         if parsed_reward_amount is not None:
             complaint.rewardAmount = parsed_reward_amount
+            if status == "RESOLVED":
+                complaint.rewardStatus = "READY_FOR_COLLECTION"
+                complaint.paymentReference = complaint.paymentReference or f"DNCRP-RWD-{complaint.trackingNumber}-{int(time.time())}"
 
         # Always bind assignment to acting officer
         complaint.assignedOfficerName = user.fullName
@@ -550,11 +554,18 @@ def update_complaint_status(complaint_id):
     resolution_message = (
         f"Final decision recorded. {complaint.finalFinding or inspector_notes or note or ''} "
         f"Reward/compensation: ৳{complaint.rewardAmount:,.2f} to the citizen. "
+        f"Reward status: {complaint.rewardStatus or 'READY_FOR_COLLECTION'}. "
+        f"Payment reference: {complaint.paymentReference or 'Pending assignment'}. "
         f"Enforcement details: {complaint.penaltyImposed or 'None awarded.'}"
         if complaint.status == "RESOLVED"
         else f"Status updated to {complaint.status}."
     )
-    NotificationService.create_complaint_notification(
+    notification_method = (
+        NotificationService.create_reward_notification
+        if complaint.status == "RESOLVED"
+        else NotificationService.create_complaint_notification
+    )
+    notification_method(
         user_id=complaint.complainantId,
         title=(f"Final Reward/Compensation Decision: {complaint.trackingNumber}" if complaint.status == "RESOLVED" else f"Consumer Dispute Update: {complaint.trackingNumber}"),
         message=resolution_message,
@@ -593,6 +604,45 @@ def update_complaint_status(complaint_id):
         "complaint": complaint_dict,
         "message": "Consumer complaint record updated."
     })
+
+@consumer_bp.route("/complaints/<complaint_id>/reward-status", methods=["POST"])
+def update_reward_status(complaint_id):
+    user = g.user
+    data = request.get_json() or {}
+    requested_status = data.get("rewardStatus")
+    allowed_statuses = ("FINE_COLLECTED", "REWARD_CALCULATED", "APPROVED", "READY_FOR_COLLECTION", "PAID")
+    transitions = {
+        "FINE_COLLECTED": "REWARD_CALCULATED",
+        "REWARD_CALCULATED": "APPROVED",
+        "APPROVED": "READY_FOR_COLLECTION",
+        "READY_FOR_COLLECTION": "PAID",
+    }
+    if requested_status not in allowed_statuses:
+        return jsonify({"error": "Invalid reward status."}), 400
+    if user.role not in ("CONSUMER_RIGHTS", "ADMIN"):
+        return jsonify({"error": "Only DNCRP officers can update reward status."}), 403
+
+    with get_db() as db:
+        complaint = db.query(ConsumerComplaint).filter(ConsumerComplaint.id == complaint_id).first()
+        if not complaint:
+            return jsonify({"error": "Complaint not found."}), 404
+        current_status = complaint.rewardStatus or "FINE_COLLECTED"
+        if transitions.get(current_status) != requested_status:
+            return jsonify({"error": f"Reward cannot move from {current_status} to {requested_status}."}), 409
+        complaint.rewardStatus = requested_status
+        if requested_status == "READY_FOR_COLLECTION":
+            complaint.paymentReference = complaint.paymentReference or f"DNCRP-RWD-{complaint.trackingNumber}-{int(time.time())}"
+        if requested_status == "PAID":
+            complaint.rewardPaidAt = utcnow_iso()
+        complaint_dict = complaint.to_dict()
+
+    NotificationService.create_reward_notification(
+        user_id=complaint.complainantId,
+        title=f"Reward Status Updated: {complaint.trackingNumber}",
+        message=f"Your 25% citizen reward is {requested_status.replace('_', ' ').title()}. Payment reference: {complaint.paymentReference or 'Pending assignment'}.",
+        related_id=complaint.id,
+    )
+    return jsonify({"success": True, "complaint": complaint_dict})
 
 # 5. List DNCRP Officers for Station / Directorate
 @consumer_bp.route("/officers", methods=["GET"])

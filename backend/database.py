@@ -67,6 +67,9 @@ def init_db():
         ("investigationSummary", "TEXT"),
         ("finalFinding", "TEXT"),
         ("rewardAmount", "FLOAT"),
+        ("rewardStatus", "VARCHAR(32)"),
+        ("paymentReference", "VARCHAR(128)"),
+        ("rewardPaidAt", "VARCHAR(64)"),
         ("workflowQueue", "VARCHAR(32) DEFAULT 'INTAKE'"),
     ]:
         try:
