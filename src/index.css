@@ -206,8 +206,36 @@
   outline: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-.sx-input-with-icon {
-  padding-left: 2.5rem;
+/* Ensure padding-left when an icon or currency prefix is on the left */
+.sx-input-with-icon,
+.sx-input.pl-8,
+.sx-input.pl-9,
+.sx-input.pl-10,
+.sx-input.pl-11,
+.sx-input.pl-12 {
+  padding-left: 2.75rem !important;
+}
+
+/* Ensure padding-right when an icon (like eye toggle) is on the right */
+.sx-input-with-icon-right,
+.sx-input.pr-8,
+.sx-input.pr-9,
+.sx-input.pr-10,
+.sx-input.pr-11,
+.sx-input.pr-12 {
+  padding-right: 2.75rem !important;
+}
+
+/* Automatically apply left padding when an icon or prefix is positioned absolutely on the left */
+.relative > svg.absolute[class*="left-"] ~ .sx-input,
+.relative > span.absolute[class*="left-"] ~ .sx-input {
+  padding-left: 2.75rem !important;
+}
+
+/* Automatically apply right padding when a toggle button or icon is positioned on the right */
+.relative > .sx-input:has(~ button.absolute[class*="right-"]),
+.relative > .sx-input:has(~ svg.absolute[class*="right-"]) {
+  padding-right: 2.75rem !important;
 }
 
 .police-reassign-button:disabled {

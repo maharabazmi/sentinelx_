@@ -190,15 +190,15 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
                 Email / Registered Identifier
               </label>
               <div className="relative">
+                <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
                   value={identifier}
                   onChange={e => setIdentifier(e.target.value)}
                   placeholder="e.g. citizen@example.com or NID"
-                  className="sx-input pl-10"
+                  className="sx-input sx-input-with-icon"
                   required
                 />
-                <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-3.5" />
               </div>
             </div>
 
@@ -288,7 +288,8 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-slate-400 hover:text-white"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-white transition"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
