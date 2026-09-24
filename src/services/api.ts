@@ -218,6 +218,22 @@ export class ApiClient {
     return this.request(`/citizen/barcode/${encodeURIComponent(barcode)}`);
   }
 
+  static async askCitizenAssistant(
+    message: string,
+    history: Array<{ sender: 'user' | 'bot'; text: string }> = []
+  ): Promise<{
+    success: boolean;
+    reply: string;
+    engine: string;
+    actions: any[];
+    suggestions: string[];
+  }> {
+    return this.request('/citizen/assistant', {
+      method: 'POST',
+      body: JSON.stringify({ message, history })
+    });
+  }
+
   // --- Police API ---
   static async getPoliceSummary(): Promise<{ success: boolean; stats: any }> {
     return this.request('/police/dashboard-summary');

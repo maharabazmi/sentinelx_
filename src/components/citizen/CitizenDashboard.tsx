@@ -44,6 +44,7 @@ import { EvidenceViewer } from '../common/EvidenceViewer';
 import { CaseChatThread } from '../common/CaseChatThread';
 import { GDDocketModal } from '../common/GDDocketModal';
 import { DisputeDocketModal } from '../common/DisputeDocketModal';
+import { CitizenAICopilot } from './CitizenAICopilot';
 import { StatusBadge } from '../ui/StatusBadge';
 import { StatCard } from '../ui/StatCard';
 import { StepProgress, StepItem } from '../ui/StepProgress';
@@ -2539,6 +2540,42 @@ export const CitizenDashboard: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* ========================================================================= */}
+      {/* FLOATING DUAL-ENGINE AI CIVIC & LEGAL COPILOT                             */}
+      {/* ========================================================================= */}
+      <CitizenAICopilot
+        userName={user?.fullName}
+        onPrefillConsumer={payload => {
+          setShopName(payload.shopName);
+          setShopDistrict(payload.shopDistrict);
+          setShopThana(payload.shopThana);
+          setShopAddress(payload.shopAddress);
+          setProductName(payload.productName);
+          setIssueType(payload.issueType);
+          setMrp(payload.mrp);
+          setPricePaid(payload.pricePaid);
+          setComplaintDesc(payload.description);
+          setComplaintStep(1);
+          setActiveTab('consumer_dispute');
+        }}
+        onPrefillCrime={payload => {
+          setCrimeType(payload.crimeType);
+          setSeverity(payload.severity);
+          setDistrict(payload.district);
+          setThana(payload.thana);
+          setLocationName(payload.locationName);
+          setCrimeTitle(payload.title);
+          setCrimeDesc(payload.description);
+          setCrimeStep(1);
+          setActiveTab('report_crime');
+        }}
+        onOpenCaseChat={caseData => setActiveChatCase(caseData)}
+        onTriggerSOS={() => {
+          setActiveTab('sos');
+          setShowSOSConfirmModal(true);
+        }}
+      />
     </div>
   );
 };
