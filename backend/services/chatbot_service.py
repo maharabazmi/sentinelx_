@@ -371,6 +371,12 @@ class ChatbotService:
         gemini-2.5-flash -> gemini-2.0-flash -> gemini-2.0-flash-lite -> gemini-1.5-flash
         Automatically catches 503 (High Demand / Overloaded) and 429 (Quota) and cascades immediately.
         """
+        try:
+            from dotenv import load_dotenv
+            load_dotenv(override=True)
+        except Exception:
+            pass
+
         api_keys = [
             k.strip()
             for k in [os.getenv("GEMINI_API_KEY"), os.getenv("GEMINI_API_KEY_BACKUP")]
@@ -414,10 +420,14 @@ class ChatbotService:
         for api_key in api_keys:
             for model_name in GEMINI_MODEL_CASCADE:
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+                headers = {
+                    "Content-Type": "application/json",
+                    "x-goog-api-key": api_key,
+                }
                 req = urllib.request.Request(
                     url,
                     data=body_bytes,
-                    headers={"Content-Type": "application/json"},
+                    headers=headers,
                     method="POST",
                 )
                 try:
