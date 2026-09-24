@@ -395,10 +395,10 @@ export const CitizenAICopilot: React.FC<CitizenAICopilotProps> = ({
                               type="button"
                               onClick={() => {
                                 onOpenCaseChat({
-                                  caseId: action.id,
+                                  caseId: action.trackingNumber || action.id,
                                   caseType: action.caseType,
-                                  title: `${action.trackingNumber} — ${action.title}`,
-                                  officer: action.assignedOfficer
+                                  title: action.title,
+                                  officer: action.assignedOfficer || (action.caseType === 'CONSUMER' ? 'DNCRP Directorate' : 'Investigating Officer')
                                 });
                                 setIsOpen(false);
                               }}
