@@ -420,8 +420,11 @@ Portal URL: ${window.location.origin}`;
     setIsExportingCrimeCSV(true);
     try {
       const res = await ApiClient.getAdminCrimeReports();
+
+      // BUG FIX: check emptiness without early return (which bypassed finally)
       if (!res.success || !res.reports || res.reports.length === 0) {
         alert('No crime incident data available to export.');
+        setIsExportingCrimeCSV(false);
         return;
       }
 
@@ -441,7 +444,7 @@ Portal URL: ${window.location.origin}`;
         'Assigned Station',
         'Confidentiality Requested',
         'Evidence Files Count',
-        'FIR Charges'
+        'Investigation Status'
       ];
 
       const escapeCSV = (val: any) => {
@@ -452,7 +455,7 @@ Portal URL: ${window.location.origin}`;
 
       const rows = res.reports.map((r: CrimeReport) => [
         escapeCSV(r.id),
-        escapeCSV(r.caseId || (r as any).trackingNumber || r.id),
+        escapeCSV(r.caseId || r.id),
         escapeCSV(r.title),
         escapeCSV(r.crimeType),
         escapeCSV(r.severity),
@@ -461,16 +464,22 @@ Portal URL: ${window.location.origin}`;
         escapeCSV(r.thana),
         escapeCSV(r.locationName),
         escapeCSV(r.occurredAt),
-        escapeCSV(r.submittedAt || (r as any).createdAt),
+        escapeCSV(r.submittedAt),
         escapeCSV(r.assignedOfficerName || 'Unassigned'),
-        escapeCSV(r.assignedOfficerStation || (r as any).assignedStation || `${r.thana} Police Station`),
+        escapeCSV(r.assignedOfficerStation || `${r.thana} Police Station`),
         escapeCSV(r.requestConfidentiality ? 'YES' : 'NO'),
-        escapeCSV(r.evidence ? r.evidence.length : 0),
-        escapeCSV((r as any).charges || (r as any).courtFIRNumber || 'Pending FIR')
+        escapeCSV(Array.isArray(r.evidence) ? r.evidence.length : 0),
+        escapeCSV(r.status === 'CASE_CLOSED' ? 'Closed' : r.status === 'INVESTIGATION' ? 'Under Investigation' : 'Active')
       ]);
 
-      const csvContent = [headers.map(h => `"${h}"`).join(','), ...rows.map(r => r.join(','))].join('\r\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const csvContent = [
+        headers.map(h => `"${h}"`).join(','),
+        ...rows.map(r => r.join(','))
+      ].join('\r\n');
+
+      // Add UTF-8 BOM so Excel opens it correctly
+      const bom = '\uFEFF';
+      const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       const dateStr = new Date().toISOString().slice(0, 10);
@@ -480,6 +489,13 @@ Portal URL: ${window.location.origin}`;
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+
+      // Log export in audit trail
+      try {
+        await ApiClient.logAdminAuditExport(res.reports.length);
+      } catch (_) {
+        // Non-critical: don't block the user if audit logging fails
+      }
     } catch (err: any) {
       alert(err.message || 'Failed to export crime statistics.');
     } finally {
