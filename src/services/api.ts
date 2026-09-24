@@ -214,6 +214,18 @@ export class ApiClient {
     return this.request(`/citizen/notifications/${id}/read`, { method: 'POST' });
   }
 
+  static async downloadRewardEcheck(complaintId: string): Promise<Blob> {
+    const token = this.getToken();
+    const response = await fetch(`${API_BASE}/citizen/consumer/rewards/${complaintId}/e-check.pdf`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || `Request failed with status ${response.status}`);
+    }
+    return response.blob();
+  }
+
   static async lookupBarcode(barcode: string): Promise<{ success: boolean; found: boolean; product?: BarcodeVerification; message?: string }> {
     return this.request(`/citizen/barcode/${encodeURIComponent(barcode)}`);
   }

@@ -7,12 +7,14 @@ import {
   UserPlus,
   PhoneCall,
   ChevronDown,
+  Download,
   Moon,
   Sun
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { UserRole } from '../../types';
+import { ApiClient } from '../../services/api';
 
 import { BrandLogo } from './BrandLogo';
 
@@ -42,6 +44,20 @@ export const Header: React.FC<HeaderProps> = ({
   const { theme, setTheme } = useTheme();
 
   const [showNotifications, setShowNotifications] = useState(false);
+
+  const handleDownloadRewardEcheck = async (complaintId: string) => {
+    try {
+      const blob = await ApiClient.downloadRewardEcheck(complaintId);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'reward-e-check.pdf';
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(err.message || 'Unable to download the reward e-check.');
+    }
+  };
   const [showHotlines, setShowHotlines] = useState(false);
   const [emblemClicks, setEmblemClicks] = useState(0);
   const clickTimerRef = useRef<any>(null);
@@ -273,6 +289,20 @@ export const Header: React.FC<HeaderProps> = ({
                               )}
                             </div>
                             <p className="text-[11px] text-slate-300 mt-1 leading-relaxed">{notif.message}</p>
+                            {notif.type === 'REWARD_COMPENSATION' && notif.relatedId && (
+                              <button
+                                type="button"
+                                onClick={event => {
+                                  event.stopPropagation();
+                                  markNotificationRead(notif.id);
+                                  handleDownloadRewardEcheck(notif.relatedId!);
+                                }}
+                                className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1.5 text-[11px] font-bold text-emerald-300 hover:bg-emerald-500/20"
+                              >
+                                <Download className="h-3.5 w-3.5" />
+                                Download E-Check PDF
+                              </button>
+                            )}
                             <span className="text-[10px] text-slate-500 block mt-1.5 font-mono">
                               {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>

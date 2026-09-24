@@ -240,6 +240,9 @@ export interface ConsumerComplaint {
   investigationSummary?: string;
   finalFinding?: string;
   rewardAmount?: number;
+  rewardStatus?: 'FINE_COLLECTED' | 'REWARD_CALCULATED' | 'APPROVED' | 'READY_FOR_COLLECTION' | 'PAID';
+  paymentReference?: string;
+  rewardPaidAt?: string;
   penaltyImposed?: string;
   assignedOfficerName?: string;
   assignedOfficerId?: string;

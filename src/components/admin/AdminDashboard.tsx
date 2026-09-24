@@ -57,6 +57,14 @@ const normalizeAdminPhone = (value: string) => {
   return digits ? `+${digits}` : '';
 };
 
+const formatAdminPhone = (value: string) => {
+  let digits = value.replace(/\D/g, '');
+  if (digits.startsWith('880')) digits = digits.slice(3);
+  if (digits.startsWith('0')) digits = digits.slice(1);
+  if (!digits) return '+880';
+  return `+880${digits.slice(0, 5)}${digits.length > 5 ? `-${digits.slice(5)}` : ''}`;
+};
+
 export const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'system_overview' | 'ai_prediction' | 'audit_trail' | 'user_management'>('system_overview');
@@ -92,13 +100,12 @@ export const AdminDashboard: React.FC = () => {
   const [newFullName, setNewFullName] = useState('');
   const [newNID, setNewNID] = useState('');
   const [newEmail, setNewEmail] = useState('');
-  const [newPhone, setNewPhone] = useState('');
-  const [newRole, setNewRole] = useState<UserRole>(UserRole.POLICE);
+  const [newPhone, setNewPhone] = useState('+880');
+  const [newRole, setNewRole] = useState<UserRole | ''>('');
   const [newBadge, setNewBadge] = useState('');
   const [newDesignation, setNewDesignation] = useState('');
   const [newDepartment, setNewDepartment] = useState('');
   const [policeDistrict, setPoliceDistrict] = useState('Dhaka');
-  const [dncrpDistrict, setDncrpDistrict] = useState('Dhaka');
   const [policeThana, setPoliceThana] = useState('');
   const [newStation, setNewStation] = useState('');
 
@@ -270,6 +277,9 @@ Portal URL: ${window.location.origin}`;
   // Create Authority User
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newRole) return;
+    const phoneDigits = newPhone.replace(/\D/g, '').replace(/^880/, '');
+    if (phoneDigits.length > 10) return;
     if (newPassword !== confirmNewPassword) {
       return;
     }
@@ -286,12 +296,11 @@ Portal URL: ${window.location.origin}`;
         fullName: newFullName,
         nidNumber: newNID,
         email: newEmail,
-        phone: newPhone,
+        phone: normalizeAdminPhone(newPhone),
         role: newRole,
         badgeNumber: newBadge,
         designation: newDesignation,
-        department: newRole === UserRole.POLICE ? newDepartment : undefined,
-        assignedDistrict: newRole === UserRole.CONSUMER_RIGHTS ? dncrpDistrict : undefined,
+        department: newRole === UserRole.POLICE || newRole === UserRole.CONSUMER_RIGHTS ? newDepartment : undefined,
         stationOrThana: newStation,
         password: newPassword
       });
@@ -308,12 +317,12 @@ Portal URL: ${window.location.origin}`;
         setNewFullName('');
         setNewNID('');
         setNewEmail('');
-        setNewPhone('');
+        setNewPhone('+880');
+        setNewRole('');
         setNewBadge('');
         setNewDesignation('');
         setNewDepartment('');
         setPoliceThana('');
-        setDncrpDistrict('Dhaka');
         setNewStation('');
         setNewPassword('');
         setConfirmNewPassword('');
@@ -1372,7 +1381,9 @@ Portal URL: ${window.location.origin}`;
                   value={newRole}
                   onChange={e => setNewRole(e.target.value as UserRole)}
                   className="sx-input"
+                  required
                 >
+                  <option value="" disabled>Select role</option>
                   <option value={UserRole.POLICE}>Police Authority (DMP/CID)</option>
                   <option value={UserRole.CONSUMER_RIGHTS}>Consumer Rights (DNCRP Authority)</option>
                   <option value={UserRole.ADMIN}>System Administrator</option>
@@ -1398,10 +1409,15 @@ Portal URL: ${window.location.origin}`;
                   <input
                     type="text"
                     value={newPhone}
-                    onChange={e => setNewPhone(e.target.value)}
+                    onChange={e => setNewPhone(formatAdminPhone(e.target.value))}
+                    placeholder="+88017123-456789"
+                    aria-invalid={newPhone.replace(/\D/g, '').replace(/^880/, '').length > 10}
                     className="sx-input"
                     required
                   />
+                  {newPhone.replace(/\D/g, '').replace(/^880/, '').length > 10 && (
+                    <p className="mt-1 text-xs font-semibold text-rose-400">Phone number cannot exceed 10 digits after +880.</p>
+                  )}
                 </div>
               </div>
 
@@ -1531,17 +1547,15 @@ Portal URL: ${window.location.origin}`;
                         </select>
                       </div>
                       <div>
-                        <label className="block font-semibold text-slate-300 mb-1">Assigned DNCRP District</label>
-                        <select
-                          value={dncrpDistrict}
-                          onChange={e => setDncrpDistrict(e.target.value)}
+                        <label className="block font-semibold text-slate-300 mb-1">Department</label>
+                        <input
+                          type="text"
+                          value={newDepartment}
+                          onChange={e => setNewDepartment(e.target.value)}
+                          placeholder="e.g. Consumer Rights Enforcement"
                           className="sx-input"
                           required
-                        >
-                          {BANGLADESH_DIVISIONS.flatMap(div => div.districts).map(district => (
-                            <option key={district.id} value={district.name}>{district.name} ({district.nameBn})</option>
-                          ))}
-                        </select>
+                        />
                       </div>
                     </div>
                   )}

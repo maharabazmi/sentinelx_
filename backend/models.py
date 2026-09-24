@@ -304,6 +304,9 @@ class ConsumerComplaint(Base):
     investigationSummary = Column(Text, nullable=True)
     finalFinding = Column(Text, nullable=True)
     rewardAmount = Column(Float, nullable=True)
+    rewardStatus = Column(String(32), nullable=True)
+    paymentReference = Column(String(128), nullable=True)
+    rewardPaidAt = Column(String(64), nullable=True)
     penaltyImposed = Column(Text, nullable=True)
     assignedOfficerName = Column(String(128), nullable=True)
     assignedOfficerId = Column(String(64), nullable=True)
@@ -359,6 +362,9 @@ class ConsumerComplaint(Base):
             "investigationSummary": self.investigationSummary,
             "finalFinding": self.finalFinding,
             "rewardAmount": self.rewardAmount,
+            "rewardStatus": self.rewardStatus,
+            "paymentReference": self.paymentReference,
+            "rewardPaidAt": self.rewardPaidAt,
             "penaltyImposed": self.penaltyImposed,
             "assignedOfficerName": self.assignedOfficerName,
             "assignedOfficerId": self.assignedOfficerId,
