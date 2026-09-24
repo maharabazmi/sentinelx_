@@ -96,12 +96,13 @@ export const ConsumerDashboard: React.FC = () => {
   const [newBarcodeStatus, setNewBarcodeStatus] = useState<'AUTHENTIC' | 'COUNTERFEIT_FLAGGED'>('AUTHENTIC');
   const [showAddBarcodeModal, setShowAddBarcodeModal] = useState(false);
 
-  const fetchConsumerData = async (scope = queueScope) => {
-    setIsLoading(true);
+  const fetchConsumerData = async (scopeArg?: string | unknown, silent = false) => {
+    const effectiveScope = typeof scopeArg === 'string' ? scopeArg : queueScope;
+    if (!silent) setIsLoading(true);
     try {
       const [sumRes, compRes, barRes] = await Promise.all([
-        ApiClient.getConsumerSummary({ scope }),
-        ApiClient.getConsumerComplaints({ scope }),
+        ApiClient.getConsumerSummary({ scope: effectiveScope }),
+        ApiClient.getConsumerComplaints({ scope: effectiveScope }),
         ApiClient.getBarcodes()
       ]);
 
@@ -111,7 +112,7 @@ export const ConsumerDashboard: React.FC = () => {
     } catch (err) {
       console.error('Error fetching consumer rights data:', err);
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   };
 
@@ -124,8 +125,8 @@ export const ConsumerDashboard: React.FC = () => {
       setQueueScope('unassigned');
       return;
     }
-    fetchConsumerData(queueScope);
-    const interval = setInterval(() => fetchConsumerData(queueScope), isIntakeOfficer ? 3000 : 10000);
+    fetchConsumerData(queueScope, false);
+    const interval = setInterval(() => fetchConsumerData(queueScope, true), isIntakeOfficer ? 5000 : 10000);
     return () => clearInterval(interval);
   }, [queueScope, isIntakeOfficer]);
 
@@ -161,7 +162,10 @@ export const ConsumerDashboard: React.FC = () => {
         setSelectedComplaint(null);
         setInspectorNotes('');
         setFineAmount('50000');
-        fetchConsumerData(queueScope);
+        if (status === ComplaintStatus.REJECTED && isIntakeOfficer) {
+          setActiveQueueTab('rejected');
+        }
+        await fetchConsumerData(queueScope, false);
       }
     } catch (err: any) {
       alert(err.message || 'Failed to update complaint record.');
@@ -188,7 +192,12 @@ export const ConsumerDashboard: React.FC = () => {
         setSelectedInvestigationOfficer('');
         setSelectedAdjudicationOfficer('');
         setInspectorNotes('');
-        fetchConsumerData(queueScope);
+        if (isIntakeOfficer) {
+          setActiveQueueTab('handed_over');
+        } else if (isInvestigationOfficer) {
+          setActiveQueueTab('completed');
+        }
+        await fetchConsumerData(queueScope, false);
       }
     } catch (err: any) {
       alert(err.message || 'Failed to hand over dispute.');
@@ -214,7 +223,7 @@ export const ConsumerDashboard: React.FC = () => {
         setNewBarcode('');
         setNewProductName('');
         setNewCompanyName('');
-        fetchConsumerData();
+        fetchConsumerData(queueScope, false);
       }
     } catch (err: any) {
       alert(err.message || 'Failed to register barcode.');
@@ -223,23 +232,88 @@ export const ConsumerDashboard: React.FC = () => {
 
   const queueTabs = isIntakeOfficer
     ? [
-        { id: 'intake', label: 'Intake Queue', match: (complaint: ConsumerComplaint) => complaint.status === ComplaintStatus.SUBMITTED || (complaint.status === ComplaintStatus.UNDER_REVIEW && (complaint.workflowQueue === 'INTAKE' || !complaint.workflowQueue)) },
-        { id: 'rejected', label: 'Rejected', match: (complaint: ConsumerComplaint) => complaint.status === ComplaintStatus.REJECTED || complaint.workflowQueue === 'REJECTED' },
-        { id: 'handed_over', label: 'Handed Over', match: (complaint: ConsumerComplaint) => complaint.workflowQueue === 'INVESTIGATION' || complaint.status === ComplaintStatus.INVESTIGATION }
+        {
+          id: 'intake',
+          label: 'Intake Queue',
+          match: (complaint: ConsumerComplaint) =>
+            complaint.status === ComplaintStatus.SUBMITTED ||
+            (complaint.status === ComplaintStatus.UNDER_REVIEW && (complaint.workflowQueue === 'INTAKE' || !complaint.workflowQueue))
+        },
+        {
+          id: 'rejected',
+          label: 'Rejected',
+          match: (complaint: ConsumerComplaint) =>
+            complaint.status === ComplaintStatus.REJECTED || complaint.workflowQueue === 'REJECTED'
+        },
+        {
+          id: 'handed_over',
+          label: 'Handed Over',
+          match: (complaint: ConsumerComplaint) =>
+            complaint.workflowQueue === 'INVESTIGATION' ||
+            complaint.workflowQueue === 'ADJUDICATION' ||
+            complaint.workflowQueue === 'COMPLETED' ||
+            complaint.status === ComplaintStatus.INVESTIGATION ||
+            complaint.status === ComplaintStatus.INVESTIGATION_SUMMARY ||
+            complaint.status === ComplaintStatus.ADJUDICATION_REVIEW ||
+            complaint.status === ComplaintStatus.FINAL_DECISION ||
+            complaint.status === ComplaintStatus.RESOLVED
+        }
       ]
     : isInvestigationOfficer
       ? [
-          { id: 'investigation_queue', label: 'Investigation Queue', match: (complaint: ConsumerComplaint) => (complaint.status === ComplaintStatus.UNDER_REVIEW && complaint.workflowQueue === 'INVESTIGATION') || (complaint.workflowQueue === 'INVESTIGATION' && !complaint.assignedOfficerId) },
-          { id: 'assigned', label: 'My Assigned Cases', match: (complaint: ConsumerComplaint) => complaint.status === ComplaintStatus.INVESTIGATION && complaint.assignedOfficerId === user?.id },
-          { id: 'under_investigation', label: 'Under Investigation', match: (complaint: ConsumerComplaint) => complaint.status === ComplaintStatus.INVESTIGATION || complaint.workflowQueue === 'INVESTIGATION' },
-          { id: 'completed', label: 'Completed Investigations', match: (complaint: ConsumerComplaint) => complaint.status === ComplaintStatus.INVESTIGATION_SUMMARY || complaint.workflowQueue === 'ADJUDICATION' }
+          {
+            id: 'investigation_queue',
+            label: 'Investigation Queue',
+            match: (complaint: ConsumerComplaint) =>
+              (complaint.status === ComplaintStatus.UNDER_REVIEW && complaint.workflowQueue === 'INVESTIGATION') ||
+              (complaint.workflowQueue === 'INVESTIGATION' && complaint.status !== ComplaintStatus.INVESTIGATION_SUMMARY)
+          },
+          {
+            id: 'assigned',
+            label: 'My Assigned Cases',
+            match: (complaint: ConsumerComplaint) =>
+              (complaint.status === ComplaintStatus.INVESTIGATION || complaint.status === ComplaintStatus.UNDER_REVIEW) &&
+              complaint.assignedOfficerId === user?.id
+          },
+          {
+            id: 'under_investigation',
+            label: 'Under Investigation',
+            match: (complaint: ConsumerComplaint) =>
+              complaint.status === ComplaintStatus.INVESTIGATION || complaint.workflowQueue === 'INVESTIGATION'
+          },
+          {
+            id: 'completed',
+            label: 'Completed Investigations',
+            match: (complaint: ConsumerComplaint) =>
+              complaint.status === ComplaintStatus.INVESTIGATION_SUMMARY || complaint.workflowQueue === 'ADJUDICATION' || complaint.workflowQueue === 'COMPLETED'
+          }
         ]
       : isAdjudicationOfficer
         ? [
-            { id: 'adjudication_queue', label: 'Adjudication Queue', match: (complaint: ConsumerComplaint) => (complaint.status === ComplaintStatus.INVESTIGATION_SUMMARY && complaint.workflowQueue === 'ADJUDICATION') || complaint.workflowQueue === 'ADJUDICATION' },
-            { id: 'under_review', label: 'Under Review', match: (complaint: ConsumerComplaint) => complaint.status === ComplaintStatus.ADJUDICATION_REVIEW },
-            { id: 'decided', label: 'Decided Cases', match: (complaint: ConsumerComplaint) => complaint.status === ComplaintStatus.FINAL_DECISION || complaint.status === ComplaintStatus.RESOLVED },
-            { id: 'reward', label: 'Reward/Compensation', match: (complaint: ConsumerComplaint) => complaint.status === ComplaintStatus.RESOLVED && complaint.rewardAmount != null }
+            {
+              id: 'adjudication_queue',
+              label: 'Adjudication Queue',
+              match: (complaint: ConsumerComplaint) =>
+                (complaint.status === ComplaintStatus.INVESTIGATION_SUMMARY && complaint.workflowQueue === 'ADJUDICATION') ||
+                complaint.workflowQueue === 'ADJUDICATION'
+            },
+            {
+              id: 'under_review',
+              label: 'Under Review',
+              match: (complaint: ConsumerComplaint) => complaint.status === ComplaintStatus.ADJUDICATION_REVIEW
+            },
+            {
+              id: 'decided',
+              label: 'Decided Cases',
+              match: (complaint: ConsumerComplaint) =>
+                complaint.status === ComplaintStatus.FINAL_DECISION || complaint.status === ComplaintStatus.RESOLVED
+            },
+            {
+              id: 'reward',
+              label: 'Reward/Compensation',
+              match: (complaint: ConsumerComplaint) =>
+                complaint.status === ComplaintStatus.RESOLVED && complaint.rewardAmount != null
+            }
           ]
         : [
             { id: 'all_complaints', label: 'All Disputes', match: () => true },
@@ -310,7 +384,7 @@ export const ConsumerDashboard: React.FC = () => {
             </button>
 
             <button
-              onClick={fetchConsumerData}
+              onClick={() => fetchConsumerData(queueScope, false)}
               className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-[#02baff]/20 transition hover:border-[#02baff]/50"
               title="Refresh telemetry"
             >

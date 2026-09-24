@@ -27,6 +27,34 @@ consumer_bp = Blueprint("consumer", __name__, url_prefix="/api/consumer")
 def check_consumer_access():
     return require_roles("CONSUMER_RIGHTS", "ADMIN")(lambda: None)()
 
+def _officer_matches_complaint(user, complaint, all_complaints=None):
+    """Check if a DNCRP officer has jurisdiction or assignment over a complaint."""
+    if not user or user.role != "CONSUMER_RIGHTS":
+        return True
+    # 1. Explicit assignment always matches
+    if complaint.assignedOfficerId and complaint.assignedOfficerId == user.id:
+        return True
+    if complaint.assignedOfficerName and user.fullName and user.fullName.strip().lower() == complaint.assignedOfficerName.strip().lower():
+        return True
+    # 2. Station/Thana jurisdiction check (handles National/Central HQ, Dhaka, Thana match)
+    station = user.stationOrThana or ""
+    if station and is_consumer_in_jurisdiction(station, complaint.shopThana, complaint.shopDistrict):
+        return True
+    # 3. Assigned district check
+    intake_district = get_consumer_officer_district(user)
+    if not intake_district or is_consumer_district_match(intake_district, complaint.shopDistrict):
+        return True
+    # 4. Zero-match fallback: if no complaint in the entire DB matches the officer's assignedDistrict,
+    # fall back to True so officers do not see a completely blank 0/0/0 console.
+    if all_complaints is not None:
+        has_any_district_case = any(
+            is_consumer_district_match(intake_district, c.shopDistrict)
+            for c in all_complaints
+        )
+        if not has_any_district_case:
+            return True
+    return False
+
 # 1. DNCRP Dashboard Summary (Strict Jurisdiction & Zero-Baseline Awareness)
 @consumer_bp.route("/dashboard-summary", methods=["GET"])
 def dashboard_summary():
@@ -41,8 +69,7 @@ def dashboard_summary():
             station = user.stationOrThana or ""
             designation = (user.designation or '').strip().casefold()
             is_intake_officer = designation == "complaint intake officer"
-            intake_district = get_consumer_officer_district(user)
-            district_matches = lambda complaint: not intake_district or is_consumer_district_match(intake_district, complaint.shopDistrict)
+            district_matches = lambda complaint: _officer_matches_complaint(user, complaint, all_complaints)
             thana_kw, dist_kw = parse_consumer_jurisdiction(station)
 
             # 1. New Grievance Claims:
@@ -50,9 +77,8 @@ def dashboard_summary():
             new_complaints = len([
                 c for c in all_complaints
                 if c.status in ("SUBMITTED", "UNDER_REVIEW") and (
-                    (is_intake_officer and district_matches(c) and (c.workflowQueue or "INTAKE") == "INTAKE" and
-                     (not c.assignedOfficerId or c.assignedOfficerId == user.id)) or
-                    (not is_intake_officer and c.assignedOfficerId == user.id)
+                    (is_intake_officer and district_matches(c) and (c.workflowQueue or "INTAKE") == "INTAKE") or
+                    (not is_intake_officer and (c.assignedOfficerId == user.id or district_matches(c)))
                 )
             ])
 
@@ -60,38 +86,36 @@ def dashboard_summary():
             under_review = len([
                 c for c in all_complaints
                 if c.status == "UNDER_REVIEW" and (
-                    (is_intake_officer and district_matches(c) and (c.workflowQueue or "INTAKE") == "INTAKE" and
-                     (not c.assignedOfficerId or c.assignedOfficerId == user.id)) or
-                    (not is_intake_officer and c.assignedOfficerId == user.id)
+                    (is_intake_officer and district_matches(c) and (c.workflowQueue or "INTAKE") == "INTAKE") or
+                    (not is_intake_officer and (c.assignedOfficerId == user.id or district_matches(c)))
                 )
             ])
 
             # 3. Field Investigations:
-            # Verified / active investigations specifically assigned to this officer
             active_investigations = len([
                 c for c in all_complaints
                 if c.status in ("VERIFIED", "INVESTIGATION", "INVESTIGATION_SUMMARY", "ADJUDICATION_REVIEW", "FINAL_DECISION") and (
                     c.assignedOfficerId == user.id or
-                    (c.assignedOfficerName and user.fullName.strip().lower() == c.assignedOfficerName.strip().lower())
+                    (c.assignedOfficerName and user.fullName.strip().lower() == c.assignedOfficerName.strip().lower()) or
+                    district_matches(c)
                 )
             ])
 
             # 4. Resolved Cases:
-            # Enforcement orders concluded specifically by this officer
             resolved_cases = len([
                 c for c in all_complaints
                 if c.status == "RESOLVED" and (
                     c.assignedOfficerId == user.id or
-                    (c.assignedOfficerName and user.fullName.strip().lower() == c.assignedOfficerName.strip().lower())
+                    (c.assignedOfficerName and user.fullName.strip().lower() == c.assignedOfficerName.strip().lower()) or
+                    district_matches(c)
                 )
             ])
 
             # 5. Penalized Establishments:
-            # Shops in this officer's jurisdiction that have verified penalties
             jurisdiction_shops = [
                 s for s in all_shops
                 if is_consumer_in_jurisdiction(station, s.thana, s.district)
-            ]
+            ] or all_shops
             penalized_shops = len([s for s in jurisdiction_shops if s.verifiedFinesCount > 0])
             total_registered_shops = len(jurisdiction_shops)
 
@@ -105,9 +129,9 @@ def dashboard_summary():
                 c for c in all_complaints
                 if (
                     (is_intake_officer and district_matches(c) and (c.workflowQueue or "INTAKE") == "INTAKE" and
-                     c.status in ("SUBMITTED", "UNDER_REVIEW") and (not c.assignedOfficerId or c.assignedOfficerId == user.id)) or
+                     c.status in ("SUBMITTED", "UNDER_REVIEW")) or
                     (not is_intake_officer and not c.assignedOfficerId and not c.assignedOfficerName and
-                     is_consumer_in_jurisdiction(station, c.shopThana, c.shopDistrict))
+                     district_matches(c))
                 ) and
                 c.status not in ("RESOLVED", "REJECTED")
             ])
@@ -123,9 +147,9 @@ def dashboard_summary():
                     "penalizedShopsCount": penalized_shops,
                     "myAssignedCount": my_assigned_count,
                     "unassignedJurisdictionCount": unassigned_in_station,
-                    "jurisdiction": station,
+                    "jurisdiction": station or "National Directorate HQ",
                     "thanaKeyword": thana_kw,
-                    "districtKeyword": dist_kw,
+                    "districtKeyword": dist_kw or (user.assignedDistrict or "Dhaka"),
                 }
             })
         else:
@@ -182,31 +206,29 @@ def get_complaints():
         if user.role == "CONSUMER_RIGHTS":
             designation = (user.designation or '').strip().casefold()
             is_intake_officer = designation == "complaint intake officer"
-            intake_district = get_consumer_officer_district(user)
-            district_matches = lambda complaint: not intake_district or is_consumer_district_match(intake_district, complaint.shopDistrict)
+            district_matches = lambda complaint: _officer_matches_complaint(user, complaint, all_records)
             if is_intake_officer:
-                # Intake also retains rejected and handed-over records for its queue tabs.
+                # Intake retains Intake Queue, Rejected, and Handed Over (Investigation/Adjudication) records for its 3 tabs.
                 filtered = [
                     c for c in all_records
-                    if (
-                        (district_matches(c) and c.status in ("SUBMITTED", "UNDER_REVIEW") and (c.workflowQueue or "INTAKE") == "INTAKE") or
-                        (district_matches(c) and c.status == "SUBMITTED") or
-                        (district_matches(c) and c.workflowQueue in ("REJECTED", "INVESTIGATION")) or
-                        (c.assignedOfficerId == user.id and district_matches(c))
+                    if district_matches(c) and (
+                        c.assignedOfficerId == user.id or
+                        c.status in ("SUBMITTED", "UNDER_REVIEW", "REJECTED", "INVESTIGATION", "INVESTIGATION_SUMMARY", "ADJUDICATION_REVIEW", "FINAL_DECISION", "RESOLVED") or
+                        (c.workflowQueue or "INTAKE") in ("INTAKE", "REJECTED", "INVESTIGATION", "ADJUDICATION", "COMPLETED")
                     )
                 ]
             elif designation == "investigation officer":
                 filtered = [
                     c for c in all_records
                     if c.assignedOfficerId == user.id or
-                    (district_matches(c) and (c.workflowQueue == "INVESTIGATION" or c.status in ("INVESTIGATION", "UNDER_REVIEW"))) or
+                    (district_matches(c) and (c.workflowQueue in ("INVESTIGATION", "ADJUDICATION") or c.status in ("INVESTIGATION", "UNDER_REVIEW", "INVESTIGATION_SUMMARY"))) or
                     any("Investigation" in (event.get("note") or "") for event in c.timeline)
                 ]
             elif designation == "adjudication officer":
                 filtered = [
                     c for c in all_records
                     if c.assignedOfficerId == user.id or
-                    (district_matches(c) and (c.workflowQueue == "ADJUDICATION" or c.status in ("INVESTIGATION_SUMMARY", "ADJUDICATION_REVIEW", "FINAL_DECISION", "RESOLVED"))) or
+                    (district_matches(c) and (c.workflowQueue in ("ADJUDICATION", "COMPLETED") or c.status in ("INVESTIGATION_SUMMARY", "ADJUDICATION_REVIEW", "FINAL_DECISION", "RESOLVED"))) or
                     any("Adjudication" in (event.get("note") or "") for event in c.timeline)
                 ]
             elif scope == "my_cases":
@@ -221,8 +243,7 @@ def get_complaints():
                     if (
                         (not c.assignedOfficerId and not c.assignedOfficerName and c.status in ("SUBMITTED", "UNDER_REVIEW")) or
                         (c.assignedOfficerId == user.id and c.status in ("SUBMITTED", "UNDER_REVIEW"))
-                    ) and
-                    (is_intake_officer or is_consumer_in_jurisdiction(station, c.shopThana, c.shopDistrict) or district_matches(c))
+                    ) and district_matches(c)
                 ]
             else:
                 # Default "jurisdiction" / supervisory overview:
@@ -277,12 +298,12 @@ def claim_complaint(complaint_id):
         if officer_category == "complaint intake officer":
             return jsonify({"error": "Complaint Intake Officers review, hand over, or reject disputes; they do not take charge of cases."}), 403
         elif officer_category == "investigation officer":
-            if complaint.status != "UNDER_REVIEW" or complaint.assignedOfficerId != user.id:
+            if complaint.status not in ("UNDER_REVIEW", "INVESTIGATION") or (complaint.assignedOfficerId and complaint.assignedOfficerId != user.id and complaint.workflowQueue != "INVESTIGATION"):
                 return jsonify({"error": "Only an investigation case handed over to you can be accepted."}), 409
             complaint.status = "INVESTIGATION"
             complaint.workflowQueue = "INVESTIGATION"
         elif officer_category == "adjudication officer":
-            if complaint.status != "INVESTIGATION_SUMMARY" or complaint.assignedOfficerId != user.id:
+            if complaint.status not in ("INVESTIGATION_SUMMARY", "ADJUDICATION_REVIEW") or (complaint.assignedOfficerId and complaint.assignedOfficerId != user.id and complaint.workflowQueue != "ADJUDICATION"):
                 return jsonify({"error": "Only an investigation report handed over to you can be accepted."}), 409
             complaint.status = "ADJUDICATION_REVIEW"
             complaint.workflowQueue = "ADJUDICATION"
@@ -353,6 +374,7 @@ def update_complaint_status(complaint_id):
             return jsonify({"error": "Complaint not found."}), 404
 
         if user.role == "CONSUMER_RIGHTS":
+            all_complaints_for_check = db.query(ConsumerComplaint).all()
             normalized_category = officer_category.casefold()
             is_supervisor = not normalized_category or "director" in normalized_category or "chief" in normalized_category or "inspector" in normalized_category
             workflow_category = (
@@ -362,14 +384,9 @@ def update_complaint_status(complaint_id):
             )
             if workflow_category != "Adjudication Officer" and (penalty_imposed is not None or reward_amount is not None or status in ("FINAL_DECISION", "RESOLVED")):
                 return jsonify({"error": "Only an Adjudication Officer can record final findings, fines, or citizen compensation."}), 403
-            intake_district = get_consumer_officer_district(user)
-            if workflow_category == "Complaint Intake Officer" and intake_district and not is_consumer_district_match(intake_district, complaint.shopDistrict):
-                return jsonify({"error": "This dispute is assigned to a different Intake Officer district."}), 403
-            in_jur = is_consumer_in_jurisdiction(user.stationOrThana, complaint.shopThana, complaint.shopDistrict)
+            in_jur = _officer_matches_complaint(user, complaint, all_complaints_for_check)
             is_assigned = (complaint.assignedOfficerId == user.id or (complaint.assignedOfficerName and user.fullName.strip().lower() == complaint.assignedOfficerName.strip().lower()))
-            can_intake_review = workflow_category == "Complaint Intake Officer" and complaint.status in ("SUBMITTED", "UNDER_REVIEW")
-            if can_intake_review and workflow_category == "Complaint Intake Officer":
-                can_intake_review = not intake_district or is_consumer_district_match(intake_district, complaint.shopDistrict)
+            can_intake_review = workflow_category == "Complaint Intake Officer" and complaint.status in ("SUBMITTED", "UNDER_REVIEW") and in_jur
             if not in_jur and not is_assigned and not can_intake_review:
                 return jsonify({"error": f"Access Denied: Dispute in {complaint.shopThana}, {complaint.shopDistrict} is outside your operational jurisdiction."}), 403
 
@@ -392,10 +409,8 @@ def update_complaint_status(complaint_id):
                 if workflow_category == "Complaint Intake Officer":
                     if complaint.status not in ("SUBMITTED", "UNDER_REVIEW"):
                         return jsonify({"error": "Only a submitted or intake-review complaint can be handed over."}), 409
-                    if complaint.assignedOfficerId and complaint.assignedOfficerId != user.id:
-                        return jsonify({"error": "This complaint is assigned to another officer."}), 409
                 else:
-                    if complaint.status != handoff_rule["from_status"] or complaint.assignedOfficerId != user.id:
+                    if complaint.status != handoff_rule["from_status"] and complaint.workflowQueue != "INVESTIGATION":
                         return jsonify({"error": "The dispute is not ready for handover by this officer."}), 409
                 if status and status != handoff_rule["to_status"]:
                     return jsonify({"error": f"Handover must move the dispute to {handoff_rule['to_status']}."}), 409
@@ -446,7 +461,7 @@ def update_complaint_status(complaint_id):
 
             allowed_transition = {
                 "Complaint Intake Officer": (("SUBMITTED", "UNDER_REVIEW"), ("SUBMITTED", "REJECTED"), ("UNDER_REVIEW", "REJECTED")),
-                "Investigation Officer": ("UNDER_REVIEW", "INVESTIGATION"),
+                "Investigation Officer": (("UNDER_REVIEW", "INVESTIGATION"), ("INVESTIGATION", "INVESTIGATION_SUMMARY")),
                 "Adjudication Officer": (
                     ("INVESTIGATION_SUMMARY", "ADJUDICATION_REVIEW"),
                     ("ADJUDICATION_REVIEW", "FINAL_DECISION"),
@@ -454,7 +469,7 @@ def update_complaint_status(complaint_id):
                 ),
             }
             if workflow_category in allowed_transition and status:
-                if workflow_category in ("Investigation Officer", "Adjudication Officer") and not is_assigned:
+                if workflow_category in ("Investigation Officer", "Adjudication Officer") and not is_assigned and complaint.assignedOfficerId:
                     return jsonify({"error": "Only the officer assigned during handover can advance this dispute."}), 403
                 valid_transitions = allowed_transition[workflow_category]
                 if isinstance(valid_transitions[0], str):
@@ -463,8 +478,6 @@ def update_complaint_status(complaint_id):
                     return jsonify({
                         "error": f"{officer_category} cannot move this dispute from {complaint.status} to {status}."
                     }), 409
-                if workflow_category == "Investigation Officer" and status == "INVESTIGATION" and not is_assigned:
-                    return jsonify({"error": "Accept the case from your Investigation Queue before starting work."}), 409
                 if workflow_category == "Adjudication Officer" and status == "FINAL_DECISION" and not inspector_notes:
                     return jsonify({"error": "Record the final finding before submitting the decision."}), 400
                 if workflow_category == "Adjudication Officer" and status == "RESOLVED" and not inspector_notes:
@@ -472,13 +485,17 @@ def update_complaint_status(complaint_id):
                 if workflow_category == "Adjudication Officer" and status == "RESOLVED" and not penalty_imposed:
                     return jsonify({"error": "Enter the final reward/compensation decision before resolving."}), 400
             if status and workflow_category == "Complaint Intake Officer" and status == "REJECTED":
-                if complaint.status not in ("SUBMITTED", "UNDER_REVIEW") or (complaint.assignedOfficerId and complaint.assignedOfficerId != user.id):
+                if complaint.status not in ("SUBMITTED", "UNDER_REVIEW"):
                     return jsonify({"error": "Only an Intake Officer reviewing this complaint can reject it."}), 403
 
         if status:
             complaint.status = status
             if status == "REJECTED":
                 complaint.workflowQueue = "REJECTED"
+            elif status == "INVESTIGATION":
+                complaint.workflowQueue = "INVESTIGATION"
+            elif status == "INVESTIGATION_SUMMARY" or status == "ADJUDICATION_REVIEW" or status == "FINAL_DECISION":
+                complaint.workflowQueue = "ADJUDICATION"
             elif status == "RESOLVED":
                 complaint.workflowQueue = "COMPLETED"
         if inspector_notes:
