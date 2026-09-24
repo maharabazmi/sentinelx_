@@ -296,8 +296,7 @@ export const ConsumerDashboard: React.FC = () => {
             const isInvestigationHandoffHistory =
               complaint.workflowQueue === 'INVESTIGATION' ||
               complaint.status === ComplaintStatus.INVESTIGATION ||
-              (complaint.status === ComplaintStatus.UNDER_REVIEW && complaint.workflowQueue === 'INVESTIGATION') ||
-              (complaint.status === ComplaintStatus.INVESTIGATION_SUMMARY && complaint.workflowQueue === 'INVESTIGATION');
+              complaint.status === ComplaintStatus.INVESTIGATION_SUMMARY;
 
             const isAdjudicationHandoff =
               complaint.workflowQueue === 'ADJUDICATION' ||
