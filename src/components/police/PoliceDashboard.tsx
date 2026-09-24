@@ -563,7 +563,7 @@ export const PoliceDashboard: React.FC = () => {
       {activeTab === 'case_management' && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {/* Station Jurisdiction & Queue Selector */}
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 p-4 rounded-2xl bg-slate-900 border border-slate-800">
+          <div className="flex flex-col gap-4 p-4 rounded-2xl bg-slate-900 border border-slate-800">
             <div>
               <div className="flex items-center gap-2">
                 <Shield className="w-4 h-4 text-blue-400" />
@@ -580,58 +580,60 @@ export const PoliceDashboard: React.FC = () => {
             </div>
 
             {/* Scope Toggle Pills */}
-            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-950 border border-slate-800 flex-wrap">
-              <button
-                type="button"
-                onClick={() => handleScopeChange('all_station')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
-                  reportQueueScope === 'all_station'
-                    ? 'bg-blue-600/30 text-blue-200 border border-blue-500/40 shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-                }`}
-              >
-                <Shield className="w-3.5 h-3.5 text-blue-400" />
-                <span>All Station Cases</span>
-              </button>
+            <div className="w-full">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 rounded-2xl bg-slate-100/60 p-1.5 border border-slate-300 shadow-inner shadow-slate-300/60">
+                <button
+                  type="button"
+                  onClick={() => handleScopeChange('all_station')}
+                  className={`w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[10.5px] sm:text-[11px] font-semibold tracking-wide transition-all duration-200 min-w-0 border ${
+                    reportQueueScope === 'all_station'
+                      ? 'bg-[#bddfe9] text-[#123a4d] shadow-sm ring-1 ring-[#7aa7b8] border-[#6e96a5]'
+                      : 'bg-[#dfeaf0] text-slate-700 hover:bg-[#d5e2e8] border-[#b9c9d0]'
+                  }`}
+                >
+                  <Shield className="w-3.5 h-3.5 text-[#1c4a62] shrink-0" />
+                  <span className="truncate">All Station Cases</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => handleScopeChange('my_cases')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
-                  reportQueueScope === 'my_cases'
-                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-                }`}
-              >
-                <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
-                <span>My Assigned Cases</span>
-                {stats?.myActiveCases !== undefined && (
-                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold ${
-                    stats.myActiveCases > 0 ? 'bg-emerald-500/30 text-emerald-200' : 'bg-slate-800 text-slate-400'
-                  }`}>
-                    {stats.myActiveCases}
-                  </span>
-                )}
-              </button>
+                <button
+                  type="button"
+                  onClick={() => handleScopeChange('my_cases')}
+                  className={`w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[10.5px] sm:text-[11px] font-semibold tracking-wide transition-all duration-200 min-w-0 border ${
+                    reportQueueScope === 'my_cases'
+                      ? 'bg-[#c6ebd3] text-[#1d4538] shadow-sm ring-1 ring-[#71a987] border-[#7fa88e]'
+                      : 'bg-[#eaf7ef] text-slate-700 hover:bg-[#dfeee5] border-[#c7ddcd]'
+                  }`}
+                >
+                  <UserCheck className="w-3.5 h-3.5 text-[#245d43] shrink-0" />
+                  <span className="truncate">My Assigned Cases</span>
+                  {stats?.myActiveCases !== undefined && (
+                    <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold shrink-0 ${
+                      stats.myActiveCases > 0 ? 'bg-[#b8e5c7] text-[#164b35]' : 'bg-slate-200 text-slate-600'
+                    }`}>
+                      {stats.myActiveCases}
+                    </span>
+                  )}
+                </button>
 
-              <button
-                type="button"
-                onClick={() => handleScopeChange('station_unassigned')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
-                  reportQueueScope === 'station_unassigned'
-                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-                }`}
-              >
-                <span>Station Queue (Unassigned)</span>
-                {stats?.stationUnassigned !== undefined && (
-                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold ${
-                    stats.stationUnassigned > 0 ? 'bg-amber-500/30 text-amber-200' : 'bg-slate-800 text-slate-400'
-                  }`}>
-                    {stats.stationUnassigned}
-                  </span>
-                )}
-              </button>
+                <button
+                  type="button"
+                  onClick={() => handleScopeChange('station_unassigned')}
+                  className={`w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[10.5px] sm:text-[11px] font-semibold tracking-wide transition-all duration-200 min-w-0 border ${
+                    reportQueueScope === 'station_unassigned'
+                      ? 'bg-[#f3db8c] text-[#553d00] shadow-sm ring-1 ring-[#caa94a] border-[#bb9840]'
+                      : 'bg-[#f8efcf] text-slate-700 hover:bg-[#f1e6bb] border-[#dccd8d]'
+                  }`}
+                >
+                  <span className="truncate">Station Queue (Unassigned)</span>
+                  {stats?.stationUnassigned !== undefined && (
+                    <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold shrink-0 ${
+                      stats.stationUnassigned > 0 ? 'bg-[#f1d36d] text-[#573d00]' : 'bg-slate-200 text-slate-600'
+                    }`}>
+                      {stats.stationUnassigned}
+                    </span>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
 
