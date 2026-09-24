@@ -106,7 +106,7 @@ class ChatbotService:
             my_reports = (
                 db.query(CrimeReport)
                 .filter(CrimeReport.reporterId == user.id)
-                .order_by(CrimeReport.reportedAt.desc())
+                .order_by(CrimeReport.submittedAt.desc())
                 .limit(5)
                 .all()
             )
