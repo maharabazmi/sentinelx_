@@ -239,6 +239,7 @@ export interface ConsumerComplaint {
   inspectorNotes?: string;
   investigationSummary?: string;
   finalFinding?: string;
+  fineAmount?: number;
   rewardAmount?: number;
   rewardStatus?: 'FINE_COLLECTED' | 'REWARD_CALCULATED' | 'APPROVED' | 'READY_FOR_COLLECTION' | 'PAID';
   paymentReference?: string;

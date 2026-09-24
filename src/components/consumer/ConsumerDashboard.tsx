@@ -161,6 +161,7 @@ export const ConsumerDashboard: React.FC = () => {
         status,
         inspectorNotes: effectiveInspectorNotes,
         penaltyImposed: penaltyStr,
+        fineAmount: status === ComplaintStatus.RESOLVED ? Number(fineAmount) : undefined,
         rewardAmount: status === ComplaintStatus.RESOLVED ? Number(fineAmount) * 0.25 : undefined
       });
 

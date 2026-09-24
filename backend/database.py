@@ -66,6 +66,7 @@ def init_db():
     for col_name, col_sql in [
         ("investigationSummary", "TEXT"),
         ("finalFinding", "TEXT"),
+        ("fineAmount", "FLOAT"),
         ("rewardAmount", "FLOAT"),
         ("rewardStatus", "VARCHAR(32)"),
         ("paymentReference", "VARCHAR(128)"),
