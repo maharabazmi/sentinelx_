@@ -957,7 +957,7 @@ export const CitizenDashboard: React.FC = () => {
                   Approximate Location Landmark <span className="text-emerald-400">*</span>
                 </label>
                 <div className="relative">
-                  <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
                     type="text"
                     value={locationName}
@@ -974,7 +974,7 @@ export const CitizenDashboard: React.FC = () => {
                   Date & Time of Occurrence <span className="text-emerald-400">*</span>
                 </label>
                 <div className="relative">
-                  <Calendar className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <Calendar className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
                     type="datetime-local"
                     value={occurredAt}
@@ -1448,7 +1448,7 @@ export const CitizenDashboard: React.FC = () => {
                   Product Barcode (EAN-13, if available)
                 </label>
                 <div className="relative">
-                  <Barcode className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <Barcode className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
                     type="text"
                     value={barcodeInput}
@@ -1474,14 +1474,14 @@ export const CitizenDashboard: React.FC = () => {
                         Official MRP on Pack (৳ BDT) <span className="text-amber-400">*</span>
                       </label>
                       <div className="relative">
-                        <span className="text-slate-400 font-bold absolute left-3.5 top-2.5 text-xs">৳</span>
+                        <span className="text-slate-400 font-bold absolute left-3.5 top-1/2 -translate-y-1/2 text-xs pointer-events-none">৳</span>
                         <input
                           type="number"
                           step="0.5"
                           value={mrp}
                           onChange={e => setMrp(e.target.value)}
                           placeholder="e.g. 175"
-                          className="sx-input"
+                          className="sx-input sx-input-with-icon"
                         />
                       </div>
                     </div>
@@ -1491,14 +1491,14 @@ export const CitizenDashboard: React.FC = () => {
                         Price Demanded / Paid (৳ BDT) <span className="text-amber-400">*</span>
                       </label>
                       <div className="relative">
-                        <span className="text-slate-400 font-bold absolute left-3.5 top-2.5 text-xs">৳</span>
+                        <span className="text-slate-400 font-bold absolute left-3.5 top-1/2 -translate-y-1/2 text-xs pointer-events-none">৳</span>
                         <input
                           type="number"
                           step="0.5"
                           value={pricePaid}
                           onChange={e => setPricePaid(e.target.value)}
                           placeholder="e.g. 210"
-                          className="sx-input"
+                          className="sx-input sx-input-with-icon"
                         />
                       </div>
                     </div>
@@ -1933,13 +1933,13 @@ export const CitizenDashboard: React.FC = () => {
 
             <div className="flex items-center gap-2">
               <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
                   value={reportSearchQuery}
                   onChange={e => setReportSearchQuery(e.target.value)}
                   placeholder="Search Case ID or title..."
-                  className="pl-9 pr-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                  className="sx-input sx-input-with-icon"
                 />
               </div>
 
@@ -2160,13 +2160,13 @@ export const CitizenDashboard: React.FC = () => {
 
             <div className="flex items-center gap-2">
               <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
                   value={complaintSearchQuery}
                   onChange={e => setComplaintSearchQuery(e.target.value)}
                   placeholder="Search tracking # or shop..."
-                  className="pl-9 pr-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                  className="sx-input sx-input-with-icon"
                 />
               </div>
 
@@ -2323,7 +2323,7 @@ export const CitizenDashboard: React.FC = () => {
                   Enter 13-Digit EAN Barcode
                 </label>
                 <div className="relative">
-                  <Barcode className="w-5 h-5 text-slate-400 absolute left-3.5 top-3" />
+                  <Barcode className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
                     type="text"
                     value={lookupBarcode}

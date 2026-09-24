@@ -420,8 +420,11 @@ Portal URL: ${window.location.origin}`;
     setIsExportingCrimeCSV(true);
     try {
       const res = await ApiClient.getAdminCrimeReports();
+
+      // BUG FIX: check emptiness without early return (which bypassed finally)
       if (!res.success || !res.reports || res.reports.length === 0) {
         alert('No crime incident data available to export.');
+        setIsExportingCrimeCSV(false);
         return;
       }
 
@@ -441,7 +444,7 @@ Portal URL: ${window.location.origin}`;
         'Assigned Station',
         'Confidentiality Requested',
         'Evidence Files Count',
-        'FIR Charges'
+        'Investigation Status'
       ];
 
       const escapeCSV = (val: any) => {
@@ -452,7 +455,7 @@ Portal URL: ${window.location.origin}`;
 
       const rows = res.reports.map((r: CrimeReport) => [
         escapeCSV(r.id),
-        escapeCSV(r.caseId || (r as any).trackingNumber || r.id),
+        escapeCSV(r.caseId || r.id),
         escapeCSV(r.title),
         escapeCSV(r.crimeType),
         escapeCSV(r.severity),
@@ -461,16 +464,22 @@ Portal URL: ${window.location.origin}`;
         escapeCSV(r.thana),
         escapeCSV(r.locationName),
         escapeCSV(r.occurredAt),
-        escapeCSV(r.submittedAt || (r as any).createdAt),
+        escapeCSV(r.submittedAt),
         escapeCSV(r.assignedOfficerName || 'Unassigned'),
-        escapeCSV(r.assignedOfficerStation || (r as any).assignedStation || `${r.thana} Police Station`),
+        escapeCSV(r.assignedOfficerStation || `${r.thana} Police Station`),
         escapeCSV(r.requestConfidentiality ? 'YES' : 'NO'),
-        escapeCSV(r.evidence ? r.evidence.length : 0),
-        escapeCSV((r as any).charges || (r as any).courtFIRNumber || 'Pending FIR')
+        escapeCSV(Array.isArray(r.evidence) ? r.evidence.length : 0),
+        escapeCSV(r.status === 'CASE_CLOSED' ? 'Closed' : r.status === 'INVESTIGATION' ? 'Under Investigation' : 'Active')
       ]);
 
-      const csvContent = [headers.map(h => `"${h}"`).join(','), ...rows.map(r => r.join(','))].join('\r\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const csvContent = [
+        headers.map(h => `"${h}"`).join(','),
+        ...rows.map(r => r.join(','))
+      ].join('\r\n');
+
+      // Add UTF-8 BOM so Excel opens it correctly
+      const bom = '\uFEFF';
+      const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       const dateStr = new Date().toISOString().slice(0, 10);
@@ -480,6 +489,13 @@ Portal URL: ${window.location.origin}`;
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+
+      // Log export in audit trail
+      try {
+        await ApiClient.logAdminAuditExport(res.reports.length);
+      } catch (_) {
+        // Non-critical: don't block the user if audit logging fails
+      }
     } catch (err: any) {
       alert(err.message || 'Failed to export crime statistics.');
     } finally {
@@ -1171,13 +1187,13 @@ Portal URL: ${window.location.origin}`;
         <div className="space-y-6 animate-in fade-in duration-200">
           <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-3 text-xs">
             <div className="relative w-full md:w-72">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 value={auditSearchQuery}
                 onChange={e => setAuditSearchQuery(e.target.value)}
                 placeholder="Search audit action, user, or IP..."
-                className="sx-input"
+                className="sx-input sx-input-with-icon"
               />
             </div>
 
@@ -1267,13 +1283,13 @@ Portal URL: ${window.location.origin}`;
 
             <div className="flex items-center gap-2">
               <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
                   value={userSearchQuery}
                   onChange={e => setUserSearchQuery(e.target.value)}
                   placeholder="Search user name or NID..."
-                  className="pl-9 pr-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-200 placeholder-slate-500"
+                  className="sx-input sx-input-with-icon"
                 />
               </div>
 
