@@ -49,6 +49,16 @@ def create_app():
             return send_from_directory(dist_dir, "index.html")
         return e
 
+    # API 500 handler - ensures JSON is always returned for API routes instead of raw HTML
+    @app.errorhandler(500)
+    def handle_500(e):
+        if request.path.startswith("/api"):
+            return jsonify({
+                "error": "Internal Server Error: Unable to complete request.",
+                "details": str(e)
+            }), 500
+        return e
+
     # Production static file serving
     @app.route("/", defaults={"path": ""})
     @app.route("/<path:path>")
