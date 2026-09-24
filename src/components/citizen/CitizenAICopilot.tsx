@@ -173,10 +173,10 @@ export const CitizenAICopilot: React.FC<CitizenAICopilotProps> = ({
           onClick={() => setIsOpen(true)}
           className="fixed bottom-6 right-6 z-50 group flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-gradient-to-r from-[#0147bf] via-[#0284c7] to-[#02baff] text-white shadow-2xl shadow-[#02baff]/30 border border-cyan-300/40 hover:scale-[1.03] active:scale-95 transition-all"
         >
-          <div className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-slate-950/40 border border-white/20 overflow-hidden">
-            <img src={sentiBotIcon} alt="SentiBot" className="w-7 h-7 object-contain" />
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400" />
+          <div className="relative shrink-0">
+            <img src={sentiBotIcon} alt="SentiBot" className="w-11 h-11 object-contain drop-shadow-lg" />
+            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400" />
           </div>
           <div className="text-left pr-1">
             <div className="flex items-center gap-1.5">
@@ -201,10 +201,8 @@ export const CitizenAICopilot: React.FC<CitizenAICopilotProps> = ({
         >
           {/* HEADER */}
           <div className="px-4 py-3 bg-gradient-to-r from-[#091326] via-[#0b1b36] to-[#081224] light:from-slate-100 light:via-white light:to-slate-100 border-b border-[#02baff]/25 light:border-slate-200 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0147bf] to-[#02baff] flex items-center justify-center shadow-md shadow-[#02baff]/20 overflow-hidden shrink-0">
-                <img src={sentiBotIcon} alt="SentiBot" className="w-7 h-7 object-contain" />
-              </div>
+            <div className="flex items-center gap-0.5 min-w-0">
+              <img src={sentiBotIcon} alt="SentiBot" className="w-15 h-15 object-contain shrink-0 drop-shadow-md" />
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <h3 className="text-xs font-black text-white font-['Orbitron'] tracking-wide whitespace-nowrap">
