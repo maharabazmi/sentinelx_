@@ -15,12 +15,12 @@ from ..models import (
     utcnow_iso,
 )
 
-# 4-Tier Gemini Model Cascade to prevent 503 High Demand / 429 Quota failures
+# 4-Tier Gemini Model Cascade (Verified 200 OK models for 2026 Gemini API keys)
 GEMINI_MODEL_CASCADE = [
-    "gemini-2.5-flash",
-    "gemini-2.0-flash",
-    "gemini-2.0-flash-lite",
-    "gemini-1.5-flash",
+    "gemini-3.6-flash",
+    "gemini-3.7-flash",
+    "gemini-3.8-flash",
+    "gemma-4-31b-it",
 ]
 
 THANA_TO_DISTRICT = {
@@ -263,9 +263,10 @@ class ChatbotService:
             "reward", "25%", "fine", "দাম", "মেয়াদ", "ভেজাল", "ওজন", "দোকান"
         )
         crime_keywords = (
+            "crime", "police", "report", "gd", "general diary", "thana",
             "theft", "stolen", "robbery", "mugged", "snatch", "extortion", "harass",
             "assault", "cyber", "scam", "fraud", "hacked", "bkash", "nagad", "threat",
-            "চুরি", "ছিনতাই", "হুমকি", "প্রতারণা"
+            "চুরি", "ছিনতাই", "হুমকি", "প্রতারণা", "জিডি", "থানা", "অপরাধ"
         )
 
         # Detect district/thana from text
@@ -312,7 +313,7 @@ class ChatbotService:
                     "lawSection": "Section 40 & Section 76(4) of DNCRP Act 2009",
                 })
 
-            if any(w in msg_lower for w in ("overcharge", "charged", "bought", "sold", "expired", "fake", "weight", "report", "complain", "file", "দাম", "নকল", "মেয়াদ")) or len(numbers) >= 2:
+            if any(w in msg_lower for w in ("overcharge", "charged", "bought", "sold", "expired", "fake", "weight", "report", "complain", "file", "how", "দাম", "নকল", "মেয়াদ")) or len(numbers) >= 2:
                 actions.append({
                     "type": "PREFILL_CONSUMER_COMPLAINT",
                     "payload": {
@@ -328,7 +329,7 @@ class ChatbotService:
                     },
                 })
 
-        elif any(k in msg_lower for k in crime_keywords):
+        elif any(k in msg_lower for k in crime_keywords) and "CASE_STATUS_CARD" not in {a["type"] for a in actions}:
             crime_type = "THEFT_ROBBERY"
             severity = "MEDIUM"
             if any(w in msg_lower for w in ("cyber", "scam", "fraud", "bkash", "nagad", "hack", "phish", "প্রতারণা")):
@@ -368,7 +369,7 @@ class ChatbotService:
     ):
         """
         Attempts Gemini models in priority order:
-        gemini-2.5-flash -> gemini-2.0-flash -> gemini-2.0-flash-lite -> gemini-1.5-flash
+        gemini-3.6-flash -> gemini-3.7-flash -> gemini-3.8-flash -> gemma-4-31b-it
         Automatically catches 503 (High Demand / Overloaded) and 429 (Quota) and cascades immediately.
         """
         try:
@@ -386,20 +387,27 @@ class ChatbotService:
             return None, None
 
         system_prompt = (
-            f"You are SentinelX AI Civic & Legal Copilot assisting citizen {user.fullName} in Bangladesh.\n"
-            "Keep responses concise (3-6 bullet points or 2 short paragraphs), empathetic, and legally accurate.\n"
-            "Key Bangladesh Law Facts:\n"
-            "- DNCRP Act 2009 Section 40: Selling above MRP carries up to BDT 50,000 fine or 1 year imprisonment.\n"
-            "- DNCRP Act 2009 Section 41/51: Adulterated or expired goods carry up to BDT 2,00,000 fine.\n"
-            "- DNCRP Act 2009 Section 76(4): Citizens receive 25% of the collected administrative fine as a statutory reward.\n"
-            "- Filing deadline: Must file within 30 days of the cause of action with a valid purchase receipt/cash memo.\n"
-            "- Criminal incidents (Theft, Robbery, Cyber Fraud, Extortion, Assault) go to the Police GD/Crime Docket.\n"
-            f"Citizen's Active Consumer Complaints: {json.dumps(db_context.get('my_complaints', [])[:3])}\n"
-            f"Citizen's Active Police Reports: {json.dumps(db_context.get('my_reports', [])[:3])}\n"
-            f"Matched Barcode Registry: {json.dumps(db_context.get('matched_barcode'))}\n"
-            f"Matched Shop Trust Profile: {json.dumps(db_context.get('matched_shop'))}\n"
-            "If an interactive Action Card is already attached below your message (such as Auto-Fill Form or Case Status Card), "
-            "mention that the user can click the interactive card below to proceed in 1 click."
+            f"You are the SentinelX AI Civic & Legal Copilot assisting citizen {user.fullName} in Bangladesh.\n"
+            "You MUST answer using grounded knowledge of the SentinelX platform and Bangladesh Law:\n"
+            "1. HOW TO FILE A CRIME REPORT / POLICE GD ON SENTINELX (5-Step Wizard in 'Report Crime' tab):\n"
+            "   - Step 1 (Incident & Severity): Select Crime Category (THEFT_ROBBERY, FRAUD_SCAM, EXTORTION, ASSAULT, HARASSMENT, CYBER_CRIME) and Severity (LOW, MEDIUM, HIGH, CRITICAL).\n"
+            "   - Step 2 (Location & Jurisdiction): Choose Division -> District -> Thana (routes directly to that Police Station's Duty/Intake Officer) and incident timestamp.\n"
+            "   - Step 3 (Headline & Anonymous Shield): Enter incident narrative and optionally enable 'Request Identity Confidentiality' (Anonymous Whistleblower Protection).\n"
+            "   - Step 4 (Evidence Upload): Upload photos, screenshots, or documents.\n"
+            "   - Step 5 (Review & Official GD Docket): Submit to receive an official GD Docket ID (e.g. CR-DHA-2026-XXXX) and live 2-way Officer Inquiry Chat.\n"
+            "2. HOW TO FILE A DNCRP CONSUMER DISPUTE ON SENTINELX (5-Step Wizard in 'Consumer Dispute' tab):\n"
+            "   - Step 1 (Merchant): Enter Shop Name, Trade License/BIN, District, and Thana.\n"
+            "   - Step 2 (Product): Enter Product Name, Brand, and 13-digit BSTI Barcode.\n"
+            "   - Step 3 (Pricing / Violation): Choose PRICE_GOUGING, EXPIRED_GOODS, COUNTERFEIT_PRODUCT, WEIGHT_MEASUREMENT_FRAUD, or ADULTERATION, and enter Printed MRP vs Demanded Price.\n"
+            "   - Step 4 (Evidence): Upload Cash Memo / Purchase Receipt and product label photo (mandatory under Section 60 within 30 days).\n"
+            "   - Step 5 (Submit to DNCRP): Routed through Complaint Intake Officer -> Investigation Officer -> Adjudication Officer. Under Section 76(4) of the DNCRP Act 2009, the citizen receives 25% of the administrative fine collected.\n"
+            f"3. LIVE SQLITE DATABASE RECORDS FOR {user.fullName}:\n"
+            f"   - Active Consumer Complaints: {json.dumps(db_context.get('my_complaints', [])[:3])}\n"
+            f"   - Active Police Crime Reports: {json.dumps(db_context.get('my_reports', [])[:3])}\n"
+            f"   - Active Emergency Alerts: {json.dumps(db_context.get('active_alerts', [])[:2])}\n"
+            f"   - Matched Barcode Registry: {json.dumps(db_context.get('matched_barcode'))}\n"
+            f"   - Matched Shop Profile: {json.dumps(db_context.get('matched_shop'))}\n"
+            "Keep your response clear, well-structured with bullet points, and if an interactive Action Card is attached below (like '1-Click Auto-Fill Police Crime Docket' or '1-Click Auto-Fill DNCRP Complaint Form'), tell the user they can click the button below to jump straight into the pre-filled form!"
         )
 
         contents = []
@@ -413,7 +421,7 @@ class ChatbotService:
         payload = {
             "system_instruction": {"parts": [{"text": system_prompt}]},
             "contents": contents,
-            "generationConfig": {"temperature": 0.35, "maxOutputTokens": 450},
+            "generationConfig": {"temperature": 0.35, "maxOutputTokens": 2048},
         }
         body_bytes = json.dumps(payload).encode("utf-8")
 
@@ -431,7 +439,7 @@ class ChatbotService:
                     method="POST",
                 )
                 try:
-                    with urllib.request.urlopen(req, timeout=4.5) as resp:
+                    with urllib.request.urlopen(req, timeout=9.0) as resp:
                         resp_data = json.loads(resp.read().decode("utf-8"))
                         candidates = resp_data.get("candidates") or []
                         if candidates:
@@ -440,7 +448,6 @@ class ChatbotService:
                             if text_out:
                                 return text_out, model_name
                 except urllib.error.HTTPError as http_err:
-                    # 503 (High Demand/Overloaded) or 429 (Rate Limit): brief jitter and cascade to next model
                     if http_err.code in (429, 500, 503):
                         time.sleep(0.25)
                         continue
@@ -477,8 +484,7 @@ class ChatbotService:
                     f"- **Product**: {p['productName']} ({p['companyName']})\n"
                     f"- **BSTI Certification**: `{p['bstiStandard']}` — **{status_label}**\n"
                     f"- **Official Government MRP**: **৳{p['mrp']}**\n\n"
-                    "If a merchant charged you more than **৳"
-                    f"{p['mrp']}** or sold a tampered batch, you can file a DNCRP complaint in 1 click."
+                    f"If a merchant charged you more than **৳{p['mrp']}** or sold a tampered batch, you can file a DNCRP complaint in 1 click."
                 )
             else:
                 return (
@@ -493,8 +499,19 @@ class ChatbotService:
                 lines.append(
                     f"- **`{c['trackingNumber']}`** ({c['title']}): Status **`{c['status']}`** in **`{c['workflowQueue']}`** queue • Assigned to **{c['assignedOfficer']}**"
                 )
-            lines.append("\nYou can click **Open Officer Chat** on any card below to message the assigned authority directly.")
+            lines.append("\nYou can click **Open Direct Officer Chat** on any card below to message the assigned authority directly.")
             return "\n".join(lines)
+
+        if "PREFILL_CRIME_REPORT" in action_types:
+            return (
+                "**How to File a Police Crime / GD Report on SentinelX (5-Step Guided Workflow)**\n\n"
+                "- **Step 1 (Incident & Severity)**: Select the crime category (`THEFT_ROBBERY`, `FRAUD_SCAM`, `EXTORTION`, `ASSAULT`, `HARASSMENT`, `CYBER_CRIME`) and urgency level (`LOW` to `CRITICAL`).\n"
+                "- **Step 2 (Thana Jurisdiction & Timestamp)**: Select your **Division, District, and Thana** so SentinelX automatically routes your docket to that Police Station's Intake Officer.\n"
+                "- **Step 3 (Narrative & Anonymous Shield)**: Describe what happened and optionally toggle **Request Identity Confidentiality** to mask your identity.\n"
+                "- **Step 4 (Evidence Upload)**: Attach photos, screenshots, or documents.\n"
+                "- **Step 5 (Submit & Official GD Docket)**: Receive an official **`CR-DHA-2026-XXXX` GD Docket** with a live 2-way **Officer Inquiry Channel**.\n\n"
+                "Click **1-Click Auto-Fill Police Crime Docket** below to open the Crime Report wizard right now!"
+            )
 
         if "REWARD_CALCULATOR_CARD" in action_types or "PREFILL_CONSUMER_COMPLAINT" in action_types:
             reward_card = next((a for a in actions if a["type"] == "REWARD_CALCULATOR_CARD"), None)
@@ -505,23 +522,15 @@ class ChatbotService:
                     f"- **Statutory Penalty**: Up to **৳50,000 administrative fine** (or up to 1 year imprisonment).\n"
                     f"- **Your 25% Citizen Reward (Section 76(4))**: Upon fine realization (est. ৳{int(reward_card['estimatedFine']):,}), you are legally entitled to **৳{int(reward_card['statutoryReward25']):,}**.\n"
                     f"- **Mandatory Checklist**: File within **30 days** and attach a photo of the **Cash Memo / Receipt** and the **MRP label**.\n\n"
-                    "Click **Auto-Fill DNCRP Complaint Form** below to load all extracted details directly into the filing form!"
+                    "Click **1-Click Auto-Fill DNCRP Complaint Form** below to load all extracted details directly into the filing form!"
                 )
             return (
-                "**Consumer Rights Violation Detected (DNCRP Act 2009)**\n\n"
-                "- **Jurisdiction**: Directorate of National Consumer Rights Protection (**DNCRP**).\n"
-                "- **Citizen Entitlement**: Under **Section 76(4)**, complainants receive **25% of the administrative fine** imposed by the Mobile Court / Adjudication Officer.\n"
-                "- **Evidence Required**: Attach your purchase receipt/cash memo and product photo so the Complaint Intake Officer approves your claim immediately.\n\n"
-                "Click the **1-Click Auto-Fill DNCRP Form** button below to open the pre-populated complaint form."
-            )
-
-        if "PREFILL_CRIME_REPORT" in action_types:
-            return (
-                "**Police Criminal / GD Jurisdiction Identified**\n\n"
-                "- **Routing**: This incident falls under **Bangladesh Police Thana Command** (`Crime / GD Docket`).\n"
-                "- **Workflow**: Your report is routed to the Thana Duty / Intake Officer $\\rightarrow$ Field Investigation Officer $\\rightarrow$ Case Resolution, with encrypted two-way chat.\n"
-                "- **Identity Protection**: You can enable **Confidential / Anonymous Shield** on Step 3 of the form.\n\n"
-                "Click **Auto-Fill Police Crime Report** below to pre-populate the form with your incident details."
+                "**How to File a DNCRP Consumer Dispute on SentinelX**\n\n"
+                "- **Step 1–3**: Enter the **Shop Name**, **District/Thana**, **Product Name**, and **MRP vs Demanded Price**.\n"
+                "- **Step 4 (Mandatory Evidence)**: Attach your **Cash Memo / Purchase Receipt** (required within 30 days under Section 60).\n"
+                "- **3-Stage Authority Review**: Routed from **Complaint Intake Officer** $\\rightarrow$ **Investigation Officer** $\\rightarrow$ **Adjudication Officer**.\n"
+                "- **25% Citizen Reward**: Under **Section 76(4) of the DNCRP Act 2009**, you receive **25% of the administrative fine** collected.\n\n"
+                "Click the **1-Click Auto-Fill DNCRP Complaint Form** button below to open the pre-populated complaint form."
             )
 
         if any(k in msg_lower for k in ("reward", "25%", "section 76", "fine", "compensation", "পুরস্কার")):
@@ -536,11 +545,11 @@ class ChatbotService:
             )
 
         return (
-            f"Hello **{user.fullName}**! I am your **SentinelX Dual-Engine Civic & Legal Copilot**.\n\n"
-            "Here is what I can do for you right now:\n"
-            "- **Auto-Fill Forms from Natural Text**: Tell me what happened (e.g., *\"A shop in Uttara charged me 2450 BDT for 1850 BDT milk\"* or *\"My phone was stolen in Dhanmondi\"*) and I will auto-fill the **DNCRP** or **Police GD** form in 1 click.\n"
-            "- **Track Live Dockets**: Ask *\"What is the status of my latest case?\"* or paste any `DNCRP-...` / `CR-...` tracking ID.\n"
-            "- **Verify Barcodes & Calculate 25% Rewards**: Paste any 13-digit barcode (like `8901030491024`) or ask about your **25% statutory reward under Section 76(4)**."
+            f"Hello **{user.fullName}**! I am your **SentinelX Dual-Engine Civic & Legal Copilot** (currently tracking **{len(db_context.get('my_reports', []))} Police GD(s)** and **{len(db_context.get('my_complaints', []))} DNCRP Complaint(s)** in your account).\n\n"
+            "Ask me anything or click a quick action below:\n"
+            "- **File or Auto-Fill a Crime Report / GD**: Ask *\"How can I make a crime report?\"* or describe an incident (*\"My phone was stolen in Dhanmondi\"*).\n"
+            "- **File a DNCRP Consumer Dispute & 25% Reward**: Describe a shop overcharge (*\"Shop in Uttara charged 2450 BDT for 1850 BDT baby milk\"*).\n"
+            "- **Track Your Live Dockets & Chat with Officers**: Ask *\"Track my latest case\"* or paste any `CR-...` / `DNCRP-...` ID."
         )
 
     @classmethod
