@@ -63,8 +63,6 @@ export const AdminDashboard: React.FC = () => {
 
   const [systemStats, setSystemStats] = useState<any>(null);
   const [usersList, setUsersList] = useState<User[]>([]);
-  const [districtEdits, setDistrictEdits] = useState<Record<string, string>>({});
-  const [savingDistrictUserId, setSavingDistrictUserId] = useState<string | null>(null);
   const [predictions, setPredictions] = useState<AIPredictionData[]>([]);
   const [riskMatrix, setRiskMatrix] = useState<ComparativeRiskRank[]>([]);
   const [resourceAllocations, setResourceAllocations] = useState<ResourceAllocationAdvice[]>([]);
@@ -181,22 +179,6 @@ export const AdminDashboard: React.FC = () => {
       console.error('Error loading admin data:', err);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleSaveOfficerDistrict = async (officer: User) => {
-    const assignedDistrict = districtEdits[officer.id] ?? officer.assignedDistrict ?? '';
-    if (!assignedDistrict) return;
-    setSavingDistrictUserId(officer.id);
-    try {
-      const result = await ApiClient.updateAdminUserDistrict(officer.id, assignedDistrict);
-      if (result.success) {
-        setUsersList(current => current.map(item => item.id === officer.id ? result.user : item));
-      }
-    } catch (err: any) {
-      alert(err.message || 'Failed to update DNCRP district.');
-    } finally {
-      setSavingDistrictUserId(null);
     }
   };
 
@@ -1336,29 +1318,6 @@ Portal URL: ${window.location.origin}`;
                     <p>Station: <span className="text-slate-300">{u.stationOrThana}</span></p>
                   )}
                 </div>
-                {u.role === UserRole.CONSUMER_RIGHTS && (
-                  <div className="flex items-center gap-2 border-t border-slate-800 pt-3">
-                    <select
-                      value={districtEdits[u.id] ?? u.assignedDistrict ?? ''}
-                      onChange={event => setDistrictEdits(current => ({ ...current, [u.id]: event.target.value }))}
-                      className="sx-input min-w-0 flex-1"
-                      aria-label={`Assigned district for ${u.fullName}`}
-                    >
-                      <option value="">Select assigned district</option>
-                      {BANGLADESH_DIVISIONS.flatMap(div => div.districts).map(district => (
-                        <option key={district.id} value={district.name}>{district.name}</option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      disabled={savingDistrictUserId === u.id || !(districtEdits[u.id] ?? u.assignedDistrict)}
-                      onClick={() => handleSaveOfficerDistrict(u)}
-                      className="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white text-xs font-bold"
-                    >
-                      {savingDistrictUserId === u.id ? 'Saving…' : 'Save'}
-                    </button>
-                  </div>
-                )}
               </div>
             ))}
           </div>

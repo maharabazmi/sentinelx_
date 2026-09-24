@@ -464,6 +464,7 @@ def update_complaint_status(complaint_id):
                 "Investigation Officer": (("UNDER_REVIEW", "INVESTIGATION"), ("INVESTIGATION", "INVESTIGATION_SUMMARY")),
                 "Adjudication Officer": (
                     ("INVESTIGATION_SUMMARY", "ADJUDICATION_REVIEW"),
+                    ("INVESTIGATION_SUMMARY", "FINAL_DECISION"),
                     ("ADJUDICATION_REVIEW", "FINAL_DECISION"),
                     ("FINAL_DECISION", "RESOLVED"),
                 ),
@@ -554,7 +555,12 @@ def update_complaint_status(complaint_id):
         if complaint.status == "RESOLVED"
         else f"Status updated to {complaint.status}."
     )
-    NotificationService.create_complaint_notification(
+    notification_method = (
+        NotificationService.create_reward_notification
+        if complaint.status == "RESOLVED"
+        else NotificationService.create_complaint_notification
+    )
+    notification_method(
         user_id=complaint.complainantId,
         title=(f"Final Reward/Compensation Decision: {complaint.trackingNumber}" if complaint.status == "RESOLVED" else f"Consumer Dispute Update: {complaint.trackingNumber}"),
         message=resolution_message,
