@@ -198,13 +198,17 @@
   width: 100%;
   padding: 0.625rem 1rem;          /* py-2.5 px-4 */
   border-radius: 0.75rem;          /* rounded-xl */
-  background: #0d1525;             /* darker than card */
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #f1f5f9;                  /* slate-100 */
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-body);
   font-size: 0.75rem;              /* text-xs */
   line-height: 1.5;
   outline: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sx-input::placeholder {
+  color: var(--text-muted);
 }
 /* Ensure padding-left when an icon or currency prefix is on the left */
 .sx-input-with-icon,

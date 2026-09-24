@@ -193,14 +193,14 @@ export const CitizenAICopilot: React.FC<CitizenAICopilotProps> = ({
       {/* EXPANDABLE AI COPILOT DRAWER */}
       {isOpen && (
         <div
-          className={`fixed z-50 transition-all duration-200 flex flex-col rounded-3xl bg-[#060b16]/95 border border-[#02baff]/35 shadow-2xl shadow-black/80 backdrop-blur-xl overflow-hidden ${
+          className={`fixed z-50 transition-all duration-200 flex flex-col rounded-3xl bg-[#060b16]/95 border border-[#02baff]/35 shadow-2xl shadow-black/80 backdrop-blur-xl overflow-hidden light:bg-white/95 light:border-slate-300 light:shadow-slate-200/70 ${
             isExpanded
               ? 'bottom-4 right-4 left-4 top-16 md:left-auto md:w-[680px] md:h-[82vh]'
               : 'bottom-5 right-5 w-[94vw] sm:w-[440px] h-[630px] max-h-[85vh]'
           }`}
         >
           {/* HEADER */}
-          <div className="px-4 py-3.5 bg-gradient-to-r from-[#091326] via-[#0b1b36] to-[#081224] border-b border-[#02baff]/25 flex items-center justify-between">
+          <div className="px-4 py-3.5 bg-gradient-to-r from-[#091326] via-[#0b1b36] to-[#081224] light:from-slate-100 light:via-white light:to-slate-100 border-b border-[#02baff]/25 light:border-slate-200 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0147bf] to-[#02baff] flex items-center justify-center shadow-md shadow-[#02baff]/20">
                 <Bot className="w-5 h-5 text-white" />
@@ -252,7 +252,7 @@ export const CitizenAICopilot: React.FC<CitizenAICopilotProps> = ({
                   className={`max-w-[88%] rounded-2xl px-3.5 py-3 ${
                     msg.sender === 'user'
                       ? 'bg-gradient-to-r from-[#0147bf] to-[#0284c7] text-white rounded-br-xs shadow-md'
-                      : 'bg-slate-900/90 text-slate-200 border border-slate-800/90 rounded-bl-xs'
+                      : 'bg-slate-900/90 text-slate-200 border border-slate-800/90 rounded-bl-xs light:bg-slate-100 light:text-slate-800 light:border-slate-200'
                   }`}
                 >
                   {renderFormattedText(msg.text)}
@@ -271,7 +271,7 @@ export const CitizenAICopilot: React.FC<CitizenAICopilotProps> = ({
                         return (
                           <div
                             key={aIdx}
-                            className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-950/50 via-slate-900 to-slate-950 border border-amber-500/40 space-y-2"
+                            className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-950/50 via-slate-900 to-slate-950 border border-amber-500/40 space-y-2 light:from-amber-100 light:via-white light:to-slate-100 light:border-amber-300"
                           >
                             <div className="flex items-center justify-between">
                               <span className="text-[10px] font-mono font-bold text-amber-300 uppercase flex items-center gap-1.5">
@@ -306,7 +306,7 @@ export const CitizenAICopilot: React.FC<CitizenAICopilotProps> = ({
                         return (
                           <div
                             key={aIdx}
-                            className="p-3.5 rounded-2xl bg-slate-900/95 border border-amber-500/40 space-y-2.5 shadow-lg"
+                            className="p-3.5 rounded-2xl bg-slate-900/95 border border-amber-500/40 space-y-2.5 shadow-lg light:bg-amber-50 light:border-amber-300 light:shadow-none"
                           >
                             <div className="flex items-center justify-between">
                               <span className="text-[11px] font-bold text-amber-300 flex items-center gap-1.5">
@@ -341,7 +341,7 @@ export const CitizenAICopilot: React.FC<CitizenAICopilotProps> = ({
                         return (
                           <div
                             key={aIdx}
-                            className="p-3.5 rounded-2xl bg-slate-900/95 border border-cyan-500/40 space-y-2.5 shadow-lg"
+                            className="p-3.5 rounded-2xl bg-slate-900/95 border border-cyan-500/40 space-y-2.5 shadow-lg light:bg-cyan-50 light:border-cyan-300 light:shadow-none"
                           >
                             <div className="flex items-center justify-between">
                               <span className="text-[11px] font-bold text-cyan-300 flex items-center gap-1.5">
@@ -374,7 +374,7 @@ export const CitizenAICopilot: React.FC<CitizenAICopilotProps> = ({
                         return (
                           <div
                             key={aIdx}
-                            className="p-3.5 rounded-2xl bg-slate-900/95 border border-blue-500/35 space-y-2"
+                            className="p-3.5 rounded-2xl bg-slate-900/95 border border-blue-500/35 space-y-2 light:bg-blue-50 light:border-blue-300 light:shadow-none"
                           >
                             <div className="flex items-center justify-between gap-2">
                               <span className="font-mono font-bold text-cyan-300 text-[11px]">
@@ -501,14 +501,14 @@ export const CitizenAICopilot: React.FC<CitizenAICopilotProps> = ({
           </div>
 
           {/* QUICK SUGGESTION CHIPS */}
-          <div className="px-3 py-2 bg-slate-950/90 border-t border-slate-800/80 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          <div className="px-3 py-2 bg-slate-950/90 border-t border-slate-800/80 flex items-center gap-1.5 overflow-x-auto no-scrollbar light:bg-slate-100 light:border-slate-200">
             {suggestions.map((sug, idx) => (
               <button
                 key={idx}
                 type="button"
                 onClick={() => handleSend(sug)}
                 disabled={isSending}
-                className="shrink-0 px-2.5 py-1 rounded-full bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-cyan-500/25 text-[10px] font-mono transition"
+                className="shrink-0 px-2.5 py-1 rounded-full bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-cyan-500/25 text-[10px] font-mono transition light:bg-white light:text-cyan-700 light:border-cyan-300 light:hover:bg-cyan-50"
               >
                 {sug}
               </button>
@@ -521,7 +521,7 @@ export const CitizenAICopilot: React.FC<CitizenAICopilotProps> = ({
               e.preventDefault();
               handleSend();
             }}
-            className="p-3 bg-slate-950 border-t border-slate-800 flex items-center gap-2"
+            className="p-3 bg-slate-950 border-t border-slate-800 flex items-center gap-2 light:bg-slate-100 light:border-slate-200"
           >
             <input
               type="text"
