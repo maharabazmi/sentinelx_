@@ -140,8 +140,9 @@ export const ConsumerDashboard: React.FC = () => {
   }, []);
 
   // Update Complaint Status & Penalty Action
-  const handleUpdateComplaint = async (status: ComplaintStatus) => {
-    if (!selectedComplaint) return;
+  const handleUpdateComplaint = async (status: ComplaintStatus, complaintOverride?: ConsumerComplaint) => {
+    const complaint = complaintOverride ?? selectedComplaint;
+    if (!complaint) return;
     setIsUpdatingStatus(true);
     try {
       const penaltyStr =
@@ -151,7 +152,7 @@ export const ConsumerDashboard: React.FC = () => {
             ).toLocaleString()} (25% statutory reward).`
           : undefined;
 
-      const res = await ApiClient.updateComplaintStatus(selectedComplaint.id, {
+      const res = await ApiClient.updateComplaintStatus(complaint.id, {
         status,
         inspectorNotes,
         penaltyImposed: penaltyStr,
@@ -159,7 +160,9 @@ export const ConsumerDashboard: React.FC = () => {
       });
 
       if (res.success) {
-        setSelectedComplaint(null);
+        if (selectedComplaint?.id === complaint.id) {
+          setSelectedComplaint(null);
+        }
         setInspectorNotes('');
         setFineAmount('50000');
         if (status === ComplaintStatus.REJECTED && isIntakeOfficer) {
@@ -206,6 +209,12 @@ export const ConsumerDashboard: React.FC = () => {
     }
   };
 
+  const formatOfficerOptionLabel = (officer: any) => {
+    const name = officer?.fullName || officer?.name || 'Unknown Officer';
+    const station = officer?.stationOrThana?.trim();
+    return station ? `${name} (${station})` : name;
+  };
+
   // Add Barcode
   const handleAddBarcode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -248,15 +257,21 @@ export const ConsumerDashboard: React.FC = () => {
         {
           id: 'handed_over',
           label: 'Handed Over',
-          match: (complaint: ConsumerComplaint) =>
-            complaint.workflowQueue === 'INVESTIGATION' ||
-            complaint.workflowQueue === 'ADJUDICATION' ||
-            complaint.workflowQueue === 'COMPLETED' ||
-            complaint.status === ComplaintStatus.INVESTIGATION ||
-            complaint.status === ComplaintStatus.INVESTIGATION_SUMMARY ||
-            complaint.status === ComplaintStatus.ADJUDICATION_REVIEW ||
-            complaint.status === ComplaintStatus.FINAL_DECISION ||
-            complaint.status === ComplaintStatus.RESOLVED
+          match: (complaint: ConsumerComplaint) => {
+            const isInvestigationHandoffHistory =
+              complaint.workflowQueue === 'INVESTIGATION' ||
+              complaint.status === ComplaintStatus.INVESTIGATION ||
+              (complaint.status === ComplaintStatus.UNDER_REVIEW && complaint.workflowQueue === 'INVESTIGATION') ||
+              (complaint.status === ComplaintStatus.INVESTIGATION_SUMMARY && complaint.workflowQueue === 'INVESTIGATION');
+
+            const isAdjudicationHandoff =
+              complaint.workflowQueue === 'ADJUDICATION' ||
+              complaint.status === ComplaintStatus.ADJUDICATION_REVIEW ||
+              complaint.status === ComplaintStatus.FINAL_DECISION ||
+              complaint.status === ComplaintStatus.RESOLVED;
+
+            return isInvestigationHandoffHistory && !isAdjudicationHandoff;
+          }
         }
       ]
     : isInvestigationOfficer
@@ -620,6 +635,18 @@ export const ConsumerDashboard: React.FC = () => {
                         </td>
                         <td className="py-3.5 px-4 text-right">
                           <div className="flex items-center justify-end gap-2">
+                            {isInvestigationOfficer && comp.status === ComplaintStatus.UNDER_REVIEW && comp.assignedOfficerId === user?.id && (
+                              <button
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  handleUpdateComplaint(ComplaintStatus.INVESTIGATION, comp);
+                                }}
+                                disabled={isUpdatingStatus}
+                                className="px-3 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 text-xs font-semibold transition"
+                              >
+                                Accept / Take Case
+                              </button>
+                            )}
                             <button
                               onClick={e => {
                                 e.stopPropagation();
@@ -808,24 +835,7 @@ export const ConsumerDashboard: React.FC = () => {
                   </div>
                 )}
 
-                {/* DNCRP workflow stage controls */}
                 <div className="space-y-4 pt-2 border-t border-slate-800 text-xs">
-                  <div className="grid grid-cols-4 md:grid-cols-7 gap-1.5 text-center">
-                    {[
-                      ['Citizen submits', ComplaintStatus.SUBMITTED],
-                      ['Intake', ComplaintStatus.UNDER_REVIEW],
-                      ['Investigation', ComplaintStatus.INVESTIGATION],
-                      ['Summary', ComplaintStatus.INVESTIGATION_SUMMARY],
-                      ['Hearing', ComplaintStatus.ADJUDICATION_REVIEW],
-                      ['Final decision', ComplaintStatus.FINAL_DECISION],
-                      ['Final resolution', ComplaintStatus.RESOLVED]
-                    ].map(([label, status]) => (
-                      <div key={status} className={`rounded-lg border px-2 py-2 ${selectedComplaint.status === status ? 'border-amber-400/60 bg-amber-500/15 text-amber-200' : 'border-slate-800 bg-slate-950/50 text-slate-500'}`}>
-                        <div className="text-[10px] font-semibold">{label}</div>
-                      </div>
-                    ))}
-                  </div>
-
                   {isAdjudicationOfficer && (
                     <div>
                       <label className="block font-semibold text-slate-300 mb-1">
@@ -868,7 +878,7 @@ export const ConsumerDashboard: React.FC = () => {
                           <select aria-label="Investigation Officer for handover" value={selectedInvestigationOfficer} onChange={e => setSelectedInvestigationOfficer(e.target.value)} className="sx-input flex-1">
                           <option value="">Select Investigation Officer</option>
                           {investigationOfficers.map(officer => (
-                            <option key={officer.id} value={officer.id}>{officer.fullName} ({officer.stationOrThana})</option>
+                            <option key={officer.id} value={officer.id}>{formatOfficerOptionLabel(officer)}</option>
                           ))}
                           </select>
                           <button type="button" aria-label="Hand over case to Investigation Officer" disabled={isUpdatingStatus || !selectedInvestigationOfficer} onClick={handleHandoverComplaint} className="consumer-intake-handover px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md">
@@ -895,7 +905,7 @@ export const ConsumerDashboard: React.FC = () => {
                         <select value={selectedAdjudicationOfficer} onChange={e => setSelectedAdjudicationOfficer(e.target.value)} className="sx-input flex-1">
                           <option value="">Select Adjudication Officer</option>
                           {adjudicationOfficers.map(officer => (
-                            <option key={officer.id} value={officer.id}>{officer.fullName} ({officer.stationOrThana})</option>
+                            <option key={officer.id} value={officer.id}>{formatOfficerOptionLabel(officer)}</option>
                           ))}
                         </select>
                         <button type="button" disabled={isUpdatingStatus || !selectedAdjudicationOfficer} onClick={handleHandoverComplaint} className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-bold transition">
