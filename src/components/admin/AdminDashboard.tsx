@@ -149,22 +149,34 @@ export const AdminDashboard: React.FC = () => {
   const fetchAdminData = async () => {
     setIsLoading(true);
     try {
-      const [statsRes, usersRes, predRes, logsRes] = await Promise.all([
+      const [statsResult, usersResult, predResult, logsResult] = await Promise.allSettled([
         ApiClient.getAdminSystemOverview(),
         ApiClient.getAdminUsers(),
         ApiClient.getAdminAIPredictions(),
         ApiClient.getAdminAuditLogs()
       ]);
 
-      if (statsRes.success) setSystemStats(statsRes.stats);
-      if (usersRes.success) setUsersList(usersRes.users);
-      if (predRes.success) {
+      if (statsResult.status === 'fulfilled' && statsResult.value.success) {
+        setSystemStats(statsResult.value.stats);
+      } else if (statsResult.status === 'rejected') {
+        console.error('Failed to load system overview:', statsResult.reason);
+      }
+
+      if (usersResult.status === 'fulfilled' && usersResult.value.success) {
+        setUsersList(usersResult.value.users);
+      }
+
+      if (predResult.status === 'fulfilled' && predResult.value.success) {
+        const predRes = predResult.value;
         setPredictions(predRes.predictions || []);
         if ((predRes as any).riskMatrix) setRiskMatrix((predRes as any).riskMatrix);
         if ((predRes as any).resourceAllocations) setResourceAllocations((predRes as any).resourceAllocations);
         if ((predRes as any).directives) setDirectivesList((predRes as any).directives);
       }
-      if (logsRes.success) setAuditLogs(logsRes.logs);
+
+      if (logsResult.status === 'fulfilled' && logsResult.value.success) {
+        setAuditLogs(logsResult.value.logs);
+      }
     } catch (err) {
       console.error('Error loading admin data:', err);
     } finally {

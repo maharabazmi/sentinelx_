@@ -95,6 +95,14 @@ def init_db():
 
     try:
         with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE crime_reports ADD COLUMN workflowQueue VARCHAR(32) DEFAULT 'INTAKE'"))
+            conn.commit()
+            logger.info("[DB] Added workflowQueue column to crime_reports table.")
+    except Exception:
+        pass
+
+    try:
+        with engine.connect() as conn:
             conn.execute(text("ALTER TABLE consumer_complaints ADD COLUMN assignedOfficerId VARCHAR(64)"))
             conn.commit()
             logger.info("[DB] Added assignedOfficerId column to consumer_complaints table.")
@@ -145,8 +153,14 @@ def init_db():
             records = get_seed_records()
             added_count = 0
             for u in records.get("users", []):
-                if not db.query(User).filter(User.id == u.id).first():
+                existing_user = db.query(User).filter(User.id == u.id).first()
+                if not existing_user:
                     db.merge(u)
+                    added_count += 1
+                elif u.role == "CONSUMER_RIGHTS" and (not existing_user.assignedDistrict or existing_user.designation != u.designation):
+                    existing_user.designation = u.designation
+                    existing_user.assignedDistrict = getattr(u, "assignedDistrict", None) or "Dhaka"
+                    existing_user.department = u.department
                     added_count += 1
             for c in records.get("complaints", []):
                 db.merge(c)
