@@ -174,6 +174,9 @@ def init_db():
             for c in records.get("complaints", []):
                 db.merge(c)
                 added_count += 1
+            for b in records.get("barcodes", []):
+                db.merge(b)
+                added_count += 1
             if added_count > 0:
                 db.commit()
                 logger.info(f"[DB] Synced {added_count} newly added seed users/officers/complaints into database.")
