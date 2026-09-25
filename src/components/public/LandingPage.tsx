@@ -50,10 +50,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
             {/* Left Column: Mission & Controls */}
             <div className="lg:col-span-7 space-y-5 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0147bf]/15 border border-[#02baff]/30 text-[#02baff] text-xs font-mono font-bold tracking-wider uppercase">
-                <span className="w-2 h-2 rounded-full bg-[#02baff] animate-pulse" />
-                PEOPLE'S REPUBLIC OF BANGLADESH • CITIZEN DEFENSE AI
-              </div>
 
               <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-white font-['Orbitron'] leading-[1.1]">
                 INTELLIGENT <br />
