@@ -84,7 +84,7 @@ class ChatbotService:
         if gemini_reply:
             return {
                 "reply": gemini_reply,
-                "engine": f"Gemini Cascade ({used_model})",
+                "engine": "Sentinel Prime Civic & Legal Intelligence",
                 "actions": actions,
                 "suggestions": cls._get_contextual_suggestions(clean_msg, actions),
             }
@@ -93,7 +93,7 @@ class ChatbotService:
         local_reply = cls._generate_local_rag_reply(user, clean_msg, db_context, actions)
         return {
             "reply": local_reply,
-            "engine": "SentinelX Hybrid Legal & DB Engine",
+            "engine": "Sentinel Prime Civic & Legal Intelligence",
             "actions": actions,
             "suggestions": cls._get_contextual_suggestions(clean_msg, actions),
         }
@@ -387,7 +387,7 @@ class ChatbotService:
             return None, None
 
         system_prompt = (
-            f"You are the SentinelX AI Civic & Legal Copilot assisting citizen {user.fullName} in Bangladesh.\n"
+            f"You are Sentinel Prime, the SentinelX AI Civic & Legal Copilot assisting citizen {user.fullName} in Bangladesh.\n"
             "You MUST answer using grounded knowledge of the SentinelX platform and Bangladesh Law:\n"
             "1. HOW TO FILE A CRIME REPORT / POLICE GD ON SENTINELX (5-Step Wizard in 'Report Crime' tab):\n"
             "   - Step 1 (Incident & Severity): Select Crime Category (THEFT_ROBBERY, FRAUD_SCAM, EXTORTION, ASSAULT, HARASSMENT, CYBER_CRIME) and Severity (LOW, MEDIUM, HIGH, CRITICAL).\n"

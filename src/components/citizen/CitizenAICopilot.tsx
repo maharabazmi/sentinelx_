@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import sentiBotIcon from '/Logo/SentiBot-01.png';
+const sentiBotIcon = '/Logo/SentiBot-01.png';
 import {
   Send,
   X,
@@ -70,7 +70,7 @@ export const CitizenAICopilot: React.FC<CitizenAICopilotProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [activeEngine, setActiveEngine] = useState('4-Tier Gemini Cascade + Local SQLite RAG');
+  const [activeEngine, setActiveEngine] = useState('National Civic & Legal Assistant');
   const [suggestions, setSuggestions] = useState<string[]>([
     'Track my latest case',
     'Shop in Uttara charged 2450 BDT for 1850 BDT baby milk',
@@ -81,9 +81,8 @@ export const CitizenAICopilot: React.FC<CitizenAICopilotProps> = ({
     {
       id: 'welcome-1',
       sender: 'bot',
-      text: `Assalamu Alaikum **${userName || 'Citizen'}**! I am your **SentinelX AI Civic & Legal Copilot**.\n\nI am connected directly to the live **Police GD**, **DNCRP Consumer Rights**, and **BSTI Barcode** databases with a **4-Tier Model Cascade**.\n\nDescribe an incident in English, Bangla, or Banglish to **auto-fill a report**, **track your live dockets**, **verify a barcode**, or **calculate your 25% DNCRP reward**!`,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      engine: 'SentinelX Dual-Engine Ready'
+      text: `Assalamu Alaikum **${userName || 'Citizen'}**! I am **Sentinel Prime** — your **Civic & Legal Assistant**.\n\nDescribe an incident in English, Bangla, or Banglish to **auto-fill a Police GD or Consumer Dispute**, **track your live cases**, **verify a BSTI barcode**, or **calculate your 25% DNCRP reward**.`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
 
@@ -118,7 +117,6 @@ export const CitizenAICopilot: React.FC<CitizenAICopilotProps> = ({
     try {
       const res = await ApiClient.askCitizenAssistant(textToSend, nextHistory);
       if (res.success) {
-        if (res.engine) setActiveEngine(res.engine);
         if (res.suggestions && res.suggestions.length > 0) {
           setSuggestions(res.suggestions);
         }
@@ -166,25 +164,31 @@ export const CitizenAICopilot: React.FC<CitizenAICopilotProps> = ({
 
   return (
     <>
-      {/* FLOATING COMMAND ORB BUTTON */}
+      {/* STYLE 2: 3D HOLOGRAM ORB (AUTO-EXPANDS ON HOVER) */}
       {!isOpen && (
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 z-50 group flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-gradient-to-r from-[#0147bf] via-[#0284c7] to-[#02baff] text-white shadow-2xl shadow-[#02baff]/30 border border-cyan-300/40 hover:scale-[1.03] active:scale-95 transition-all"
+          title="Open Sentinel Prime — Civic & Legal Assistant"
+          className="sx-prime-orb fixed bottom-6 right-6 z-50 group flex items-center rounded-full p-1.5 transition-all duration-300 hover:pr-4 hover:scale-105 active:scale-95"
         >
-          <div className="relative shrink-0">
-            <img src={sentiBotIcon} alt="SentiBot" className="w-11 h-11 object-contain drop-shadow-lg" />
-            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400" />
+          {/* Glowing Circular Core */}
+          <div className="relative shrink-0 w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-lg ring-2 ring-cyan-300/80">
+            <span className="absolute inset-0 rounded-full border-2 border-cyan-400/50 animate-ping opacity-30 pointer-events-none" />
+            <img src={sentiBotIcon} alt="Sentinel Prime" className="w-8 h-8 object-contain drop-shadow-xs transition-transform duration-300 group-hover:scale-110" />
+            <span className="absolute top-0 right-0 w-3 h-3 rounded-full bg-emerald-400 ring-2 ring-[#0147bf]" />
           </div>
-          <div className="text-left pr-1">
+
+          {/* Smooth Slide-Out Label on Hover */}
+          <div className="max-w-0 overflow-hidden group-hover:max-w-[190px] group-hover:ml-2.5 transition-all duration-300 ease-out text-left whitespace-nowrap">
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-black font-['Orbitron'] tracking-wider">SentiBot</span>
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span className="sx-prime-title text-xs font-black font-['Orbitron'] tracking-wider">
+                SENTINEL PRIME
+              </span>
+              <Sparkles className="w-3.5 h-3.5 text-amber-300 shrink-0" />
             </div>
-            <p className="text-[10px] text-cyan-100/90 font-mono">
-              Auto-Fill • Case Tracker • 25% DNCRP Reward
+            <p className="text-[10px] !text-cyan-100 font-medium">
+              Civic & Legal AI Assistant
             </p>
           </div>
         </button>
@@ -201,19 +205,20 @@ export const CitizenAICopilot: React.FC<CitizenAICopilotProps> = ({
         >
           {/* HEADER */}
           <div className="px-4 py-3 bg-gradient-to-r from-[#091326] via-[#0b1b36] to-[#081224] light:from-slate-100 light:via-white light:to-slate-100 border-b border-[#02baff]/25 light:border-slate-200 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-0.5 min-w-0">
-              <img src={sentiBotIcon} alt="SentiBot" className="w-15 h-15 object-contain shrink-0 drop-shadow-md" />
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-11 h-11 rounded-xl bg-white/95 p-1 flex items-center justify-center shrink-0 shadow-md ring-1 ring-cyan-400/40">
+                <img src={sentiBotIcon} alt="Sentinel Prime" className="w-9 h-9 object-contain" />
+              </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <h3 className="text-xs font-black text-white font-['Orbitron'] tracking-wide whitespace-nowrap">
-                    SentiBot
+                  <h3 className="text-xs font-black text-white light:text-slate-900 font-['Orbitron'] tracking-wide whitespace-nowrap">
+                    SENTINEL PRIME
                   </h3>
-                  <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-mono whitespace-nowrap">
-                    LIVE DB
+                  <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-semibold whitespace-nowrap">
+                    ONLINE
                   </span>
                 </div>
-                <p className="text-[10px] text-cyan-300/80 font-mono flex items-center gap-1 mt-0.5 truncate">
-                  <Cpu className="w-3 h-3 text-cyan-400 shrink-0" />
+                <p className="text-[10px] text-cyan-300/80 flex items-center gap-1 mt-0.5 truncate">
                   <span className="truncate">{activeEngine}</span>
                 </p>
               </div>
@@ -254,9 +259,8 @@ export const CitizenAICopilot: React.FC<CitizenAICopilotProps> = ({
                   }`}
                 >
                   {renderFormattedText(msg.text)}
-                  <div className="mt-1.5 pt-1 border-t border-white/5 flex items-center justify-between gap-3 text-[9px] font-mono opacity-65">
+                  <div className="mt-1.5 pt-1 border-t border-white/5 flex items-center justify-end text-[9px] font-mono opacity-65">
                     <span>{msg.timestamp}</span>
-                    {msg.engine && <span>{msg.engine}</span>}
                   </div>
                 </div>
 

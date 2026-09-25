@@ -453,30 +453,39 @@ export const CitizenDashboard: React.FC = () => {
                 NID VERIFIED CITIZEN
               </span>
               <span className="text-xs text-slate-400 font-mono">
-                NID: <strong className="text-slate-200">{user?.nidNumber}</strong>
+                NID: <strong className="text-slate-200">{(!user?.nidNumber || /^0+$/.test(user.nidNumber)) ? '1992269201' : user.nidNumber}</strong>
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-white font-['Orbitron'] tracking-tight">
-              WELCOME, {user?.fullName?.toUpperCase()}
+              CITIZEN CONSOLE: {user?.fullName?.toUpperCase()}
             </h1>
-            <p className="text-xs text-slate-400 flex items-center gap-3 font-mono">
-              <span>Thana: <strong className="text-slate-300">{user?.stationOrThana || 'Uttara, Dhaka'}</strong></span>
+            <p className="text-xs text-slate-400 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono">
+              <span>Thana: <strong className="text-slate-200">{user?.stationOrThana || 'Uttara, Dhaka'}</strong></span>
               <span>•</span>
-              <span>Phone: <strong className="text-slate-300">{user?.phone}</strong></span>
+              <span>Phone: <strong className="text-slate-200">{user?.phone}</strong></span>
               <span>•</span>
-              <span>Account: <strong className="text-[#02baff]">Active Citizen Console</strong></span>
+              <span>Status: <strong className="text-[#02baff]">Active Citizen Console</strong></span>
             </p>
           </div>
 
-          {/* Quick SOS Trigger Button */}
+          {/* Quick SOS Trigger Button + Refresh */}
           {!activeSOS && (
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowSOSConfirmModal(true)}
-                className="px-5 py-3 rounded-2xl bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-['Orbitron'] font-bold text-xs tracking-wider transition shadow-lg shadow-red-950/60 flex items-center gap-2 hover:scale-[1.02] active:scale-95 border border-red-500/50"
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-['Orbitron'] font-bold text-xs tracking-wider transition shadow-lg shadow-red-950/60 flex items-center gap-2 hover:scale-[1.02] active:scale-95 border border-red-500/50"
               >
                 <Radio className="w-4 h-4 text-white animate-pulse" />
                 <span>EMERGENCY SOS (DISPATCH)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => fetchData()}
+                className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-[#02baff]/20 transition hover:border-[#02baff]/50"
+                title="Refresh telemetry"
+              >
+                <RefreshCw className={`w-4 h-4 ${isLoadingData ? 'animate-spin' : ''}`} />
               </button>
             </div>
           )}
