@@ -512,12 +512,15 @@ Portal URL: ${window.location.origin}`;
       <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-[#090e1a]/95 via-[#070b14]/95 to-[#05070e]/95 border border-[#02baff]/20 shadow-2xl backdrop-blur-md relative overflow-hidden">
         <div className="absolute top-0 left-0 w-32 h-1 bg-gradient-to-r from-purple-500 via-[#0147bf] to-[#02baff]" />
 
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-          <div className="space-y-1.5">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+          <div className="space-y-1.5 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="px-2.5 py-0.5 rounded-full bg-purple-500/15 text-purple-300 text-xs font-bold font-['Orbitron'] border border-purple-500/30 flex items-center gap-1.5">
                 <Cpu className="w-3.5 h-3.5 text-[#02baff]" />
                 NATIONAL COMMAND & CYBER OPERATIONS HEADQUARTERS
+              </span>
+              <span className="text-xs text-slate-400 font-mono">
+                Badge: <strong className="text-slate-200">{user?.badgeNumber || 'ADMIN-SYS-001'}</strong>
               </span>
             </div>
 
@@ -525,35 +528,36 @@ Portal URL: ${window.location.origin}`;
               CYBER COMMAND: {user?.fullName?.toUpperCase()}
             </h1>
 
-            <p className="text-xs text-slate-400 flex items-center gap-3 font-mono">
-              <span>Jurisdiction: <strong className="text-slate-200">National Cyber Security Operations Center</strong></span>
+            <p className="text-xs text-slate-400 flex items-center gap-2.5 font-mono whitespace-nowrap overflow-x-auto no-scrollbar">
+              <span>Jurisdiction: <strong className="text-slate-200">National Cyber Operations HQ</strong></span>
               <span>•</span>
-              <span>Classification: <strong className="text-[#02baff]">TOP SECRET // STRATEGIC CLEARANCE</strong></span>
+              <span>Designation: <strong className="text-slate-200">Chief Security Officer (CISO)</strong></span>
+              <span>•</span>
+              <span>Clearance: <strong className="text-[#02baff]">Strategic Command</strong></span>
             </p>
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap">
-            <button
-              onClick={handleExportCrimeStatisticsCSV}
-              disabled={isExportingCrimeCSV}
-              className="px-3.5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-emerald-500/40 text-emerald-400 hover:text-emerald-300 font-bold text-xs transition shadow-lg shadow-emerald-950/30 flex items-center gap-2 active:scale-95 disabled:opacity-50"
-              title="Download nationwide crime incidents dataset in CSV format"
-            >
-              <FileSpreadsheet className={`w-4 h-4 ${isExportingCrimeCSV ? 'animate-bounce' : ''}`} />
-              <span>{isExportingCrimeCSV ? 'Exporting...' : 'Export Crime Stats (CSV)'}</span>
-            </button>
-
+          <div className="flex items-center gap-2.5 shrink-0 whitespace-nowrap">
             <button
               onClick={() => setShowAddUserModal(true)}
-              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#0147bf] to-[#02baff] hover:from-[#013ab0] hover:to-[#00a8e8] text-white font-bold text-xs font-['Orbitron'] tracking-wider transition shadow-lg shadow-[#0147bf]/30 flex items-center gap-2 active:scale-95"
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#0147bf] to-[#02baff] hover:from-[#013ab0] hover:to-[#00a8e8] text-white font-bold text-xs font-['Orbitron'] tracking-wider transition shadow-lg shadow-[#0147bf]/30 flex items-center gap-2 active:scale-95 whitespace-nowrap"
             >
-              <UserPlus className="w-4 h-4" />
+              <UserPlus className="w-4 h-4 shrink-0" />
               <span>Provision User</span>
             </button>
 
             <button
+              onClick={handleExportCrimeStatisticsCSV}
+              disabled={isExportingCrimeCSV}
+              className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-emerald-500/30 transition hover:border-emerald-500/60 shrink-0 disabled:opacity-50"
+              title="Export nationwide crime statistics (CSV)"
+            >
+              <FileSpreadsheet className={`w-4 h-4 ${isExportingCrimeCSV ? 'animate-bounce' : ''}`} />
+            </button>
+
+            <button
               onClick={fetchAdminData}
-              className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-[#02baff]/20 transition hover:border-[#02baff]/50"
+              className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-[#02baff]/20 transition hover:border-[#02baff]/50 shrink-0"
               title="Refresh telemetry"
             >
               <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
@@ -734,7 +738,7 @@ Portal URL: ${window.location.origin}`;
             <div className="flex items-center gap-2 text-purple-300">
               <Sparkles className="w-4 h-4 text-purple-400" />
               <span>
-                <strong>Demonstration Inference Engine:</strong> Uses historical spatial-temporal incident patterns and holiday volatility models for resource planning.
+                <strong>Spatial-Temporal Risk Analytics:</strong> Analyzes historical incident patterns, regional density, and seasonal volatility for tactical resource planning.
               </span>
             </div>
           </div>

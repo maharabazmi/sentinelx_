@@ -42,7 +42,8 @@ import { CaseChatThread } from '../common/CaseChatThread';
 
 export const ConsumerDashboard: React.FC = () => {
   const { user } = useAuth();
-  const officerCategory = user?.designation || '';
+  const rawCategory = user?.designation || '';
+  const officerCategory = rawCategory.toLowerCase().includes('police') ? 'Deputy Director' : rawCategory;
   const isInvestigationOfficer = officerCategory === 'Investigation Officer';
   const isAdjudicationOfficer = officerCategory === 'Adjudication Officer';
   const isIntakeOfficer = user?.role === 'CONSUMER_RIGHTS' && (
@@ -56,7 +57,13 @@ export const ConsumerDashboard: React.FC = () => {
     'Adjudication Officer'
   ].includes(officerCategory)
     ? officerCategory
-    : (officerCategory || 'DNCRP Authority');
+    : (officerCategory || 'Deputy Director');
+  const consumerJurisdictionLabel = (user?.stationOrThana || 'National Directorate HQ, Dhaka')
+    .replace(/Model Police Station\s*\(DMP\)/gi, 'Circle Office, Dhaka')
+    .replace(/Police Station/gi, 'Circle Office');
+  const consumerBadgeLabel = (!user?.badgeNumber || user.badgeNumber.endsWith('-') || user.badgeNumber.startsWith('BP-') || user.badgeNumber.startsWith('DMP-'))
+    ? `DNCRP-${(user?.id || '84920').slice(-5).toUpperCase()}`
+    : user.badgeNumber;
   const [activeTab, setActiveTab] = useState<'complaints' | 'barcodes'>('complaints');
 
   const [stats, setStats] = useState<any>(null);
@@ -403,7 +410,10 @@ export const ConsumerDashboard: React.FC = () => {
             <div className="flex items-center gap-2 flex-wrap">
               <span className="px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 text-xs font-bold font-['Orbitron'] border border-amber-500/30 flex items-center gap-1.5">
                 <Scale className="w-3.5 h-3.5 text-amber-400" />
-                DNCRP AUTHORITY • {authorityCategoryLabel}
+                DNCRP AUTHORITY • {authorityCategoryLabel.toUpperCase()}
+              </span>
+              <span className="text-xs text-slate-400 font-mono">
+                Badge: <strong className="text-slate-200">{consumerBadgeLabel}</strong>
               </span>
             </div>
 
@@ -411,22 +421,10 @@ export const ConsumerDashboard: React.FC = () => {
               AUTHORITY CONSOLE: {user?.fullName?.toUpperCase()}
             </h1>
 
-            <div className="flex flex-wrap items-center gap-2 pt-0.5">
-              <span className="px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-400 text-xs font-mono border border-blue-500/30 flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-blue-400" />
-                Operational Jurisdiction: <strong className="text-white">{user?.stationOrThana || 'National HQ, Dhaka'}</strong>
-              </span>
-              {stats?.thanaKeyword && (
-                <span className="px-2 py-0.5 rounded bg-slate-800 text-[11px] font-mono text-slate-300 border border-slate-700">
-                  Thana: {stats.thanaKeyword.toUpperCase()}
-                </span>
-              )}
-            </div>
-
-            <p className="text-xs text-slate-400 flex items-center gap-3 font-mono">
-              <span>Cell: <strong className="text-slate-200">{user?.department || 'National Market Surveillance Cell'}</strong></span>
+            <p className="text-xs text-slate-400 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono">
+              <span>Jurisdiction: <strong className="text-slate-200">{consumerJurisdictionLabel}</strong></span>
               <span>•</span>
-              <span>Designation: <strong className="text-slate-200">{user?.designation || 'Deputy Director'}</strong></span>
+              <span>Designation: <strong className="text-slate-200">{authorityCategoryLabel}</strong></span>
               <span>•</span>
               <span>Status: <strong className="text-amber-400">Mobile Court Warrant Active</strong></span>
             </p>

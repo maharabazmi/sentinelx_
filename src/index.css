@@ -536,15 +536,25 @@ html.light .bg-\[\#0d1525\],
 html.light [class*="bg-[#090e1a]"],
 html.light [class*="bg-[#05070e]"],
 html.light [class*="bg-[#070b14]"],
+html.light [class*="bg-[#060b16]"],
+html.light [class*="bg-[#091326]"],
+html.light [class*="bg-[#0b1b36]"],
+html.light [class*="bg-[#081224]"],
 .light [class*="bg-[#090e1a]"],
 .light [class*="bg-[#05070e]"],
-.light [class*="bg-[#070b14]"] {
+.light [class*="bg-[#070b14]"],
+.light [class*="bg-[#060b16]"],
+.light [class*="bg-[#091326]"],
+.light [class*="bg-[#0b1b36]"],
+.light [class*="bg-[#081224]"] {
   background-color: #ffffff !important;
 }
 
 html.light [class*="from-[#090e1a]"],
 html.light [class*="from-[#05070e]"],
-.light [class*="from-[#090e1a]"] {
+html.light [class*="from-[#091326]"],
+.light [class*="from-[#090e1a]"],
+.light [class*="from-[#091326]"] {
   --tw-gradient-from: #ffffff var(--tw-gradient-from-position) !important;
   --tw-gradient-to: rgb(255 255 255 / 0) var(--tw-gradient-to-position) !important;
 }
@@ -556,7 +566,9 @@ html.light [class*="from-[#05070e]"],
 
 html.light [class*="via-[#070b14]"],
 html.light [class*="via-[#080d1a]"],
-.light [class*="via-[#070b14]"] {
+html.light [class*="via-[#0b1b36]"],
+.light [class*="via-[#070b14]"],
+.light [class*="via-[#0b1b36]"] {
   --tw-gradient-via: #f8fafc var(--tw-gradient-via-position) !important;
 }
 
@@ -565,7 +577,9 @@ html.light [class*="via-[#080d1a]"],
 }
 
 html.light [class*="to-[#05070e]"],
-.light [class*="to-[#05070e]"] {
+html.light [class*="to-[#081224]"],
+.light [class*="to-[#05070e]"],
+.light [class*="to-[#081224]"] {
   --tw-gradient-to: #f1f5f9 var(--tw-gradient-to-position) !important;
 }
 
@@ -602,6 +616,39 @@ html.light .text-slate-200,
   /* Ultra-sharp black slate */
 }
 
+/* Keep white text crisp inside solid saturated colored buttons, badges, and gradients in Light Mode */
+html.light [class*="bg-blue-600"].text-white,
+html.light [class*="bg-blue-500"].text-white,
+html.light [class*="bg-emerald-600"].text-white,
+html.light [class*="bg-emerald-500"].text-white,
+html.light [class*="bg-red-600"].text-white,
+html.light [class*="bg-red-500"].text-white,
+html.light [class*="bg-rose-600"].text-white,
+html.light [class*="bg-rose-500"].text-white,
+html.light [class*="bg-purple-600"].text-white,
+html.light [class*="bg-indigo-600"].text-white,
+html.light [class*="bg-cyan-600"].text-white,
+html.light [class*="bg-amber-600"].text-white,
+html.light [class*="from-[#0147bf]"].text-white,
+html.light [class*="from-blue-600"].text-white,
+html.light [class*="from-emerald-600"].text-white,
+html.light [class*="from-red-600"].text-white,
+html.light [class*="from-rose-600"].text-white,
+html.light [class*="from-purple-600"].text-white,
+html.light [class*="bg-blue-600"] .text-white,
+html.light [class*="bg-emerald-600"] .text-white,
+html.light [class*="bg-red-600"] .text-white,
+html.light [class*="bg-rose-600"] .text-white,
+html.light [class*="bg-purple-600"] .text-white,
+html.light [class*="bg-indigo-600"] .text-white,
+html.light [class*="from-[#0147bf]"] .text-white,
+html.light [class*="from-red-600"] .text-white,
+html.light [class*="from-rose-600"] .text-white,
+html.light .sx-solid-btn,
+html.light .sx-solid-btn * {
+  color: #ffffff !important;
+}
+
 html.light .text-slate-300,
 html.light .text-slate-400,
 .light .text-slate-300,
@@ -632,17 +679,11 @@ html.light .text-blue-200,
 
 /* Accent text colors adapted for high-contrast daylight rendering */
 html.light .text-emerald-200,
-.light .text-emerald-200 {
-  color: #047857 !important;
-}
+.light .text-emerald-200,
 html.light .text-emerald-400,
 .light .text-emerald-400 {
   color: #047857 !important;
   /* Emerald-700 */
-}
-html.light .text-amber-200,
-.light .text-amber-200 {
-  color: #b45309 !important;
 }
 
 html.light .text-emerald-300,
@@ -651,6 +692,8 @@ html.light .text-emerald-300,
   /* Emerald-800 */
 }
 
+html.light .text-amber-200,
+.light .text-amber-200,
 html.light .text-amber-400,
 .light .text-amber-400 {
   color: #b45309 !important;
@@ -673,6 +716,80 @@ html.light .text-blue-300,
 .light .text-blue-300 {
   color: #1e40af !important;
   /* Blue-800 */
+}
+
+html.light .text-cyan-100,
+html.light .text-cyan-200,
+html.light .text-cyan-300,
+html.light .text-cyan-400,
+html.light [class*="text-cyan-300"],
+html.light [class*="text-cyan-200"],
+.light .text-cyan-100,
+.light .text-cyan-200,
+.light .text-cyan-300,
+.light .text-cyan-400 {
+  color: #0e7490 !important;
+  /* Cyan-700 for high daylight legibility */
+}
+
+html.light .text-sky-200,
+html.light .text-sky-300,
+html.light .text-sky-400,
+.light .text-sky-200,
+.light .text-sky-300,
+.light .text-sky-400 {
+  color: #0369a1 !important;
+  /* Sky-700 */
+}
+
+html.light .text-rose-200,
+html.light .text-rose-300,
+html.light .text-rose-400,
+.light .text-rose-200,
+.light .text-rose-300,
+.light .text-rose-400 {
+  color: #be123c !important;
+  /* Rose-700 */
+}
+
+html.light .text-indigo-200,
+html.light .text-indigo-300,
+html.light .text-indigo-400,
+.light .text-indigo-200,
+.light .text-indigo-300,
+.light .text-indigo-400 {
+  color: #4338ca !important;
+  /* Indigo-700 */
+}
+
+html.light .text-teal-200,
+html.light .text-teal-300,
+html.light .text-teal-400,
+.light .text-teal-200,
+.light .text-teal-300,
+.light .text-teal-400 {
+  color: #0f766e !important;
+  /* Teal-700 */
+}
+
+html.light .text-orange-200,
+html.light .text-orange-300,
+html.light .text-orange-400,
+.light .text-orange-200,
+.light .text-orange-300,
+.light .text-orange-400 {
+  color: #c2410c !important;
+  /* Orange-700 */
+}
+
+html.light .text-yellow-200,
+html.light .text-yellow-300,
+html.light .text-yellow-400,
+.light .text-yellow-200,
+.light .text-yellow-300,
+.light .text-yellow-400 {
+  color: #a16207 !important;
+  /* Yellow-700 */
 }
 
 html.light .text-purple-400,
@@ -777,25 +894,38 @@ html.light .provision-account-button:disabled,
 html.light .bg-red-950\/40,
 html.light .bg-red-950\/60,
 html.light .bg-red-950\/30,
-.light .bg-red-950\/40 {
+html.light .bg-rose-950\/30,
+html.light .bg-rose-950\/40,
+html.light .bg-rose-950\/50,
+html.light .bg-rose-950\/60,
+html.light .bg-rose-950\/70,
+html.light .bg-rose-950\/80,
+.light .bg-red-950\/40,
+.light .bg-rose-950\/40,
+.light .bg-rose-950\/60,
+.light .bg-rose-950\/80 {
   background-color: #fee2e2 !important;
   border-color: #fca5a5 !important;
   color: #991b1b !important;
 }
 
 html.light .bg-amber-950\/40,
+html.light .bg-amber-950\/50,
 html.light .bg-amber-950\/60,
 html.light .bg-amber-950\/30,
-.light .bg-amber-950\/40 {
+.light .bg-amber-950\/40,
+.light .bg-amber-950\/50 {
   background-color: #fef3c7 !important;
   border-color: #fcd34d !important;
   color: #92400e !important;
 }
 
 html.light .bg-emerald-950\/40,
+html.light .bg-emerald-950\/50,
 html.light .bg-emerald-950\/60,
 html.light .bg-emerald-950\/30,
-.light .bg-emerald-950\/40 {
+.light .bg-emerald-950\/40,
+.light .bg-emerald-950\/50 {
   background-color: #d1fae5 !important;
   border-color: #6ee7b7 !important;
   color: #065f46 !important;
@@ -804,7 +934,13 @@ html.light .bg-emerald-950\/30,
 html.light .bg-blue-950\/40,
 html.light .bg-blue-950\/60,
 html.light .bg-blue-950\/30,
-.light .bg-blue-950\/40 {
+html.light .bg-cyan-950\/30,
+html.light .bg-cyan-950\/40,
+html.light .bg-cyan-950\/50,
+html.light .bg-indigo-950\/40,
+.light .bg-blue-950\/40,
+.light .bg-cyan-950\/40,
+.light .bg-indigo-950\/40 {
   background-color: #dbeafe !important;
   border-color: #93c5fd !important;
   color: #1e40af !important;
@@ -817,6 +953,37 @@ html.light .bg-purple-950\/30,
   background-color: #f3e8ff !important;
   border-color: #d8b4fe !important;
   color: #6b21a8 !important;
+}
+
+/* Sentinel Prime 3D Glowing Orb & Pill — High Contrast in Both Dark & Light Themes */
+.sx-prime-orb,
+.sx-prime-pill {
+  background: linear-gradient(135deg, #0147bf 0%, #0284c7 55%, #02baff 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(103, 232, 249, 0.55) !important;
+  box-shadow: 0 14px 30px -6px rgba(1, 71, 191, 0.55), 0 0 20px -2px rgba(2, 186, 255, 0.4) !important;
+}
+
+.sx-prime-orb .sx-prime-title,
+.sx-prime-pill .sx-prime-title {
+  color: #ffffff !important;
+}
+
+html.light .sx-prime-orb,
+.light .sx-prime-orb,
+html.light .sx-prime-pill,
+.light .sx-prime-pill {
+  background: linear-gradient(135deg, #0147bf 0%, #0284c7 60%, #02baff 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid #0284c7 !important;
+  box-shadow: 0 14px 28px -6px rgba(1, 71, 191, 0.42), 0 4px 12px -2px rgba(2, 132, 199, 0.28) !important;
+}
+
+html.light .sx-prime-orb .sx-prime-title,
+.light .sx-prime-orb .sx-prime-title,
+html.light .sx-prime-pill .sx-prime-title,
+.light .sx-prime-pill .sx-prime-title {
+  color: #ffffff !important;
 }
 
 /* 5. Inputs, Textareas, Selects & Tables */

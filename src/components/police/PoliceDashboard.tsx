@@ -435,7 +435,11 @@ export const PoliceDashboard: React.FC = () => {
                 POLICE COMMAND & INVESTIGATION PORTAL
               </span>
               <span className="text-xs text-slate-400 font-mono">
-                Badge: <strong className="text-slate-200">{user?.badgeNumber || 'DMP-84920'}</strong>
+                Badge: <strong className="text-slate-200">
+                  {(!user?.badgeNumber || user.badgeNumber.endsWith('-'))
+                    ? `${user?.badgeNumber || 'DMP-'}${(user?.id || '84920').replace(/\D/g, '').slice(-5).padStart(5, '4')}`
+                    : user.badgeNumber}
+                </strong>
               </span>
             </div>
 

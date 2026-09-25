@@ -211,7 +211,7 @@ export const RegisterWizard: React.FC<RegisterWizardProps> = ({
         setOtpCooldown(60);
         setEmailSuccessMessage(`6-digit verification code sent to ${email}`);
         if (res.devOtp) {
-          setDevOtpNotice(`Dev Preview: Code is ${res.devOtp}`);
+          setDevOtpNotice(`Instant Verification Code: ${res.devOtp}`);
         }
       }
     } catch (err: any) {
