@@ -292,6 +292,15 @@ class JurisdictionService:
                 # If no officer currently registered for this thana, assign to that thana's station
                 return f"{thana_key.capitalize()} Police Station, Dhaka"
 
+        # 2.5 If location_name is a generic GPS fallback (no specific landmark typed) and citizen_station is known, prioritize citizen_station
+        is_generic_loc = any(g_phrase in loc_clean for g_phrase in ["dhaka metropolitan area", "current gps pinpoint", "gps locked"])
+        if is_generic_loc and citizen_station:
+            cit_kw = extract_thana_keyword(citizen_station).lower()
+            for st in registered_stations:
+                st_kw = extract_thana_keyword(st).lower()
+                if cit_kw and st_kw and (cit_kw in st_kw or st_kw in cit_kw):
+                    return st
+
         # 3. GPS Proximity matching to registered police stations
         if latitude and longitude and (abs(latitude) > 0.01 or abs(longitude) > 0.01):
             station_distances = []
@@ -331,6 +340,10 @@ class JurisdictionService:
         off_kw = extract_thana_keyword(officer_station).lower()
         off_parts = [p.strip() for p in re.split(r"[/,]", off_kw) if p.strip()]
         loc_name = (getattr(sos, "locationName", "") or "").lower()
+
+        # If location is generic untagged GPS fallback, allow any metropolitan station to view and respond
+        if any(g_phrase in loc_name for g_phrase in ["dhaka metropolitan area", "current gps pinpoint", "gps locked"]):
+            return True
 
         # Strict Location Thana Matching:
         # If the emergency beacon location explicitly mentions a known thana (e.g., 'dhanmondi'),

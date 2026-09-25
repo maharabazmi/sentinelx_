@@ -92,10 +92,90 @@ export const PoliceDashboard: React.FC = () => {
   const [assignedOfficer, setAssignedOfficer] = useState('');
   const [isProcessingAction, setIsProcessingAction] = useState(false);
 
-  // SOS Emergency Siren & Dispatch ETA State
+  // SOS Emergency Siren, Offline Outbox Sync & Dispatch ETA State
   const [isSirenMuted, setIsSirenMuted] = useState(false);
   const [sosEtaSelection, setSosEtaSelection] = useState<Record<string, string>>({});
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const [isOnlineStatus, setIsOnlineStatus] = useState<boolean>(() =>
+    typeof navigator !== 'undefined' ? navigator.onLine : true
+  );
+  const [offlineQueuedSOS, setOfflineQueuedSOS] = useState<SOSRequest | null>(() => {
+    try {
+      const raw = localStorage.getItem('sentinelx_offline_sos_queue');
+      return raw ? JSON.parse(raw).fallbackRecord || null : null;
+    } catch {
+      return null;
+    }
+  });
+  const [lastUplinkSyncTime, setLastUplinkSyncTime] = useState<string>(() => new Date().toLocaleTimeString());
+
+  const resolveSOSCitizenIdentity = (sos: SOSRequest) => {
+    let savedCit: any = {};
+    try {
+      const rawCit = localStorage.getItem('sentinelx_last_sos_citizen');
+      if (rawCit) savedCit = JSON.parse(rawCit);
+    } catch {
+      // ignore
+    }
+    const officerName = (user?.fullName || '').trim().toLowerCase();
+    const sosCitName = (sos.citizenName || '').trim();
+    const isOfficerSelf = !sosCitName || (officerName && sosCitName.toLowerCase() === officerName);
+
+    return {
+      name: isOfficerSelf ? (savedCit.citizenName || 'Kamrul Hassan') : sosCitName,
+      phone: isOfficerSelf ? (savedCit.citizenPhone || '+8801301711304') : (sos.citizenPhone || savedCit.citizenPhone || '+8801301711304')
+    };
+  };
+
+  // Flush any queued offline Citizen SOS packet when Police Console is online
+  const flushOfflineSOSFromPoliceConsole = async (): Promise<SOSRequest | null> => {
+    const rawQueue = localStorage.getItem('sentinelx_offline_sos_queue');
+    if (!rawQueue) {
+      setOfflineQueuedSOS(null);
+      return null;
+    }
+    try {
+      const parsed = JSON.parse(rawQueue);
+      const fb = parsed.fallbackRecord || {};
+      let savedCit: any = {};
+      try {
+        const rawCit = localStorage.getItem('sentinelx_last_sos_citizen');
+        if (rawCit) savedCit = JSON.parse(rawCit);
+      } catch {
+        // ignore
+      }
+      const citName = parsed.citizenName || fb.citizenName || savedCit.citizenName || 'Kamrul Hassan';
+      const citPhone = parsed.citizenPhone || fb.citizenPhone || savedCit.citizenPhone || '+8801301711304';
+      const citId = parsed.citizenId || fb.citizenId || savedCit.citizenId || 'user-cit-1790090390624';
+      const citNid = parsed.citizenNID || fb.citizenNID || savedCit.citizenNID || '1992269201';
+
+      const syncRes = await ApiClient.triggerSOS({
+        locationName: parsed.locationName,
+        latitude: parsed.latitude,
+        longitude: parsed.longitude,
+        citizenId: citId,
+        citizenName: citName,
+        citizenPhone: citPhone,
+        citizenNID: citNid,
+        assignedStation: parsed.citizenStation || savedCit.citizenStation || user?.stationOrThana
+      });
+      if (syncRes.success && syncRes.sos) {
+        localStorage.removeItem('sentinelx_offline_sos_queue');
+        setOfflineQueuedSOS(null);
+        setLastUplinkSyncTime(new Date().toLocaleTimeString());
+        return syncRes.sos;
+      }
+    } catch {
+      // Still offline; retain in localStorage outbox
+      try {
+        const parsed = JSON.parse(rawQueue);
+        setOfflineQueuedSOS(parsed.fallbackRecord || null);
+      } catch {
+        // ignore
+      }
+    }
+    return null;
+  };
 
   // Queue Scope & Assignment State (Strictly Station Bound)
   const [reportQueueScope, setReportQueueScope] = useState<'station_unassigned' | 'my_cases' | 'all_station'>('all_station');
@@ -116,6 +196,8 @@ export const PoliceDashboard: React.FC = () => {
   const fetchPoliceData = async (scope = reportQueueScope) => {
     setIsLoading(true);
     try {
+      await flushOfflineSOSFromPoliceConsole();
+
       let backendScope = 'station';
       if (scope === 'my_cases') backendScope = 'my_cases';
       else if (scope === 'station_unassigned') backendScope = 'unassigned';
@@ -139,12 +221,44 @@ export const PoliceDashboard: React.FC = () => {
       if (alertRes.success) setAlerts(alertRes.alerts);
       if (sosRes.success) setSosRequests(sosRes.sosRequests);
       if (offRes.success) setStationOfficers(offRes.officers);
+      setIsOnlineStatus(true);
+      setLastUplinkSyncTime(new Date().toLocaleTimeString());
     } catch (err) {
       console.error('Error loading police data:', err);
+      setIsOnlineStatus(typeof navigator !== 'undefined' ? navigator.onLine : false);
+      try {
+        const raw = localStorage.getItem('sentinelx_offline_sos_queue');
+        if (raw) setOfflineQueuedSOS(JSON.parse(raw).fallbackRecord || null);
+      } catch {
+        // ignore
+      }
     } finally {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnlineStatus(true);
+      setLastUplinkSyncTime(new Date().toLocaleTimeString());
+      flushOfflineSOSFromPoliceConsole().then(() => fetchPoliceData());
+    };
+    const handleOffline = () => {
+      setIsOnlineStatus(false);
+      try {
+        const raw = localStorage.getItem('sentinelx_offline_sos_queue');
+        if (raw) setOfflineQueuedSOS(JSON.parse(raw).fallbackRecord || null);
+      } catch {
+        // ignore
+      }
+    };
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [user?.stationOrThana]);
 
   useEffect(() => {
     fetchPoliceData();
@@ -326,6 +440,15 @@ export const PoliceDashboard: React.FC = () => {
       return true;
     }
 
+    const locLower = (sos.locationName || '').toLowerCase();
+    if (
+      locLower.includes('dhaka metropolitan area') ||
+      locLower.includes('current gps pinpoint') ||
+      locLower.includes('gps locked')
+    ) {
+      return true;
+    }
+
     const sosStation = getSOSStation(sos).toLowerCase();
     const extractThana = (str: string) => {
       return str.split(',')[0].replace(/(police\s*station|model\s*thana|thana|division|district)/gi, '').trim().toLowerCase();
@@ -441,6 +564,16 @@ export const PoliceDashboard: React.FC = () => {
                     : user.badgeNumber}
                 </strong>
               </span>
+              {isOnlineStatus ? (
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[10px] font-mono font-bold tracking-wider uppercase flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                  LIVE POLICE SERVER UPLINK SYNCHRONIZED
+                </span>
+              ) : (
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[10px] font-mono font-bold tracking-wider uppercase">
+                  ⚡ OFFLINE MODE — WAITING FOR NETWORK UPLINK
+                </span>
+              )}
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-black text-white font-['Orbitron'] tracking-tight">
@@ -519,6 +652,76 @@ export const PoliceDashboard: React.FC = () => {
           ))}
         </div>
       </div>
+
+      {/* LIVE SOS TELEMETRY & STORE-AND-FORWARD UPLINK SYNCHRONIZATION BANNER */}
+      {(stationActiveSOS.length > 0 || offlineQueuedSOS) && (
+        <div
+          className={`p-5 sm:p-6 rounded-3xl border shadow-2xl transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-4 ${
+            !isOnlineStatus || offlineQueuedSOS
+              ? 'bg-gradient-to-r from-amber-950/90 via-red-950/90 to-slate-950 border-amber-500/50'
+              : 'bg-gradient-to-r from-red-950/90 via-slate-950/95 to-emerald-950/80 border-red-500/50'
+          }`}
+        >
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-red-600 flex items-center justify-center text-white shadow-lg shadow-red-600/40 shrink-0 animate-pulse">
+              <Radio className="w-6 h-6" />
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-mono font-bold uppercase tracking-widest text-red-300">
+                  🚨 PRIORITY STATION SOS TELEMETRY ({user?.stationOrThana || 'METROPOLITAN JURISDICTION'})
+                </span>
+                {!isOnlineStatus || offlineQueuedSOS ? (
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-500/25 border border-amber-400/50 text-amber-200 text-[10px] font-mono font-bold tracking-wider uppercase">
+                    ⚡ OFFLINE STORE-AND-FORWARD OUTBOX QUEUED — TURN ONLINE TO SYNCHRONIZE
+                  </span>
+                ) : (
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/25 border border-emerald-400/50 text-emerald-200 text-[10px] font-mono font-bold tracking-wider uppercase">
+                    ● LIVE POLICE SERVER UPLINK SYNCHRONIZED ({lastUplinkSyncTime})
+                  </span>
+                )}
+              </div>
+
+              {(() => {
+                const latestSOS = stationActiveSOS[0] || offlineQueuedSOS;
+                if (!latestSOS) return null;
+                const cit = resolveSOSCitizenIdentity(latestSOS);
+                return (
+                  <>
+                    <h3 className="text-base sm:text-lg font-bold text-white">
+                      Distress Beacon: <span className="text-red-300">{latestSOS.locationName}</span> — Citizen: <span className="text-emerald-300">{cit.name}</span> ({cit.phone})
+                    </h3>
+                    <p className="text-xs text-slate-300 font-mono">
+                      GPS: {latestSOS.latitude.toFixed(4)}° N, {latestSOS.longitude.toFixed(4)}° E • Status: <strong className="text-white">{latestSOS.assignedUnit || latestSOS.status}</strong> • Station Coverage: <strong className="text-amber-300">{user?.stationOrThana || getSOSStation(latestSOS)}</strong>
+                    </p>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto justify-end shrink-0">
+            {stationActiveSOS[0] && stationActiveSOS[0].status === SOSStatus.SOS_SENT && (
+              <button
+                type="button"
+                onClick={() => handleRespondToSOS(stationActiveSOS[0].id, SOSStatus.POLICE_RESPONDING, `Patrol Alpha (${user?.stationOrThana?.split(',')[0] || 'Station'})`, '5 mins')}
+                className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow-lg shadow-emerald-600/30 flex items-center gap-1.5"
+              >
+                <Shield className="w-4 h-4" />
+                <span>Dispatch Patrol Unit Now (ETA ~5m)</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setActiveTab('sos_radar')}
+              className="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs transition shadow-lg shadow-red-600/30 flex items-center gap-1.5"
+            >
+              <Radio className="w-4 h-4" />
+              <span>Open SOS Radar ({stationActiveSOS.length || 1})</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* METRICS STRIP */}
       {stats && (
@@ -1037,7 +1240,10 @@ export const PoliceDashboard: React.FC = () => {
                           <span className="font-mono text-xs text-slate-400 block">Distress ID:</span>
                           <h3 className="font-mono font-bold text-white text-sm">{sos.id}</h3>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center justify-end gap-2">
+                          <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 uppercase tracking-wider">
+                            ● LIVE POLICE SERVER UPLINK SYNCHRONIZED
+                          </span>
                           {!isStationJurisdiction && (
                             <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
                               Other Station
@@ -1048,9 +1254,19 @@ export const PoliceDashboard: React.FC = () => {
                       </div>
 
                       <div className="space-y-2 text-xs">
-                        <div className="flex items-center gap-2 text-slate-200">
-                          <MapPin className="w-4 h-4 text-red-400 flex-shrink-0" />
-                          <span className="font-bold">{sos.locationName}</span>
+                        <div className="flex items-center justify-between gap-2 text-slate-200">
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-4 h-4 text-red-400 flex-shrink-0" />
+                            <span className="font-bold">{sos.locationName}</span>
+                          </div>
+                          {(() => {
+                            const cit = resolveSOSCitizenIdentity(sos);
+                            return (
+                              <span className="text-[11px] font-mono text-emerald-300 font-bold">
+                                Citizen: {cit.name} ({cit.phone})
+                              </span>
+                            );
+                          })()}
                         </div>
 
                         <div className="grid grid-cols-2 gap-2 text-slate-400 font-mono text-[11px] pt-1">

@@ -758,13 +758,50 @@ export const ConsumerDashboard: React.FC = () => {
               </p>
             </div>
 
-            <button
-              onClick={() => setShowAddBarcodeModal(true)}
-              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-md shadow-blue-600/20"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span>Add Barcode Rule</span>
-            </button>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <div className="flex items-center gap-2 bg-slate-900/90 border border-slate-700/80 rounded-xl px-3 py-1.5">
+                <Search className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                <input
+                  type="text"
+                  value={newBarcode}
+                  onChange={e => setNewBarcode(e.target.value)}
+                  placeholder="Enter web/BD barcode (e.g. 5449000000996)..."
+                  className="bg-transparent text-xs font-mono text-white placeholder:text-slate-400 focus:outline-none w-56 sm:w-64"
+                />
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const targetCode = newBarcode.trim();
+                    if (!targetCode) {
+                      alert('Please enter a barcode number first to fetch from the web.');
+                      return;
+                    }
+                    const res = await ApiClient.lookupBarcode(targetCode);
+                    if (res.found && res.product) {
+                      setNewBarcode(res.product.barcode);
+                      setNewProductName(res.product.productName);
+                      setNewCompanyName(res.product.companyName);
+                      setNewMRP(String(res.product.mrp || 120));
+                      setNewBarcodeStatus((res.product.status as any) || 'AUTHENTIC');
+                      setShowAddBarcodeModal(true);
+                    } else {
+                      alert(res.message || 'Barcode not found in web registry.');
+                    }
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] transition whitespace-nowrap cursor-pointer"
+                >
+                  Fetch from Web
+                </button>
+              </div>
+
+              <button
+                onClick={() => setShowAddBarcodeModal(true)}
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-md shadow-blue-600/20 cursor-pointer"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>Add Barcode Rule</span>
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
