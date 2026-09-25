@@ -169,7 +169,7 @@ export const CitizenAICopilot: React.FC<CitizenAICopilotProps> = ({
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          title="Open Sentinel Prime — Civic & Legal Assistant"
+          aria-label="Open Sentinel Prime"
           className="sx-prime-orb fixed bottom-6 right-6 z-50 group flex items-center rounded-full p-1.5 transition-all duration-300 hover:pr-4 hover:scale-105 active:scale-95"
         >
           {/* Glowing Circular Core */}
@@ -180,12 +180,11 @@ export const CitizenAICopilot: React.FC<CitizenAICopilotProps> = ({
           </div>
 
           {/* Smooth Slide-Out Label on Hover */}
-          <div className="max-w-0 overflow-hidden group-hover:max-w-[190px] group-hover:ml-2.5 transition-all duration-300 ease-out text-left whitespace-nowrap">
-            <div className="flex items-center gap-1.5">
+          <div className="max-w-0 overflow-hidden group-hover:max-w-[180px] group-hover:ml-2.5 transition-all duration-300 ease-out text-left whitespace-nowrap">
+            <div className="flex items-center">
               <span className="sx-prime-title text-xs font-black font-['Orbitron'] tracking-wider">
                 SENTINEL PRIME
               </span>
-              <Sparkles className="w-3.5 h-3.5 text-amber-300 shrink-0" />
             </div>
             <p className="text-[10px] !text-cyan-100 font-medium">
               Civic & Legal AI Assistant
