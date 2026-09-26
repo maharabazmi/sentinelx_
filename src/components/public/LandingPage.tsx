@@ -139,14 +139,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <div className="lg:col-span-5 flex flex-col items-center justify-center relative">
               <div className="relative w-full max-w-sm aspect-square flex items-center justify-center">
                 {/* Orbital radar rings */}
-                <div className="absolute inset-0 rounded-full border border-[#02baff]/15 animate-ping [animation-duration:6s]" />
-                <div className="absolute inset-6 rounded-full border border-[#0147bf]/30 animate-pulse-subtle" />
-                <div className="absolute inset-12 rounded-full border border-dashed border-[#02baff]/25" />
+                <div className="hero-radar-pulse absolute inset-0 rounded-full border border-[#02baff]/20" />
+                <div className="hero-radar-orbit absolute inset-6 rounded-full border border-dashed border-[#0147bf]/35">
+                  <span className="absolute left-1/2 top-0 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#02baff] shadow-[0_0_14px_3px_rgba(2,186,255,0.55)]" />
+                </div>
+                <div className="hero-radar-inner absolute inset-12 rounded-full border border-[#02baff]/15" />
 
                 {/* Central Futuristic Brand Emblem */}
-                <div className="relative z-10 w-48 h-48 rounded-3xl bg-gradient-to-br from-[#090e1a] to-[#05070e] border border-[#02baff]/40 flex flex-col items-center justify-center p-6 shadow-2xl shadow-[#0147bf]/40 glow-blue">
+                <div className="hero-emblem-card hero-emblem-float relative z-10 w-48 h-48 rounded-3xl bg-gradient-to-br from-[#090e1a] to-[#05070e] border border-[#02baff]/40 flex flex-col items-center justify-center p-6 shadow-2xl shadow-[#0147bf]/40 glow-blue">
                   <BrandLogo variant="mark" size="xl" glow={true} />
-                  <span className="mt-3 text-xs font-['Orbitron'] font-bold tracking-widest text-[#02baff]">
+                  <span className="hero-emblem-label mt-3 text-xs font-['Orbitron'] font-bold tracking-widest text-[#02baff]">
                     SENTINEL-X
                   </span>
                 </div>
