@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Printer,
   X,
@@ -26,6 +26,90 @@ export const GDDocketModal: React.FC<GDDocketModalProps> = ({
   viewerRole = 'CITIZEN'
 }) => {
   const hashToken = `SHA256-${report.caseId.replace(/[^0-9]/g, '') || '92847192'}-VERIFIED`;
+  const docketContentRef = useRef<HTMLDivElement>(null);
+  const [printError, setPrintError] = useState<string | null>(null);
+
+  const handlePrintDocket = async () => {
+    const docketContent = docketContentRef.current;
+    if (!docketContent) return;
+
+    const printWindow = window.open('', '_blank', 'popup,width=900,height=900');
+    if (!printWindow) {
+      setPrintError('Allow pop-ups to print this GD docket or save it as a PDF.');
+      return;
+    }
+
+    setPrintError(null);
+
+    try {
+      const printDocument = printWindow.document;
+      printDocument.open();
+      printDocument.write('<!doctype html><html><head><meta charset="utf-8"></head><body></body></html>');
+      printDocument.close();
+      printDocument.title = `GD Docket ${report.caseId}`;
+
+      document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]').forEach(source => {
+        const stylesheet = printDocument.createElement('link');
+        stylesheet.rel = 'stylesheet';
+        stylesheet.href = source.href;
+        if (source.media) stylesheet.media = source.media;
+        printDocument.head.appendChild(stylesheet);
+      });
+
+      document.querySelectorAll('style').forEach(source => {
+        const style = printDocument.createElement('style');
+        style.textContent = source.textContent;
+        printDocument.head.appendChild(style);
+      });
+
+      const printStyles = printDocument.createElement('style');
+      printStyles.textContent = `
+        @page { size: A4 portrait; margin: 12mm 15mm; }
+        html, body { margin: 0; padding: 0; background: #fff; color: #020617; }
+        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        #gd-docket-print-content {
+          box-sizing: border-box;
+          width: 100%;
+          max-width: none;
+          margin: 0 auto;
+          padding: 0;
+          overflow: visible;
+          background: #fff;
+          border: 2px solid #0f172a;
+          border-radius: 8px;
+          box-shadow: none;
+        }
+        @media print {
+          *, *::before, *::after { animation: none !important; transition: none !important; }
+          [data-gd-print-exclude] { display: none !important; }
+        }
+      `;
+      printDocument.head.appendChild(printStyles);
+
+      const printableDocket = docketContent.cloneNode(true) as HTMLDivElement;
+      printableDocket.id = 'gd-docket-print-content';
+      printableDocket.querySelectorAll('[data-gd-print-exclude]').forEach(element => element.remove());
+      printDocument.body.appendChild(printableDocket);
+
+      const stylesheets = Array.from(printDocument.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]'));
+      await Promise.all(stylesheets.map(stylesheet => new Promise<void>(resolve => {
+        if (stylesheet.sheet) {
+          resolve();
+          return;
+        }
+        stylesheet.addEventListener('load', () => resolve(), { once: true });
+        stylesheet.addEventListener('error', () => resolve(), { once: true });
+        window.setTimeout(resolve, 5000);
+      })));
+
+      printWindow.addEventListener('afterprint', () => printWindow.close(), { once: true });
+      printWindow.focus();
+      printWindow.print();
+    } catch {
+      printWindow.close();
+      setPrintError('Could not prepare the GD docket for printing. Please try again.');
+    }
+  };
 
   return (
     <div
@@ -39,13 +123,14 @@ export const GDDocketModal: React.FC<GDDocketModalProps> = ({
         className="bg-white text-slate-900 rounded-3xl w-full max-w-2xl my-auto shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-150 border-4 border-emerald-800/80 relative"
       >
         {/* Printable Docket Content */}
-        <div className="p-6 sm:p-8 space-y-5 print:p-0 print:m-0">
+        <div ref={docketContentRef} className="p-6 sm:p-8 space-y-5 print:p-0 print:m-0">
           {/* Official Bangladesh Government Header */}
           <div className="text-center pb-4 border-b-2 border-slate-900 space-y-1 relative">
             <button
               onClick={onClose}
               className="absolute top-0 right-0 text-slate-400 hover:text-slate-800 p-1.5 rounded-lg hover:bg-slate-100 transition print:hidden"
               aria-label="Close modal"
+              data-gd-print-exclude
             >
               <X className="w-5 h-5" />
             </button>
@@ -197,14 +282,14 @@ export const GDDocketModal: React.FC<GDDocketModalProps> = ({
         </div>
 
         {/* Action Bar (Hidden in physical print or PDF generation) */}
-        <div className="p-4 bg-slate-100 border-t border-slate-300 flex items-center justify-between gap-3 print:hidden">
+        <div className="p-4 bg-slate-100 border-t border-slate-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3 print:hidden">
           <span className="text-xs text-slate-600">
-            Official General Diary (GD) docket acknowledgment for legal & court records.
+            Print this GD docket only, or choose Save as PDF in the print dialog.
           </span>
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => window.print()}
+              onClick={handlePrintDocket}
               className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold flex items-center gap-1.5 transition shadow hover:shadow-md cursor-pointer"
             >
               <Printer className="w-4 h-4" />
@@ -218,6 +303,9 @@ export const GDDocketModal: React.FC<GDDocketModalProps> = ({
               Close
             </button>
           </div>
+          {printError && (
+            <p role="alert" className="text-xs text-rose-700 sm:basis-full">{printError}</p>
+          )}
         </div>
       </div>
     </div>
