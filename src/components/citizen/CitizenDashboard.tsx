@@ -453,6 +453,10 @@ export const CitizenDashboard: React.FC = () => {
       !selectedComplaintStatuses || selectedComplaintStatuses.includes(complaint.status);
     return matchesSearch && matchesStatus;
   });
+  const clearComplaintFilters = () => {
+    setComplaintStatusFilter('ALL');
+    setComplaintSearchQuery('');
+  };
   const [printingDocket, setPrintingDocket] = useState<CrimeReport | null>(null);
   const [printingDisputeDocket, setPrintingDisputeDocket] = useState<ConsumerComplaint | null>(null);
 
@@ -2644,34 +2648,46 @@ export const CitizenDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-            {COMPLAINT_STATUS_FILTERS.map(filter => {
-              const count = filter.statuses
-                ? myComplaints.filter(complaint => filter.statuses?.includes(complaint.status)).length
-                : myComplaints.length;
-              const isActive = complaintStatusFilter === filter.id;
+          <div className="flex items-center gap-2">
+            <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+              {COMPLAINT_STATUS_FILTERS.map(filter => {
+                const count = filter.statuses
+                  ? myComplaints.filter(complaint => filter.statuses?.includes(complaint.status)).length
+                  : myComplaints.length;
+                const isActive = complaintStatusFilter === filter.id;
 
-              return (
-                <button
-                  key={filter.id}
-                  type="button"
-                  aria-pressed={isActive}
-                  onClick={() => setComplaintStatusFilter(filter.id)}
-                  className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 whitespace-nowrap ${
-                    isActive
-                      ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20'
-                      : 'bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800'
-                  }`}
-                >
-                  <span>{filter.label}</span>
-                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
-                    isActive ? 'bg-slate-950/30 text-slate-950' : 'bg-slate-800 text-slate-400'
-                  }`}>
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
+                return (
+                  <button
+                    key={filter.id}
+                    type="button"
+                    aria-pressed={isActive}
+                    onClick={() => setComplaintStatusFilter(filter.id)}
+                    className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 whitespace-nowrap ${
+                      isActive
+                        ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20'
+                        : 'bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800'
+                    }`}
+                  >
+                    <span>{filter.label}</span>
+                    <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+                      isActive ? 'bg-slate-950/30 text-slate-950' : 'bg-slate-800 text-slate-400'
+                    }`}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            {(complaintStatusFilter !== 'ALL' || complaintSearchQuery) && (
+              <button
+                type="button"
+                onClick={clearComplaintFilters}
+                className="flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-amber-400 transition hover:bg-amber-500/10 hover:text-amber-300"
+              >
+                <X className="h-3.5 w-3.5" />
+                Clear filters
+              </button>
+            )}
           </div>
 
           {myComplaints.length === 0 ? (
@@ -2692,10 +2708,7 @@ export const CitizenDashboard: React.FC = () => {
               description="No consumer claims match the selected status and search. Clear the filters to see all claims."
               action={{
                 label: 'Clear Filters',
-                onClick: () => {
-                  setComplaintStatusFilter('ALL');
-                  setComplaintSearchQuery('');
-                },
+                onClick: clearComplaintFilters,
                 icon: X
               }}
             />
