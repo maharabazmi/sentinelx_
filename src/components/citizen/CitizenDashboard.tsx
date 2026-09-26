@@ -36,6 +36,7 @@ import {
   ShieldCheck,
   Printer,
   Download,
+  Copy,
   Car,
   Navigation
 } from 'lucide-react';
@@ -453,8 +454,27 @@ export const CitizenDashboard: React.FC = () => {
       !selectedComplaintStatuses || selectedComplaintStatuses.includes(complaint.status);
     return matchesSearch && matchesStatus;
   });
+  const [copiedComplaintTracking, setCopiedComplaintTracking] = useState<string | null>(null);
+  const [complaintTrackingCopyError, setComplaintTrackingCopyError] = useState<string | null>(null);
   const [printingDocket, setPrintingDocket] = useState<CrimeReport | null>(null);
   const [printingDisputeDocket, setPrintingDisputeDocket] = useState<ConsumerComplaint | null>(null);
+
+  const handleCopyComplaintTracking = async (trackingNumber: string) => {
+    setComplaintTrackingCopyError(null);
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error('Clipboard access is unavailable.');
+      }
+      await navigator.clipboard.writeText(trackingNumber);
+      setCopiedComplaintTracking(trackingNumber);
+      window.setTimeout(() => {
+        setCopiedComplaintTracking(current => current === trackingNumber ? null : current);
+      }, 2000);
+    } catch {
+      setCopiedComplaintTracking(null);
+      setComplaintTrackingCopyError(trackingNumber);
+    }
+  };
 
   // Flush any queued offline SOS packet to the Police server as soon as connectivity returns
   const flushOfflineSOSQueue = async (): Promise<SOSRequest | null> => {
@@ -2708,9 +2728,30 @@ export const CitizenDashboard: React.FC = () => {
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
                       <div className="flex items-center gap-3 flex-wrap">
-                        <span className="font-mono text-xs font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/30">
-                          {comp.trackingNumber}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono text-xs font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/30">
+                            {comp.trackingNumber}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleCopyComplaintTracking(comp.trackingNumber)}
+                            aria-label={copiedComplaintTracking === comp.trackingNumber
+                              ? `Copied tracking number ${comp.trackingNumber}`
+                              : `Copy tracking number ${comp.trackingNumber}`}
+                            title={copiedComplaintTracking === comp.trackingNumber ? 'Copied' : 'Copy tracking number'}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-amber-300 hover:bg-amber-500/10 transition"
+                          >
+                            {copiedComplaintTracking === comp.trackingNumber
+                              ? <Check className="h-3.5 w-3.5" />
+                              : <Copy className="h-3.5 w-3.5" />}
+                          </button>
+                          {copiedComplaintTracking === comp.trackingNumber && (
+                            <span role="status" className="text-[11px] text-emerald-400">Copied</span>
+                          )}
+                          {complaintTrackingCopyError === comp.trackingNumber && (
+                            <span role="status" className="text-[11px] text-rose-400">Copy failed; select the number to copy it.</span>
+                          )}
+                        </div>
                         <h3 className="text-base font-bold text-white font-display">
                           {comp.shopName}
                         </h3>
