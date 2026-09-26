@@ -4,6 +4,7 @@ import {
   Barcode,
   Search,
   CheckCircle2,
+  Copy,
   AlertCircle,
   FileText,
   DollarSign,
@@ -86,6 +87,29 @@ export const ConsumerDashboard: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [issueFilter, setIssueFilter] = useState('ALL');
+  const [copiedTrackingNumber, setCopiedTrackingNumber] = useState<string | null>(null);
+  const [trackingNumberCopyError, setTrackingNumberCopyError] = useState<string | null>(null);
+
+  const handleCopyTrackingNumber = async (
+    event: React.MouseEvent<HTMLButtonElement>,
+    trackingNumber: string
+  ) => {
+    event.stopPropagation();
+    setTrackingNumberCopyError(null);
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error('Clipboard access is unavailable.');
+      }
+      await navigator.clipboard.writeText(trackingNumber);
+      setCopiedTrackingNumber(trackingNumber);
+      window.setTimeout(() => {
+        setCopiedTrackingNumber(current => current === trackingNumber ? null : current);
+      }, 2000);
+    } catch {
+      setCopiedTrackingNumber(null);
+      setTrackingNumberCopyError(trackingNumber);
+    }
+  };
 
   // Selected Complaint Enforcement Modal
   const [selectedComplaint, setSelectedComplaint] = useState<ConsumerComplaint | null>(null);
@@ -634,7 +658,42 @@ export const ConsumerDashboard: React.FC = () => {
                         className="hover:bg-slate-800/40 transition group cursor-pointer"
                       >
                         <td className="py-3.5 px-4 font-mono font-bold text-amber-400">
-                          {comp.trackingNumber}
+                          <div className="flex items-center gap-1.5">
+                            <span>{comp.trackingNumber}</span>
+                            <button
+                              type="button"
+                              onClick={event => handleCopyTrackingNumber(event, comp.trackingNumber)}
+                              aria-label={copiedTrackingNumber === comp.trackingNumber
+                                ? `Copied tracking number ${comp.trackingNumber}`
+                                : trackingNumberCopyError === comp.trackingNumber
+                                  ? `Could not copy tracking number ${comp.trackingNumber}`
+                                  : `Copy tracking number ${comp.trackingNumber}`}
+                              title={copiedTrackingNumber === comp.trackingNumber
+                                ? 'Copied'
+                                : trackingNumberCopyError === comp.trackingNumber
+                                  ? 'Clipboard unavailable; select the number to copy it'
+                                  : 'Copy tracking number'}
+                              className={`rounded-md p-1 transition hover:bg-amber-500/10 ${
+                                copiedTrackingNumber === comp.trackingNumber
+                                  ? 'text-emerald-400'
+                                  : trackingNumberCopyError === comp.trackingNumber
+                                    ? 'text-rose-400'
+                                    : 'text-slate-400 hover:text-amber-300'
+                              }`}
+                            >
+                              {copiedTrackingNumber === comp.trackingNumber
+                                ? <CheckCircle2 className="h-3.5 w-3.5" />
+                                : trackingNumberCopyError === comp.trackingNumber
+                                  ? <AlertCircle className="h-3.5 w-3.5" />
+                                  : <Copy className="h-3.5 w-3.5" />}
+                            </button>
+                            {copiedTrackingNumber === comp.trackingNumber && (
+                              <span role="status" className="sr-only">Tracking number copied</span>
+                            )}
+                            {trackingNumberCopyError === comp.trackingNumber && (
+                              <span role="status" className="sr-only">Clipboard unavailable. Select the tracking number to copy it.</span>
+                            )}
+                          </div>
                         </td>
                         <td className="py-3.5 px-4 font-medium text-white">
                           <div>{comp.shopName}</div>
