@@ -268,7 +268,7 @@ def verify_report(report_id):
         resource=report.caseId,
         resource_id=report.id,
         ip_address=request.remote_addr,
-        status="SUCCESS",
+        status="SUCCESS" if action == "VERIFY" else "FAILED",
         details=f"Officer updated case status to [{new_status}]. Notes: {notes or 'N/A'}",
     )
 
