@@ -1,70 +1,129 @@
-# SentinelX - AI-Assisted Public Safety & Consumer Protection Platform
+# SentinelX
 
-National civil safety and consumer grievance management system for the People's Republic of Bangladesh.
+SentinelX is a web application for public-safety reports and consumer complaints in Bangladesh. Citizens can submit reports and request help; police and consumer-rights staff can review and manage cases through role-based dashboards.
 
----
+## What it includes
 
-## Tech Stack
+- **Citizen services:** crime reports, emergency SOS requests, consumer complaints, barcode lookups, notifications, and an AI assistant.
+- **Police dashboard:** report review and assignment, status updates, emergency alerts, SOS response, and a crime heatmap.
+- **Consumer-rights dashboard:** complaint review, investigation workflow, shop and barcode records, and reward tracking.
+- **Admin dashboard:** system overview, user administration, audit logs, and crime-risk predictions.
+- **Account access:** NID verification, registration, email verification, login, and password recovery.
 
-- **Frontend**: React 19, TypeScript, Vite 6, Tailwind CSS 4, Lucide React, Leaflet, Recharts
-- **Backend**: Python 3 (Flask), SQLAlchemy, Psycopg2, PyJWT, Bcrypt
-- **Database**: PostgreSQL (with SQLite resilient development fallback)
+Some services use external providers. Local development can use the project's mock NID service; live integrations need their own credentials and configuration.
 
----
+## Technology
 
-## Quick Start
+- **Frontend:** React 19, TypeScript, Vite, Tailwind CSS, Leaflet, Recharts, and Lucide icons
+- **Backend:** Python, Flask, SQLAlchemy, and PyJWT
+- **Database:** PostgreSQL when available; SQLite is used as a local fallback
 
-### 1. Prerequisites
-- **Python 3.10+**
-- **Bun** or **Node.js**
+## Run locally
 
-### 2. Install Dependencies
+### Requirements
 
-#### Python Backend
-```bash
-pip install -r requirements.txt
+- Python 3.10 or newer
+- Bun, or Node.js with npm
+- PostgreSQL is optional for local development
+
+### Install
+
+Run these commands from the repository root.
+
+Create and activate a Python virtual environment:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 ```
 
-#### Frontend
-```bash
+On macOS or Linux, activate it with `source .venv/bin/activate` instead.
+
+Install the backend and frontend dependencies:
+
+```powershell
+python -m pip install -r requirements.txt
 bun install
-# or: npm install
 ```
 
-### 3. Environment Configuration
-Edit `.env` to configure your PostgreSQL connection and API keys:
-```env
-DATABASE_URL="postgresql://user:password@localhost:5432/sentinelx_db?schema=public"
-FLASK_PORT=5000
-FLASK_HOST="0.0.0.0"
-JWT_SECRET="sentinelx-bangladesh-national-security-token-secret-2026"
-PORICHOY_API_KEY=""
+If you use Node.js instead of Bun, run `npm install`.
+
+Copy `.env.example` to `.env` and adjust the settings you need. On PowerShell:
+
+```powershell
+Copy-Item .env.example .env
 ```
 
-> **Note**: If your local PostgreSQL server is not currently running, the backend automatically falls back to local SQLite (`sqlite:///sentinelx.db`) with full demonstration records, so the app runs out of the box without manual setup.
+If PostgreSQL is unavailable, the backend falls back to the local `sentinelx.db` SQLite database. The first run initializes the schema and adds demonstration records.
 
-### 4. Run the Application
+### Start the app
 
-In terminal 1 (Backend):
-```bash
+Open two terminals in the repository root. Start the backend in the first:
+
+```powershell
 python app.py
 ```
-*(Runs Flask REST API on http://127.0.0.1:5000)*
 
-In terminal 2 (Frontend):
-```bash
+Start the frontend in the second:
+
+```powershell
 bun run dev
-# or: npm run dev
 ```
-*(Runs Vite React SPA on http://localhost:3000 with automatic proxy to the Flask backend)*
 
----
+Open <http://localhost:3000>. The Vite development server forwards `/api` requests to the Flask backend at `http://127.0.0.1:5000`.
 
-## Architecture & API Endpoints
+The backend health check is available at <http://127.0.0.1:5000/api/health>.
 
-- **Health Check**: `GET /api/health`
-- **Auth & NID**: `POST /api/auth/verify-nid`, `POST /api/auth/register`, `POST /api/auth/login`
-- **Citizen Services**: Crime report lodging, DNCRP dispute filing, SOS emergency distress dispatch, BSTI barcode verification
-- **Police Command**: Operational dashboard, crime report review/investigation updates, verified-only crime heatmap, emergency alerts
-- **Consumer Rights (DNCRP)**: Complaint resolution, mobile court enforcement penalties, shop inspection surveillance index
-- **Admin Governance**: National security overview, AI crime risk prediction & scenario simulations, audit logging
+## Configuration
+
+The application reads settings from `.env`. Common settings include:
+
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE_URL` | PostgreSQL connection string |
+| `FLASK_PORT` | Backend port; defaults to `5000` |
+| `FLASK_HOST` | Backend bind address |
+| `JWT_SECRET` | Signing key for authentication tokens |
+| `ADMIN_CLEARANCE_KEY` | Key used by the admin clearance flow |
+| `GEMINI_API_KEY` | Optional key for Gemini-powered assistant features |
+| `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD` | Optional email delivery settings |
+| `PORICHOY_API_KEY` | Optional credential for live NID verification |
+
+`.env.example` lists the available email, server, and AI settings. Keep real credentials in your local `.env`; do not commit them. Replace the example JWT and clearance values before using a shared or deployed environment.
+
+## API overview
+
+All API routes use the `/api` prefix. The full request and response behavior is implemented in `backend/routes/`.
+
+| Area | Example routes |
+| --- | --- |
+| Health | `GET /api/health` |
+| Accounts | `POST /api/auth/verify-nid`, `POST /api/auth/register`, `POST /api/auth/login` |
+| Citizen | `POST /api/citizen/reports`, `POST /api/citizen/sos`, `POST /api/citizen/complaints` |
+| Police | `GET /api/police/reports`, `GET /api/police/heatmap`, `POST /api/police/emergency-alerts` |
+| Consumer rights | `GET /api/consumer/complaints`, `GET /api/consumer/dashboard-summary` |
+| Administration | `GET /api/admin/system-overview`, `GET /api/admin/audit-logs` |
+| Case messages | `/api/cases/<case_id>/messages` |
+
+## Build and type check
+
+Build the frontend and run its TypeScript check with:
+
+```powershell
+bun run build
+bun run lint
+```
+
+## Project layout
+
+```text
+backend/                 Flask app, API routes, database models, and services
+src/                     React application, role dashboards, and shared UI
+public/                  Static assets
+2_database/schema.sql    Database schema reference
+app.py                   Flask application entry point
+```
+
+## Demo data and security
+
+Development seed accounts use the demonstration password `demo1234`; the seeded account records are listed in `backend/seed_data.py`. These credentials and the local fallback database are for demonstrations only. Do not use them for a deployed service or store real personal data in the development database.
