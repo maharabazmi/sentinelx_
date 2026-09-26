@@ -138,5 +138,31 @@ class TestEmailAndProvisioning(unittest.TestCase):
         self.assertEqual(new_login.status_code, 200)
         self.assertFalse(new_login.get_json()["user"]["mustChangePassword"])
 
+    def test_04_admin_provisions_dncrp_officer_without_district(self):
+        """DNCRP provisioning requires an officer category, not an assigned district."""
+        with get_db() as db:
+            admin_user = db.query(User).filter(User.role == "ADMIN").first()
+            self.assertIsNotNone(admin_user, "Admin user must exist in seed records")
+            admin_token = generate_token(admin_user)
+
+        prov_resp = self.client.post(
+            "/api/admin/users",
+            headers={"Authorization": f"Bearer {admin_token}"},
+            json={
+                "fullName": "Test DNCRP Officer",
+                "nidNumber": f"8877665544{os.getpid() % 1000:03d}",
+                "email": f"dncrp.test.{os.getpid()}@dncrp.gov.bd",
+                "phone": f"+8801800{os.getpid() % 100000:05d}",
+                "role": "CONSUMER_RIGHTS",
+                "designation": "Complaint Intake Officer",
+                "department": "Consumer Rights Enforcement",
+                "stationOrThana": "National Directorate HQ, Dhaka",
+                "password": "SentX#test99!"
+            }
+        )
+
+        self.assertEqual(prov_resp.status_code, 201, prov_resp.get_json())
+        self.assertIsNone(prov_resp.get_json()["user"]["assignedDistrict"])
+
 if __name__ == "__main__":
     unittest.main()
