@@ -25,6 +25,13 @@ interface EvidenceUploaderProps {
   maxFileSizeMB?: number;
 }
 
+const SUPPORTED_EVIDENCE_EXTENSIONS = new Set([
+  'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'avif', 'heic', 'tif', 'tiff',
+  'mp4', 'mov', 'avi', 'mkv', 'webm',
+  'mp3', 'wav', 'ogg', 'm4a', 'aac',
+  'pdf', 'doc', 'docx', 'txt', 'csv', 'xls', 'xlsx'
+]);
+
 export const EvidenceUploader: React.FC<EvidenceUploaderProps> = ({
   files,
   evidenceList,
@@ -76,6 +83,12 @@ export const EvidenceUploader: React.FC<EvidenceUploaderProps> = ({
     const newItems: EvidenceFile[] = [];
 
     Array.from(fileList).forEach(file => {
+      const extension = file.name.split('.').pop()?.toLowerCase() || '';
+      if (!SUPPORTED_EVIDENCE_EXTENSIONS.has(extension)) {
+        setErrorMessage(`"${file.name}" is not a supported evidence file type.`);
+        return;
+      }
+
       if (file.size > maxBytes) {
         setErrorMessage(`"${file.name}" exceeds the maximum limit of ${maxFileSizeMB}MB.`);
         return;
@@ -207,7 +220,7 @@ export const EvidenceUploader: React.FC<EvidenceUploaderProps> = ({
       <input
         ref={docInputRef}
         type="file"
-        accept=".pdf,.doc,.docx,.txt,.csv,.xls,.xlsx,.mp3,.mp4,.wav,image/*"
+        accept=".pdf,.doc,.docx,.txt,.csv,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.webp,.bmp,.svg,.avif,.heic,.tif,.tiff,.mp4,.mov,.avi,.mkv,.webm,.mp3,.wav,.ogg,.m4a,.aac,image/*,video/*,audio/*"
         multiple
         className="hidden"
         onChange={(e) => processFiles(e.target.files)}
@@ -276,7 +289,7 @@ export const EvidenceUploader: React.FC<EvidenceUploaderProps> = ({
           Drag & drop files here from your local computer, or <span className="underline font-semibold text-slate-100">browse</span>
         </p>
         <p className="text-[10px] text-slate-500">
-          Supports JPG, PNG, PDF, DOCX, MP4, MP3 up to {maxFileSizeMB}MB
+          Supports images, video, audio, PDF, Word, and spreadsheet files up to {maxFileSizeMB}MB
         </p>
       </div>
 
