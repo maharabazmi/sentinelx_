@@ -1,0 +1,77 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+6 0 obj
+<< /Length 3068 >>
+stream
+0 0 0 rg
+BT /F2 13 Tf 40 790 Td (Database Schema & Entity-Relationship Specification) Tj ET
+0 0 0 rg
+BT /F2 10.5 Tf 40 756 Td (1. RELATIONAL DATABASE OVERVIEW \(10 NORMALIZED TABLES\)) Tj ET
+0.15 0.15 0.15 rg
+BT /F1 9 Tf 45 741 Td (Engine: PostgreSQL / SQLite \(SQLAlchemy ORM\) | Foreign Keys: Enforced | Composite Indexes: 15 Active) Tj ET
+0 0 0 rg
+BT /F2 10.5 Tf 40 722 Td (2. ENTITY-RELATIONSHIP TABLE DEFINITIONS & FOREIGN KEYS) Tj ET
+0.15 0.15 0.15 rg
+BT /F1 9 Tf 45 707 Td (1. users \(PK: id\) -> Stores CITIZEN, POLICE, CONSUMER_RIGHTS, and ADMIN accounts + Porichoy NID & Station.) Tj ET
+0.15 0.15 0.15 rg
+BT /F1 9 Tf 45 694 Td (2. crime_reports \(PK: id, UK: caseId\) -> FK: reporterId -> users\(id\), assignedOfficerId -> users\(id\).) Tj ET
+0.15 0.15 0.15 rg
+BT /F1 9 Tf 45 681 Td (3. consumer_complaints \(PK: id, UK: trackingNumber\) -> FK: complainantId -> users\(id\), assignedOfficerId -> users\(id\).) Tj ET
+0.15 0.15 0.15 rg
+BT /F1 9 Tf 45 668 Td (4. shop_reputations \(PK: id\) -> Tracks merchant compliance score, verified violations, and DNCRP fines.) Tj ET
+0.15 0.15 0.15 rg
+BT /F1 9 Tf 45 655 Td (5. barcode_verifications \(PK: barcode\) -> BSTI & GS1 Bangladesh \(894\) registry \(AUTHENTIC / COUNTERFEIT_FLAGGED\).) Tj ET
+0.15 0.15 0.15 rg
+BT /F1 9 Tf 45 642 Td (6. sos_requests \(PK: id\) -> FK: citizenId -> users\(id\). Supports Store-and-Forward Offline SOS Uplink Sync.) Tj ET
+0.15 0.15 0.15 rg
+BT /F1 9 Tf 45 629 Td (7. emergency_alerts \(PK: id\) -> Public safety broadcasts with geospatial jurisdiction & expiration timestamps.) Tj ET
+0.15 0.15 0.15 rg
+BT /F1 9 Tf 45 616 Td (8. case_messages \(PK: id\) -> FK: senderId -> users\(id\). 2-way encrypted inquiry chat for GD & DNCRP dockets.) Tj ET
+0.15 0.15 0.15 rg
+BT /F1 9 Tf 45 603 Td (9. notifications \(PK: id\) -> FK: userId -> users\(id\). Real-time alert & status transition notifications.) Tj ET
+0.15 0.15 0.15 rg
+BT /F1 9 Tf 45 590 Td (10. audit_logs \(PK: id\) -> Immutable National Security audit log recording actor, IP, resource, and timestamp.) Tj ET
+0 0 0 rg
+BT /F2 10.5 Tf 40 571 Td (3. CARDINALITY & REFERENTIAL INTEGRITY RELATIONSHIPS) Tj ET
+0.15 0.15 0.15 rg
+BT /F1 9 Tf 45 556 Td (- users \(1\) ----< \(0..N\) crime_reports [Citizen files Police GDs; Police Officer assigned to investigate]) Tj ET
+0.15 0.15 0.15 rg
+BT /F1 9 Tf 45 543 Td (- users \(1\) ----< \(0..N\) consumer_complaints [Citizen files DNCRP disputes; Intake/Investigation/Adjudication]) Tj ET
+0.15 0.15 0.15 rg
+BT /F1 9 Tf 45 530 Td (- users \(1\) ----< \(0..N\) sos_requests [Citizen triggers Offline/Live SOS; routed to nearest Police Station]) Tj ET
+0.15 0.15 0.15 rg
+BT /F1 9 Tf 45 517 Td (- crime_reports / consumer_complaints \(1\) ----< \(0..N\) case_messages [2-Way Officer-Citizen Inquiry Thread]) Tj ET
+0.15 0.15 0.15 rg
+BT /F1 9 Tf 45 504 Td (- users \(1\) ----< \(0..N\) notifications [Real-time status & emergency broadcast delivery]) Tj ET
+0.15 0.15 0.15 rg
+BT /F1 9 Tf 45 491 Td (Note: High-resolution visual ERD diagram is also included in erd_diagram.png & erd_diagram.svg.) Tj ET
+endstream
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000251 00000 n 
+0000000321 00000 n 
+0000000396 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+3516
+%%EOF
