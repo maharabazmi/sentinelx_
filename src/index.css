@@ -410,6 +410,104 @@ html.light .provision-user-backdrop,
   animation: radar-sweep 4s linear infinite;
 }
 
+@keyframes hero-radar-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.94);
+  }
+
+  50% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+}
+
+@keyframes hero-radar-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes hero-emblem-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.hero-radar-pulse {
+  animation: hero-radar-pulse 5s ease-in-out infinite;
+}
+
+.hero-radar-orbit {
+  animation: hero-radar-orbit 24s linear infinite;
+}
+
+.hero-emblem-float {
+  animation: hero-emblem-float 4.8s ease-in-out infinite;
+}
+
+@keyframes hero-radar-pulse-light {
+  0%,
+  100% {
+    opacity: 0.58;
+    transform: scale(0.94);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+html.light .hero-radar-pulse,
+.light .hero-radar-pulse {
+  animation-name: hero-radar-pulse-light;
+  border-color: rgba(1, 71, 191, 0.5) !important;
+}
+
+html.light .hero-radar-orbit,
+.light .hero-radar-orbit {
+  border-color: rgba(1, 71, 191, 0.55) !important;
+}
+
+html.light .hero-radar-orbit > span,
+.light .hero-radar-orbit > span {
+  background-color: #0147bf !important;
+  box-shadow: 0 0 0 3px rgba(1, 71, 191, 0.12), 0 0 16px 4px rgba(1, 71, 191, 0.35) !important;
+}
+
+html.light .hero-radar-inner,
+.light .hero-radar-inner {
+  border-color: rgba(1, 71, 191, 0.32) !important;
+}
+
+html.light .hero-emblem-card,
+.light .hero-emblem-card {
+  background: linear-gradient(145deg, #ffffff 0%, #eaf4ff 100%) !important;
+  border-color: rgba(1, 71, 191, 0.48) !important;
+  box-shadow: 0 18px 40px rgba(1, 71, 191, 0.18), 0 4px 12px rgba(15, 23, 42, 0.12) !important;
+}
+
+html.light .hero-emblem-label,
+.light .hero-emblem-label {
+  color: #0147bf !important;
+  text-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-radar-pulse,
+  .hero-radar-orbit,
+  .hero-emblem-float {
+    animation: none;
+  }
+}
+
 /* ==========================================================================
    HIGH-CONTRAST LIGHT MODE OVERRIDES Across All Sub-sections & Components
    ========================================================================== */
