@@ -362,6 +362,31 @@ def write_artifacts(outcomes, started_at, total, failures, errors):
         status, details = outcomes.get(case["method"], ("NOT RUN", ""))
         rows.append({**case, "status": status, "actual": details or status, "defect": details if status in {"FAIL", "ERROR"} else ""})
 
+    passed = sum(row["status"] == "PASS" for row in rows)
+    skipped = sum(row["status"] == "SKIP" for row in rows)
+
+    def markdown_cell(value):
+        return escape(str(value)).replace("|", "&#124;").replace("\r\n", "<br>").replace("\n", "<br>")
+
+    markdown_rows = [
+        "# SentinelX Automated Test Results",
+        "",
+        f"- Run started: {started_at.isoformat(timespec='seconds')} UTC",
+        f"- UI target: `{markdown_cell(BASE_URL)}`",
+        f"- Browser: `{markdown_cell(BROWSER)}`",
+        "- API database: temporary SQLite, deleted after the run",
+        f"- Summary: **{total} executed, {passed} passed, {failures} failed, {errors} errors, {skipped} skipped**",
+        "- Scope: public UI smoke checks and authentication/NID API contracts; no shared or production database is used.",
+        "",
+        "| ID | Module | Test case | Expected result | Actual result | Status | Defect / feedback |",
+        "| --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    for row in rows:
+        markdown_rows.append("| " + " | ".join(markdown_cell(row[key]) for key in (
+            "id", "module", "title", "expected", "actual", "status", "defect"
+        )) + " |")
+    (TESTING_DIR / "test_results.md").write_text("\n".join(markdown_rows) + "\n", encoding="utf-8")
+
     workbook = Workbook()
     sheet = workbook.active
     sheet.title = "Test Cases"

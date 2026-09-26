@@ -26,7 +26,9 @@ python _testing/test_scripts/run_selenium_tests.py
 
 The runner defaults to headless Chrome at `http://127.0.0.1:3000`. Selenium Manager may download a compatible browser driver on first use. Set `$env:SENTINELX_BROWSER = "edge"` for Edge, `$env:SENTINELX_BASE_URL` for another frontend URL, or `$env:SENTINELX_HEADLESS = "false"` to show the browser.
 
-Each run overwrites `test_cases.xlsx` and `test_report.pdf` with actual pass/fail/error results. A browser startup or server connection error is reported as an execution error, not a pass.
+Each run overwrites `test_cases.xlsx`, `test_report.pdf`, and `test_results.md` with actual pass/fail/error results. A browser startup or server connection error is reported as an execution error, not a pass.
+
+GitHub does not render PDF or Excel file contents in a pull-request diff; it may display “Binary file not shown”. This is expected for those formats. Open [test_results.md](test_results.md) to review every case and its result directly in GitHub, or download the PDF and workbook for the formatted reports.
 
 ## Scope
 
