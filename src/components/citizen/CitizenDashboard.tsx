@@ -67,6 +67,31 @@ import {
 } from '../../types';
 import { BANGLADESH_DIVISIONS, getThanasByDistrict } from '../../data/bangladeshGeo';
 
+type ComplaintStatusFilter = 'ALL' | 'IN_PROGRESS' | ComplaintStatus;
+
+const COMPLAINT_STATUS_FILTERS: {
+  id: ComplaintStatusFilter;
+  label: string;
+  statuses: ComplaintStatus[] | null;
+}[] = [
+  { id: 'ALL', label: 'All Claims', statuses: null },
+  { id: ComplaintStatus.SUBMITTED, label: 'Submitted', statuses: [ComplaintStatus.SUBMITTED] },
+  {
+    id: 'IN_PROGRESS',
+    label: 'In Progress',
+    statuses: [
+      ComplaintStatus.UNDER_REVIEW,
+      ComplaintStatus.VERIFIED,
+      ComplaintStatus.INVESTIGATION,
+      ComplaintStatus.INVESTIGATION_SUMMARY,
+      ComplaintStatus.ADJUDICATION_REVIEW,
+      ComplaintStatus.FINAL_DECISION
+    ]
+  },
+  { id: ComplaintStatus.RESOLVED, label: 'Resolved', statuses: [ComplaintStatus.RESOLVED] },
+  { id: ComplaintStatus.REJECTED, label: 'Rejected', statuses: [ComplaintStatus.REJECTED] }
+];
+
 export const CitizenDashboard: React.FC = () => {
   const { user, activeAlerts } = useAuth();
   const [activeTab, setActiveTab] = useState<
@@ -415,6 +440,19 @@ export const CitizenDashboard: React.FC = () => {
   const [reportSearchQuery, setReportSearchQuery] = useState('');
   const [reportStatusFilter, setReportStatusFilter] = useState('ALL');
   const [complaintSearchQuery, setComplaintSearchQuery] = useState('');
+  const [complaintStatusFilter, setComplaintStatusFilter] = useState<ComplaintStatusFilter>('ALL');
+  const selectedComplaintStatuses = COMPLAINT_STATUS_FILTERS.find(
+    filter => filter.id === complaintStatusFilter
+  )?.statuses;
+  const filteredComplaints = myComplaints.filter(complaint => {
+    const matchesSearch =
+      complaint.trackingNumber.toLowerCase().includes(complaintSearchQuery.toLowerCase()) ||
+      complaint.shopName.toLowerCase().includes(complaintSearchQuery.toLowerCase()) ||
+      complaint.productName.toLowerCase().includes(complaintSearchQuery.toLowerCase());
+    const matchesStatus =
+      !selectedComplaintStatuses || selectedComplaintStatuses.includes(complaint.status);
+    return matchesSearch && matchesStatus;
+  });
   const [printingDocket, setPrintingDocket] = useState<CrimeReport | null>(null);
   const [printingDisputeDocket, setPrintingDisputeDocket] = useState<ConsumerComplaint | null>(null);
 
@@ -2606,6 +2644,36 @@ export const CitizenDashboard: React.FC = () => {
             </div>
           </div>
 
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+            {COMPLAINT_STATUS_FILTERS.map(filter => {
+              const count = filter.statuses
+                ? myComplaints.filter(complaint => filter.statuses?.includes(complaint.status)).length
+                : myComplaints.length;
+              const isActive = complaintStatusFilter === filter.id;
+
+              return (
+                <button
+                  key={filter.id}
+                  type="button"
+                  aria-pressed={isActive}
+                  onClick={() => setComplaintStatusFilter(filter.id)}
+                  className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 whitespace-nowrap ${
+                    isActive
+                      ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20'
+                      : 'bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800'
+                  }`}
+                >
+                  <span>{filter.label}</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+                    isActive ? 'bg-slate-950/30 text-slate-950' : 'bg-slate-800 text-slate-400'
+                  }`}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
           {myComplaints.length === 0 ? (
             <EmptyState
               icon={Scale}
@@ -2617,15 +2685,23 @@ export const CitizenDashboard: React.FC = () => {
                 icon: Scale
               }}
             />
+          ) : filteredComplaints.length === 0 ? (
+            <EmptyState
+              icon={Search}
+              title="No Matching Claims"
+              description="No consumer claims match the selected status and search. Clear the filters to see all claims."
+              action={{
+                label: 'Clear Filters',
+                onClick: () => {
+                  setComplaintStatusFilter('ALL');
+                  setComplaintSearchQuery('');
+                },
+                icon: X
+              }}
+            />
           ) : (
             <div className="grid grid-cols-1 gap-4">
-              {myComplaints
-                .filter(c =>
-                  c.trackingNumber.toLowerCase().includes(complaintSearchQuery.toLowerCase()) ||
-                  c.shopName.toLowerCase().includes(complaintSearchQuery.toLowerCase()) ||
-                  c.productName.toLowerCase().includes(complaintSearchQuery.toLowerCase())
-                )
-                .map(comp => (
+              {filteredComplaints.map(comp => (
                   <div
                     key={comp.id}
                     className="p-6 rounded-3xl bg-slate-900/90 border border-slate-800/80 shadow-lg space-y-4"
@@ -2744,7 +2820,7 @@ export const CitizenDashboard: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                ))}
+              ))}
             </div>
           )}
         </div>
