@@ -1,20 +1,20 @@
 # Bug / Feedback Report
 
 **Project:** SentinelX  
-**Suite:** Selenium public-UI smoke tests  
-**Report date:** 2026-09-26
+**Suite:** Selenium UI smoke tests and Flask auth/NID API contract tests
+**Report date:** 2026-09-27
 
 ## Confirmed defects
 
-No application defect is claimed by this test contribution. The automated suite reports defects only when an assertion fails; `test_report.pdf` records the latest run.
+No application defect was observed in the latest run. All 12 included cases passed; `test_report.pdf` and `test_cases.xlsx` contain the detailed results. The suite reports assertion failures separately from setup/runtime errors.
 
 ## Coverage feedback
 
 | Priority | Feedback | Follow-up |
 | --- | --- | --- |
-| Medium | Current browser checks intentionally stop before submitting forms, so they do not verify API, database, authorization, or role-dashboard behavior. | Add authenticated workflow tests against a dedicated disposable test database and non-production accounts. |
-| Low | External NID, email, mapping, and AI integrations are not exercised by this read-only UI smoke suite. | Test integrations with documented mocks/stubs or an approved staging environment. |
+| Medium | Role-specific dashboard workflows, case submission, and notifications are not covered. | Add role-based workflows against a dedicated disposable database, with explicit cleanup and non-production accounts. |
+| Low | Live NID, email, mapping, and AI integrations are not exercised; NID checks use the local mock service. | Test integrations with documented mocks/stubs or an approved staging environment. |
 
 ## Safe test data
 
-The suite uses only the public landing page and opens client-side dialogs. It does not log in, register users, send OTPs, create cases, or dispatch SOS alerts. Do not add write-flow browser tests against a shared or production database.
+Browser checks use public pages and client-side dialogs. API login tests use a seeded temporary SQLite database under the system temp directory, deleted after the suite. Tests do not register accounts, send OTPs, create cases, or dispatch SOS alerts. Do not run write-flow tests against a shared or production database.

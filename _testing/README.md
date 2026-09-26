@@ -1,6 +1,6 @@
 # SentinelX Testing
 
-This folder contains the Selenium browser smoke suite, an Excel test-case sheet, and a PDF test report. The suite only inspects public UI behavior. It does not submit authentication, registration, complaint, emergency, or other data-changing forms.
+This folder contains a combined Selenium UI and Flask API contract suite, an Excel test-case sheet, and a PDF test report. Browser tests inspect public UI behavior without submitting forms. API tests use a temporary SQLite database that is removed after the run; they do not use the configured application database.
 
 ## Run
 
@@ -8,6 +8,7 @@ From the repository root, install the isolated testing dependencies:
 
 ```powershell
 python -m pip install -r _testing/requirements.txt
+python -m pip install -r requirements.txt
 bun install
 ```
 
@@ -29,6 +30,6 @@ Each run overwrites `test_cases.xlsx` and `test_report.pdf` with actual pass/fai
 
 ## Scope
 
-The five automated cases cover landing-page rendering, emergency hotline links, login dialog/password visibility, opening the NID registration wizard, and the theme toggle. Authentication success, backend/database behavior, registration submission, role-specific dashboards, and external integrations are not covered and should be tested separately in an isolated test environment.
+The 12 automated cases cover five public UI behaviors plus NID verification validation, valid/registered NID checks, successful and rejected citizen login, and the public admin-login security block. Test records exist only in a unique temporary SQLite database that is deleted after the run. Registration submission, role-specific dashboard workflows, case creation, notifications, and external integrations need separate tests in an isolated environment.
 
 See [bug_feedback_report.md](bug_feedback_report.md) for current findings and follow-up coverage notes.
