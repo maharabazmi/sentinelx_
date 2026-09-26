@@ -238,39 +238,59 @@ def login():
         ).first()
 
         if not user:
-            return jsonify({"error": "Invalid credentials. User not found."}), 401
+            failed_reason = "USER_NOT_FOUND"
+            user_info = None
+        elif user.role == "ADMIN":
+            failed_reason = "ADMIN_BLOCKED"
+            user_info = user.to_dict()
+        elif not check_password(password, user.passwordHash):
+            failed_reason = "WRONG_PASSWORD"
+            user_info = user.to_dict()
+        else:
+            failed_reason = None
+            safe_user = user.to_dict()
+            token = generate_token(user)
 
-        # High Security Policy: Appointed Admin accounts cannot authenticate via the public gateway
-        if user.role == "ADMIN":
-            AuditService.log(
-                user_id=user.id,
-                user_name=user.fullName,
-                user_role=user.role,
-                action="ADMIN_PUBLIC_LOGIN_BLOCKED",
-                resource="AUTH",
-                ip_address=request.remote_addr,
-                status="DENIED",
-                details="Attempted admin login via public civilian gateway. Blocked by security policy.",
-            )
-            return jsonify({
-                "error": "Access Denied: Administrative accounts cannot authenticate via the public civilian gateway. Official Higher Authority Clearance required."
-            }), 403
+    if failed_reason == "USER_NOT_FOUND":
+        AuditService.log(
+            user_id="UNKNOWN",
+            user_name=identifier,
+            user_role="UNAUTHENTICATED",
+            action="LOGIN_FAILED",
+            resource="AUTH",
+            ip_address=request.remote_addr,
+            status="FAILED",
+            details=f"Failed login attempt for unknown identifier [{identifier}].",
+        )
+        return jsonify({"error": "Invalid credentials. User not found."}), 401
 
-        if not check_password(password, user.passwordHash):
-            AuditService.log(
-                user_id=user.id,
-                user_name=user.fullName,
-                user_role=user.role,
-                action="LOGIN_FAILED",
-                resource="AUTH",
-                ip_address=request.remote_addr,
-                status="DENIED",
-                details="Incorrect password provided.",
-            )
-            return jsonify({"error": "Invalid password. Please check your credentials."}), 401
+    if failed_reason == "ADMIN_BLOCKED":
+        AuditService.log(
+            user_id=user_info["id"],
+            user_name=user_info["fullName"],
+            user_role=user_info["role"],
+            action="ADMIN_PUBLIC_LOGIN_BLOCKED",
+            resource="AUTH",
+            ip_address=request.remote_addr,
+            status="FAILED",
+            details="Attempted admin login via public civilian gateway. Blocked by security policy.",
+        )
+        return jsonify({
+            "error": "Access Denied: Administrative accounts cannot authenticate via the public civilian gateway. Official Higher Authority Clearance required."
+        }), 403
 
-        safe_user = user.to_dict()
-        token = generate_token(user)
+    if failed_reason == "WRONG_PASSWORD":
+        AuditService.log(
+            user_id=user_info["id"],
+            user_name=user_info["fullName"],
+            user_role=user_info["role"],
+            action="LOGIN_FAILED",
+            resource="AUTH",
+            ip_address=request.remote_addr,
+            status="FAILED",
+            details="Incorrect password provided.",
+        )
+        return jsonify({"error": "Invalid password. Please check your credentials."}), 401
 
     AuditService.log(
         user_id=safe_user["id"],

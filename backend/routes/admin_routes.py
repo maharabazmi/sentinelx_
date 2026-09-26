@@ -223,17 +223,6 @@ def get_ai_predictions():
         resource_allocations = ai_prediction_service.get_resource_allocation_advice(db)
         directives = ai_prediction_service.get_directives(db)
 
-    AuditService.log(
-        user_id=g.user.id,
-        user_name=g.user.fullName,
-        user_role=g.user.role,
-        action="QUERY_AI_PREDICTIONS",
-        resource="AI_PREDICTION_ENGINE",
-        ip_address=request.remote_addr,
-        status="SUCCESS",
-        details="Admin accessed AI crime prediction spatial-temporal analysis and comparative risk matrix.",
-    )
-
     return jsonify({
         "success": True,
         "disclaimer": "Demonstration Prediction - Model results for strategic planning and resource deployment evaluation.",
@@ -312,16 +301,6 @@ def list_directives():
 def get_admin_crime_reports():
     with get_db() as db:
         reports = db.query(CrimeReport).order_by(CrimeReport.submittedAt.desc()).all()
-        AuditService.log(
-            user_id=g.user.id,
-            user_name=g.user.fullName,
-            user_role=g.user.role,
-            action="ACCESS_CRIME_STATISTICS",
-            resource="CRIME_REPORTS_DATABASE",
-            ip_address=request.remote_addr,
-            status="SUCCESS",
-            details=f"Admin accessed complete national incident records ({len(reports)} cases) for analytics & export.",
-        )
         return jsonify({
             "success": True,
             "total": len(reports),
@@ -349,7 +328,7 @@ def log_audit_export():
 def get_audit_logs():
     role = request.args.get("role")
     action = request.args.get("action")
-    limit = int(request.args.get("limit", 100))
+    limit = int(request.args.get("limit", 250))
 
     logs = AuditService.get_logs(user_role=role, action=action, limit=limit)
     return jsonify({

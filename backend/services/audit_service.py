@@ -4,6 +4,8 @@ from ..database import get_db
 from ..models import AuditLog, utcnow_iso
 
 class AuditService:
+    PASSIVE_IGNORED_ACTIONS = {"QUERY_AI_PREDICTIONS", "ACCESS_CRIME_STATISTICS"}
+
     @staticmethod
     def log(
         user_id: str,
@@ -16,6 +18,9 @@ class AuditService:
         resource_id: str = None,
         ip_address: str = "127.0.0.1",
     ) -> dict:
+        if action in AuditService.PASSIVE_IGNORED_ACTIONS:
+            return {}
+
         log_id = f"audit-{int(time.time() * 1000)}-{uuid.uuid4().hex[:4]}"
         log_item = AuditLog(
             id=log_id,
@@ -43,7 +48,9 @@ class AuditService:
     @staticmethod
     def get_logs(user_role: str = None, action: str = None, limit: int = 100):
         with get_db() as db:
-            query = db.query(AuditLog)
+            query = db.query(AuditLog).filter(
+                AuditLog.action.notin_(AuditService.PASSIVE_IGNORED_ACTIONS)
+            )
             if user_role:
                 query = query.filter(AuditLog.userRole == user_role)
             if action:

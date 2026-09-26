@@ -598,11 +598,11 @@ def update_complaint_status(complaint_id):
         user_id=user.id,
         user_name=user.fullName,
         user_role=user.role,
-        action="UPDATE_CONSUMER_COMPLAINT",
+        action="REJECT_CONSUMER_COMPLAINT" if complaint.status == "REJECTED" else "UPDATE_CONSUMER_COMPLAINT",
         resource=complaint.trackingNumber,
         resource_id=complaint.id,
         ip_address=request.remote_addr,
-        status="SUCCESS",
+        status="FAILED" if complaint.status == "REJECTED" else "SUCCESS",
         details=f"DNCRP officer updated dispute [{complaint.trackingNumber}] to [{complaint.status}]. Penalty: [{penalty_imposed or 'None'}].",
     )
 
